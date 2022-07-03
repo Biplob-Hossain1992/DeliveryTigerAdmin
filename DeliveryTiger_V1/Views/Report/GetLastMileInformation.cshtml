@@ -1,0 +1,122 @@
+﻿
+@{
+    ViewBag.Title = "Get Last Mile Information Report";
+}
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+<script type="text/javascript">
+    var app = angular.module('LastMileReportModule', []);
+    app.controller('LastMileReportController', function ($scope, $http) {
+        $scope.getLastMileInformationData = function (fromDate, toDate) {
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate
+            };
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/GetLastMileInformation', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function success(response) {
+                    $scope.LastMileInformationData = response.data.model;
+                    $scope.showLoader = false;
+                },
+                    function error(error) {
+                        $scope.showLoader = false;
+                    });
+        }
+    });
+</script>
+
+<div ng-app="LastMileReportModule">
+    <div ng-controller="LastMileReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input type="text" class="form-control-sm form-control" placeholder="search" ng-model="mainSearch" />
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="getLastMileInformationData(fromDate, toDate)">Search</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        #
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='id'; reverseSort=!reverseSort">
+                                            Id
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='district'; reverseSort=!reverseSort">
+                                            District
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='invoiceCourier'; reverseSort=!reverseSort">
+                                            InvoiceCourier
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='invoiceNumber'; reverseSort=!reverseSort">
+                                            InvoiceNumber
+                                        </a>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="lastMileInformationData in LastMileInformationData | orderBy:orderByField:reverseSort | filter:mainSearch ">
+                                    <td>{{$index+1}}</td>
+                                    <td>DT-{{lastMileInformationData.id}}</td>
+                                    <td>{{lastMileInformationData.district}}</td>
+                                    <td>{{lastMileInformationData.invoiceCourier}}</td>
+                                    <td>{{lastMileInformationData.invoiceNumber}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

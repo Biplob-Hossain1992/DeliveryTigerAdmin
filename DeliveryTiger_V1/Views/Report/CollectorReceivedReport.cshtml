@@ -1,0 +1,235 @@
+﻿
+@{
+    ViewBag.Title = "CollectorReceivedReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+         $('#datepickerCollector').datepicker({
+             keyboardNavigation: false,
+             forceParse: false,
+             autoclose: true,
+             endDate: new Date(new Date().setDate(new Date().getDate()))
+         });
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+</script>
+<script type="text/javascript">
+    var app = angular.module('collectorModule', []);
+    app.controller('collectorReportController', function ($scope, $http) {
+        //var localUrl = "http://localhost:58676/api/";
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/";
+
+        $scope.getCollectorReportOrders = (fromDate, toDate) => {
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined' || fromDate == '' || toDate == '') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+            var orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate
+            };
+            $scope.showLoader = true;
+
+            $http.post(apiBaseURL + 'Report/CollectorReceivedReport', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.table(response.data.model);
+                    $scope.collectorOrders = response.data.model;
+                    $scope.totalCollected = response.data.model.reduce((a, b) => a + b.totalCollected, 0);
+                    $scope.totalReceived = response.data.model.reduce((a, b) => a + b.totalReceived, 0);
+                    //$scope.collectedUniqMerchant = response.data.model.reduce((a, b) => a + b.collectedUniqMerchant, 0);
+                    //$scope.receivedUniqMerchant = response.data.model.reduce((a, b) => a + b.receivedUniqMerchant, 0);
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.CollectorReceivedReportDetails = (fromDate, toDate, collectorId, collectorName) => {
+
+            let orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "collectorId": collectorId
+            };
+            $scope.collectorName = collectorName;
+
+            $http.post(apiBaseURL + 'Report/CollectorReceivedReportDetails', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.collectorOrdersDetails = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+    });
+</script>
+
+<div class="row" ng-app="collectorModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="collectorReportController">
+
+        <div class="modal fade" id="myModal" role="dialog">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">{{collectorName}} Details</h4>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>OrderId</th>
+                                    <th>Mechant</th>
+                                    <th>Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in collectorOrdersDetails | filter:mainSearch | orderBy:'-companyName'">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>{{o.courierOrderId}}</td>
+                                    <td>{{o.companyName}}</td>
+                                    <td>{{o.comment}}-{{o.status}}</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                                <div class="input-daterange input-group" id="datepickerCollector">
+
+                                    <input type="text" class="form-control-sm form-control" ng-model="fromDate" name="start" placeholder="From Date" />
+                                    <span class="input-group-addon">to</span>
+                                    <input type="text" class="form-control-sm form-control" ng-model="toDate" name="end" placeholder="To Date" />
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="getCollectorReportOrders(fromDate, toDate)">Search</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="col-lg-12">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <table class="table table-bordered" ng-show="showTable">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        #
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='collectorName'; reverseSort = !reverseSort">
+                                            Collector Name
+                                        </a>
+                                    </th>
+
+                                    <th>
+                                        <a href="#" ng-click="orderByField='totalCollected'; reverseSort = !reverseSort">
+                                            Collected (Uniq Merchant)
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='totalReceived'; reverseSort = !reverseSort">
+                                            Received (Uniq Merchant)
+                                        </a>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in collectorOrders | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>
+                                        {{o.collectorName}}
+                                    </td>
+                                    <td ng-click="CollectorReceivedReportDetails(fromDate, toDate, o.collectorId,o.collectorName)" style="cursor:pointer;" data-toggle="modal" data-target="#myModal">
+                                        {{o.totalCollected}}({{o.collectedUniqMerchant}})
+                                    </td>
+                                    <td>
+                                        {{o.totalReceived}}({{o.receivedUniqMerchant}})
+                                    </td>
+                                </tr>
+                                <tr style="background-color:#F5F5F6">
+                                    <th colspan="2" class="text-center">
+                                        Total
+                                    </th>
+                                    <th>
+                                        {{totalCollected}}
+
+                                    </th>
+                                    <th>
+                                        {{totalReceived}}
+                                    </th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>

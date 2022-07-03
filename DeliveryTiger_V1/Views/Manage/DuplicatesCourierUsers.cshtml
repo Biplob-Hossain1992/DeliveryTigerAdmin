@@ -1,0 +1,209 @@
+﻿
+@{
+    ViewBag.Title = "DuplicatesCourierUsers";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+     }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('duplicatesCourierUsersModule', []);
+    app.controller('duplicatesCourierUsersManageController', function ($scope, $http) {
+        //var localUrl = "http://localhost:58676/api/";
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/";
+
+        $scope.init = function () {
+
+            $scope.GetDuplicatesCourierUsersInfo();
+        };
+
+        //Load Table Data
+        $scope.GetDuplicatesCourierUsersInfo = () => {
+
+            
+            $scope.showLoader = true;
+
+            $http.get(apiBaseURL + 'Fetch/GetDuplicatesCourierUsersInfo', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(response);
+                    $scope.getDuplicatesCourierUsersList = response.data.model;
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.UpdateBlockUser = (courierUserId) => {
+
+            var r = confirm("Are you Sure Want to block this User!");
+            if (r == true) {
+                UpdateBlockUserAlert(courierUserId);
+            } else {
+                txt = "You pressed Cancel!";
+            }
+        }
+
+
+        function UpdateBlockUserAlert(courierUserId) {
+
+            var courierUser = {
+                courierUserId: courierUserId,
+                isBlock: true
+            };
+
+            $scope.showLoader = true;
+
+            $http.put(apiBaseURL + 'Account/UpdateBlockUser/' + courierUserId, courierUser,
+                { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token').trim() } })
+                .then(function (response) {
+                    
+                    alert("Blocked Successfully...!");
+                    $scope.GetDuplicatesCourierUsersInfo();
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response);
+                    alert("Blocked Failed...!");
+                    $scope.showLoader = false;
+                });
+        }
+        
+
+    });
+</script>
+
+<div class="row" ng-app="duplicatesCourierUsersModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="duplicatesCourierUsersManageController" data-ng-init="init()">
+        
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="row form-inline">
+                                <div>
+                                    <input type="text" style="margin-left:30px;" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="col-lg-12">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <table class="table table-bordered" ng-show="showTable">
+
+                            <div style="color:orangered;">
+                                <b>
+                                    Total Count: {{getDuplicatesCourierUsersList.length}}
+                                </b>
+                            </div>
+
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                            Company Name
+                                        </a>
+                                    </th>
+                                    <th>Mobile</th>
+                                    <th>Alter Mobile</th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='joinDate'; reverseSort = !reverseSort">
+                                            Join Date
+                                        </a>
+                                    </th>
+                                    <th>IsBlock</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="d in getDuplicatesCourierUsersList | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                    <td style="width:50px;">
+                                        {{$index+1}}
+                                    </td>
+
+                                    <td>
+                                        {{d.companyName}}
+                                    </td>
+                                    <td>
+                                        {{d.mobile}}
+                                    </td>
+                                    <td>
+                                        {{d.alterMobile}}
+                                    </td>
+                                    <td>
+                                        {{d.joinDate | date}}
+                                    </td>
+                                    <td>
+                                        {{d.isBlock}}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-w-m btn-info" ng-click="UpdateBlockUser(d.courierUserId)"><b>Block User</b></button>
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

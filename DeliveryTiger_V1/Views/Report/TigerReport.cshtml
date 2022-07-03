@@ -1,0 +1,292 @@
+﻿
+@{
+    ViewBag.Title = "Tiger Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+
+<div ng-app="TigerReportModule">
+    <div ng-controller="TigerReportController">
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">Tiger Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="margin-right: 2px;" type="text" class="form-control form-control-sm" ng-model="mainSearch" placeholder="Search" />
+                                <div class="input-group input-daterange">
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" name="fromDate" id="fromDate" ng-model="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" name="toDate" id="toDate" ng-model="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                </div>
+                                <button style="margin-left: 2px;" class="btn btn-w-m btn-success" type="button" ng-click="getTigerReportData(fromDate,toDate)">Show</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a>
+                                                    Total Delivered Order
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a>
+                                                    Total InTime Delivered Order
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a>
+                                                    Total OutTime Delivered Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="cursor: pointer;" ng-click="getReportDataDetails('1')">
+                                                {{ totalDeliveredOrderCount }}
+                                                <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                            <td style="cursor: pointer;" ng-click="getReportDataDetails('2')">
+                                                <span ng-if="totalInTimeDeliveredOrderCount != null">
+                                                    {{ totalInTimeDeliveredOrderCount }} ({{ (totalInTimeDeliveredOrderCount * 100) / totalDeliveredOrderCount | number: 2}}%)
+                                                </span>
+                                                <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                            <td style="cursor: pointer;" ng-click="getReportDataDetails('3')">
+                                                <span ng-if="totalOutTimeDeliveredOrderCount != null">
+                                                    {{ totalOutTimeDeliveredOrderCount }} ({{ (totalOutTimeDeliveredOrderCount * 100) / totalDeliveredOrderCount | number: 2}}%)
+                                                </span>
+                                                <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                @*Table Total Delivered Order Details*@
+                                <table class="table table-bordered table-responsive" ng-show="showDeliveredOrder">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="5">
+                                                <span style="font-size: 18px;"><b>{{tableTitle}}</b></span>
+                                            </th>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                #
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='courierOrderId'; reverseSort = !reverseSort">
+                                                    Courier Order Id
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='deliveryDate'; reverseSort = !reverseSort">
+                                                    Delivery Date
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='expectedDeliveryDate'; reverseSort = !reverseSort">
+                                                    Expected Delivery Date
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='courierName'; reverseSort = !reverseSort">
+                                                    Courier Name
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="d in reportData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>
+                                                {{$index +1}}
+                                            </td>
+                                            <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3;" ng-click="getOrderHistoryInformation(d.courierOrderId)">
+                                                {{d.courierOrderId}}
+                                                <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>
+                                            </td>
+                                            <td>
+                                                {{d.deliveryDate | date: 'medium'}}
+                                            </td>
+                                            <td>
+                                                {{ d.expectedDeliveryDate | date: 'medium' }}
+                                            </td>
+                                            <td>
+                                                {{ d.courierName }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                @*Table Delivered Order Details End*@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+
+                @*Order Information Modal*@
+                <div id="orderInformationModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content" style="text-align: center;">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Order Informations</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="spiner-example text-center" ng-show="showLoaderModal">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1"></div>
+                                    <div class="sk-rect2"></div>
+                                    <div class="sk-rect3"></div>
+                                    <div class="sk-rect4"></div>
+                                    <div class="sk-rect5"></div>
+                                </div>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <table class="table table-hover" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>OrderId</th>
+                                            <th>Confirmed By</th>
+                                            <th>Order Date</th>
+                                            <th>Confirmation Date</th>
+                                            <th>Status</th>
+                                            <th>Comment</th>
+                                            <th>Hub Name</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="o in OrderInformations">
+                                            <td>{{$index +1}}</td>
+                                            <td>
+                                                @*<a ng-href="https://admin.deliverytiger.com.bd/Operation/Operation?orderId={{o.courierOrderId}}"> {{o.courierOrderId}}</a>*@
+                                                {{o.courierOrderId}}
+                                            </td>
+                                            <td>{{o.isConfirmedBy}}({{o.namePostedBy}})</td>
+                                            <td>{{o.orderDate | date:'medium'}}</td>
+                                            <td>{{o.postedOn | date:'medium'}}</td>
+                                            <td>{{o.statusNameEng}}-{{o.status}}</td>
+                                            <td>{{o.comment}}</td>
+                                            <td>{{o.hubName}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Order Information Modal End*@
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    var app = angular.module('TigerReportModule', []);
+    app.controller('TigerReportController', function ($scope, $http) {
+        $scope.getTigerReportData = function (fromDate, toDate) {
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let RequestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/TigerReport', RequestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.reportData = response.data.model;
+                    $scope.totalDeliveredOrder = $scope.reportData;
+                    $scope.totalDeliveredOrderCount = $scope.reportData.length;
+                    $scope.totalInTimeDeliveredOrder = $scope.reportData.filter(x => x.deliveryFlag === 1);
+                    $scope.totalInTimeDeliveredOrderCount = $scope.totalInTimeDeliveredOrder.length;
+                    $scope.totalOutTimeDeliveredOrder = $scope.reportData.filter(x => x.deliveryFlag === 0);
+                    $scope.totalOutTimeDeliveredOrderCount = $scope.totalOutTimeDeliveredOrder.length;
+                    $scope.tableTitle = "Total Delivered Order";
+                    $scope.showLoader = false;
+                    $scope.showDeliveredOrder = true;
+                }, function error(response) {
+                    console.log(response);
+                    $scope.showLoader = false;
+                })
+        }
+
+        $scope.getReportDataDetails = function (detailsFlag) {
+            if (detailsFlag == "1") {
+                $scope.reportData = $scope.totalDeliveredOrder;
+                $scope.tableTitle = "Total Delivered Order";
+            }
+            else if (detailsFlag == "2") {
+                $scope.reportData = $scope.totalInTimeDeliveredOrder;
+                $scope.tableTitle = "Total InTime Delivered Order";
+            }
+            else if (detailsFlag == "3") {
+                $scope.reportData = $scope.totalOutTimeDeliveredOrder;
+                $scope.tableTitle = "Total OutTime Delivered Order";
+            }
+        }
+
+        $scope.getOrderHistoryInformation = function (orderId) {
+            $scope.showLoaderModal = true;
+            $http.get(apiBaseURL + 'Fetch/OrderUpdateHistory/' + orderId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.OrderInformations = response.data.model;
+                    $scope.showLoaderModal = false;
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoaderModal = false;
+                });
+        }
+    });
+</script>

@@ -1,0 +1,2201 @@
+﻿
+@{
+    ViewBag.Title = "LoanApplication";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.min.js" integrity="sha512-IO99nu6TitXdydITTnjerPUo0HffdgLC9yIfv5gwglcsSR7nN008a7QDynI5Ih0mGLlnNnt8tGIuBCFRZaNjqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-sanitize.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.css" integrity="sha512-3MNyrZTIbIT7sGASBSy4HeOwFNhRephd5RfnYcyr7Nbs0CX3/KaNcpPivPOAkOfrKBLL2VtyNzXgphX1i71nEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<style>
+    #spinner-front {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        top: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        z-index: 998;
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        opacity: 1;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function () {
+
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+     }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+
+<!--Page Header-->
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<!--Page Header End-->
+<!--Page Start-->
+
+<div ng-app="loanApplicationModule" style="margin-top:10px;">
+    <div ng-controller="loanApplicationController">
+
+        <div id="spinner-front" ng-show="showFullPageLoader">
+            <img src="~/Content/loading-spinner.gif" />
+        </div>
+
+
+        <div class="row" ng-init="getAllDistrict()">
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-content">
+
+                        <div class="row">
+
+                            @*Merchant Select*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label><strong>মার্চেন্টের প্রতিষ্ঠানের নামঃ</strong></label>
+                                    <ui-select ng-model="merchantMobile" theme="select2" style="width:250px;" on-select="onSelectGetData($item, $model)" ng-click="getMerchantMobile($select.selected.companyName ,$select.selected.courierUserId)">
+                                        <ui-select-match>
+                                            <span ng-bind="$select.selected.companyName"></span>
+                                        </ui-select-match>
+                                        <ui-select-choices repeat="item in (allMerchantInfo | filter: $select.search)" refresh="loadMerchantData($select.search)" refresh-delay="100" minimum-input-length="1">
+                                            <span ng-bind="item.companyName +' - '+item.mobile"></span>
+                                        </ui-select-choices>
+                                    </ui-select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <p>
+                                    লোন আবেদনকারীর ছবি:<br />
+                                    <input type="file" name="image" onchange="angular.element(this).scope().uploadApplicantPhotoFile(this);" class="form-control" required>
+                                </p>
+                                <img id="loanApplicantPhoto" ng-src="{{PreviewLoanApplicantImage}}" ng-show="PreviewLoanApplicantImage != null" alt="" style="height:200px;width:100px" />
+                                <i ng-show="PreviewLoanApplicantImage != null" class="fa fa-times-circle" aria-hidden="true" style="font-size: 20px;" ng-click="closeImageReader('loanApplicantPhoto')"></i>
+                                <input type="text" ng-model="loanApplicantPhotoUrl" style="display: none;" />
+                            </div>
+
+                            @*Gender*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="genderRadio">এই প্রতিষ্ঠানের প্রধান উদ্যোক্তা একজন :</label>
+                                    <input id="male" type="radio" name="genderRadio" ng-model="gender" value="male" />
+                                    <label for="male"><strong>পুরুষ</strong></label>
+                                    <input id="female" type="radio" name="genderRadio" ng-model="gender" value="female" />
+                                    <label for="female"><strong>মহিলা</strong></label>
+                                </div>
+                            </div>
+
+                            @*Age*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="age">আপনার বয়সসীমা:</label>
+                                    <select class="form-control" ng-model="age" name="age" id="age">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="১৮-২৫">১৮-২৫</option>
+                                        <option value="২৫-৩০">২৫-৩০</option>
+                                        <option value="৩০-৩৫">৩০-৩৫</option>
+                                        <option value="৩৫-৬৫">৩৫-৬৫</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*edu level*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="eduLevel">শিক্ষাগত যোগ্যতা:</label>
+                                    <select class="form-control" ng-model="eduLevel" name="eduLevel" id="eduLevel">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="প্রাতিষ্ঠানিক শিক্ষা নেই">প্রাতিষ্ঠানিক শিক্ষা নেই</option>
+                                        <option value="পি এস সি">পি এস সি</option>
+                                        <option value="জে এস সি">জে এস সি</option>
+                                        <option value="এস এস সি">এস এস সি</option>
+                                        <option value="এইচ এস সি">এইচ এস সি</option>
+                                        <option value="স্নাতক">স্নাতক</option>
+                                        <option value="স্নাতকোত্তর">স্নাতকোত্তর</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*family member*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="faMem">পরিবারের সদস্য সংখ্যা:</label>
+                                    <select class="form-control" ng-model="famMem" id="famMem">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="২-৫">২-৫</option>
+                                        <option value="৫-৭">৫-৭</option>
+                                        <option value="৭-১০">৭-১০</option>
+                                        <option value="১০-১৫">১০-১৫</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*Home Ownership*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="homeOwnership">বাসার মালিকানা:</label>
+                                    <select class="form-control" ng-model="homeOwnership" id="homeOwnership">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="নিজের">নিজের</option>
+                                        <option value="পরিবারের নিজস্ব">পরিবারের নিজস্ব</option>
+                                        <option value="ভাড়া">ভাড়া</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*Residence Location*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="residenceLocation">বাসার অবস্থান:</label>
+                                    <select class="form-control" ng-model="residenceLocation" id="residenceLocation">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="মহানগর">মহানগর</option>
+                                        <option value="সিটি কর্পোরেশন">সিটি কর্পোরেশন</option>
+                                        <option value="শহরে">শহরে</option>
+                                        <option value="গ্রামে">গ্রামে</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*Married*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="married">বৈবাহিক অবস্থা:</label>
+                                    <select class="form-control" ng-model="married" id="married">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="বিবাহিত">বিবাহিত</option>
+                                        <option value="অবিবাহিত">অবিবাহিত</option>
+                                        <option value="তালাকপ্রাপ্ত">তালাকপ্রাপ্ত</option>
+                                        <option value="বিধবা/ বিপত্নীক">বিধবা/ বিপত্নীক</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentRoadNo">পেশা:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="applicantOccupation" name="applicantOccupation" id="applicantOccupation" maxlength="100" placeholder="Ex: পেশা" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentRoadNo">অভিজ্ঞতা:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="applicantExperience" name="applicantExperience" id="applicantExperience" maxlength="100" placeholder="Ex: অভিজ্ঞতা" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Date of Birth*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="dateOfBirth">আপনার জন্মতারিখ:</label>
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="dateOfBirth"
+                                           id="dateOfBirth" name="dateOfBirth" class="btn flatpickr" placeholder="Date of Birth"
+                                           autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Business Start Date*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="businessStartDate">ব্যবসা শুরুর তারিখ:</label>
+                                    <input type="text" class="btn flatpickr" ng-model="businessStartDate"
+                                           name="businessStartDate" id="businessStartDate" maxlength="100" placeholder="Ex:ব্যবসা শুরুর তারিখ "
+                                           style="border: 1px solid #46b8da; margin-right: 2px;"
+                                           autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentRoadNo">পিতার নাম:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="fatherName" name="fatherName" id="fatherName" maxlength="100" placeholder="Ex: পিতার নাম" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentRoadNo">মাতার নাম:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="motherName" name="motherName" id="motherName" maxlength="100" placeholder="Ex: মাতার নাম" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentRoadNo">স্বামীর/ স্ত্রীর নাম:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="spouseName" name="spouseName" id="spouseName" maxlength="100" placeholder="Ex: স্বামীর/ স্ত্রীর নাম" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12" style="margin-top: 65px;">
+                                <label style="font-size: 17px;"><b>বর্তমান ঠিকানাঃ </b></label>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentHouseNo">হাউজ নাম্বার:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PresentHouseNo" name="PresentHouseNo" id="PresentHouseNo" maxlength="100" placeholder="Ex: হাউজ নাম্বার" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentRoadNo">রোড নাম্বার:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PresentRoadNo" name="PresentRoadNo" id="PresentRoadNo" maxlength="100" placeholder="Ex: রোড নাম্বার" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentRoadName">রোডের নাম:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PresentRoadName" name="PresentRoadName" id="PresentRoadName" maxlength="100" placeholder="Ex: রোডের নাম" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentAreaName">মহল্লা:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PresentAreaName" name="PresentAreaName" id="PresentAreaName" maxlength="100" placeholder="Ex: মহল্লা" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PresentPostOffice">পোস্ট অফিস:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PresentPostOffice" name="PresentPostOffice" id="PresentPostOffice" maxlength="100" placeholder="Ex: পোস্ট অফিস" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label style="margin-right: 5px; font-weight: bold;">জেলা: </label>
+                                    <select style="border: 1px solid #46b8da;" class="form-control" ng-model="PresentDistrict" name="PresentDistrict" id="PresentDistrict" ng-change="getAllThana(PresentDistrict,1,0)">
+                                        <option value="0">Select District</option>
+                                        <option ng-repeat="district in presentDistricts" value="{{district.districtId}}">{{district.district}}({{district.districtId}})</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label style="margin-right: 5px; font-weight: bold;">থানা: </label>
+                                    <select style="border: 1px solid #46b8da;" class="form-control" ng-model="PresentThana" name="permanentThana" id="permanentThana">
+                                        <option value="0">Select Thana</option>
+                                        <option ng-repeat="thana in presentThanas" value="{{thana.districtId}}">{{thana.district}}({{thana.districtId}})</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="houseOwnerRadio">আপনি যে বাড়িতে থাকেন তার মালিকানা :</label>
+                                    <input id="ishouseOwnerTrue" type="radio" name="houseOwnerRadio" ng-model="isHouseOwnerChange" ng-value="true" ng-change="trackOwnerChangeValue(isHouseOwnerChange)" />
+                                    <label for="ishouseOwnerTrue"><strong>হ্যা</strong></label>
+                                    <input id="ishouseOwnerFalse" type="radio" name="houseOwnerRadio" ng-model="isHouseOwnerChange" ng-value="false" ng-change="trackOwnerChangeValue(isHouseOwnerChange)" />
+                                    <label for="ishouseOwnerFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" class="form-control form-control-sm" ng-model="PresentAddHouseOwner"
+                                           name="PresentAddHouseOwner" id="PresentAddHouseOwner" maxlength="100"
+                                           placeholder="হাউজ এর নাম" autocomplete="off" value="" />
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" class="form-control form-control-sm" ng-model="PresentAddDurationOfLiving"
+                                           name="PresentAddDurationOfLiving" id="PresentAddDurationOfLiving" maxlength="10"
+                                           placeholder="কত দিন ধরে বসবাস করছেন" autocomplete="off" value="" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12" style="margin-top: 65px;">
+                                <label style="font-size: 17px;"><b>স্থায়ী ঠিকানাঃ </b></label>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PermanentHouseNo">হাউজ নাম্বার:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PermanentHouseNo" name="PermanentHouseNo" id="PermanentHouseNo" maxlength="100" placeholder="Ex: হাউজ নাম্বার" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PermanentRoadNo">রোড নাম্বার:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PermanentRoadNo" name="PermanentRoadNo" id="PermanentRoadNo" maxlength="100" placeholder="Ex: রোড নাম্বার" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PermanentRoadName">রোডের নাম:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PermanentRoadName" name="PermanentRoadName" id="PermanentRoadName" maxlength="100" placeholder="Ex: রোডের নাম" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PermanentAreaName">মহল্লা:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PermanentAreaName" name="PermanentAreaName" id="PermanentAreaName" maxlength="100" placeholder="Ex: মহল্লা" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PermanentPostOffice">পোস্ট অফিস:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PermanentPostOffice" name="PermanentPostOffice" id="PermanentPostOffice" maxlength="100" placeholder="Ex: পোস্ট অফিস" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label style="margin-right: 5px; font-weight: bold;">জেলা: </label>
+                                    <select style="border: 1px solid #46b8da;" class="form-control" ng-model="PermanentDistrict" name="permanentDistrict" id="permanentDistrict" ng-change="getAllThana(PermanentDistrict,2,0)">
+                                        <option value="0">Select District</option>
+                                        <option ng-repeat="district in permanentDistricts" value="{{district.districtId}}">{{district.district}}({{district.districtId}})</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label style="margin-right: 5px; font-weight: bold;">থানা: </label>
+                                    <select style="border: 1px solid #46b8da;" class="form-control" ng-model="PermanentThana" name="permanentThana" id="permanentThana">
+                                        <option value="0">Select Thana</option>
+                                        <option ng-repeat="thana in permanentThanas" value="{{thana.districtId}}">{{thana.district}}({{thana.districtId}})</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="PermanentPostOffice">বাড়ির মালিকের নাম:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="PermanentAddOwnerName" name="PermanentAddOwnerName" id="PermanentAddOwnerName" maxlength="100" placeholder="Ex: বাড়ির মালিকের নাম" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12" style="margin-top: 65px;">
+                                <label style="font-size: 17px;"><b>পরিবারের সদস্যদের তথ্য: </b></label>
+                            </div>
+                            <div class="col-lg-12">
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="addNewMember()">
+                                        <i class="fa fa-plus" aria-hidden="true"></i>
+                                        নতুন সদস্য যোগ করুন
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="family-member-details-section" class="row" ng-repeat="familyMember in familyMembers" style="margin-left: 0px; margin-right: 0px; border: 1px solid #000; border-radius: 5px; padding-top: 15px; margin-top: 5px;">
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <button type="button" class="btn btn-w-m btn-danger" ng-click="removeUser(familyMember)">
+                                            <i class="fa fa-trash" aria-hidden="true"></i>
+                                            বাতিল করুন
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label for="FamilyMemberName">নাম:</label>
+                                        <input type="text" class="form-control form-control-sm" ng-model="familyMember.FamilyMemberName" name="FamilyMemberName" id="FamilyMemberName" maxlength="100" placeholder="Ex: সদস্যের নাম" autocomplete="off" />
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label for="FamilyMemberRelation">সম্পর্ক:</label>
+                                        <input type="text" class="form-control form-control-sm" ng-model="familyMember.FamilyMemberRelation" name="FamilyMemberRelation" id="FamilyMemberRelation" maxlength="100" placeholder="Ex: সদস্যের সাথে সম্পর্ক" autocomplete="off" />
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label for="FamilyMemberAge">বয়স:</label>
+                                        <input type="text" class="form-control form-control-sm" ng-model="familyMember.FamilyMemberAge" name="FamilyMemberAge" id="FamilyMemberAge" maxlength="2" placeholder="Ex: সদস্যের বয়স" autocomplete="off" />
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label for="FamilyMemberEducation">শিক্ষাগত যোগ্যতা:</label>
+                                        <input type="text" class="form-control form-control-sm" ng-model="familyMember.FamilyMemberEducation" name="FamilyMemberEducation" id="FamilyMemberEducation" maxlength="100" placeholder="Ex: সদস্যের শিক্ষাগত যোগ্যতা" autocomplete="off" />
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label for="FamilyMemberMaritalStatus">বৈবাহিক অবস্থা:</label>
+                                        <select class="form-control" ng-model="familyMember.FamilyMemberMaritalStatus" name="FamilyMemberMaritalStatus" id="FamilyMemberMaritalStatus">
+                                            <option value="-1">নির্বাচন করুন</option>
+                                            <option value="0">অবিবাহিত</option>
+                                            <option value="1">বিবাহিত</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label for="FamilyMemberOccupation">পেশা:</label>
+                                        <input type="text" class="form-control form-control-sm" ng-model="familyMember.FamilyMemberOccupation" name="FamilyMemberOccupation" id="FamilyMemberOccupation" maxlength="100" placeholder="Ex: সদস্যের পেশা" autocomplete="off" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            @*NID Number*@
+                            <div class="col-lg-6" style="margin-top: 120px;">
+                                <div class="form-group">
+                                    <label for="nidNo">এনআইডি নাম্বার:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="nidNo" name="nidNo" id="nidNo" maxlength="50" placeholder="Ex: এনআইডি নাম্বার" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <!--NID Front Image-->
+                            <div class="col-lg-6" ng-hide="hasNidImage">
+                                <div class="form-group" style="margin-top: 120px;">
+                                    <p>
+                                        এনআইডি এর ছবি (সামনের দিক):<br />
+                                        <input type="file" name="image" onchange="angular.element(this).scope().uploadedFileNidImage(this);" class="form-control" required>
+                                    </p>
+                                    <img id="nidImageFront" ng-src="{{PreviewNidImage}}" ng-show="PreviewNidImage != null" alt="" style="height:100px;width:200px" />
+                                    <i ng-show="PreviewNidImage != null" class="fa fa-times-circle" aria-hidden="true" style="font-size: 20px;" ng-click="closeImageReader('nidFront')"></i>
+                                    <input type="text" ng-model="nidImgUrl" style="display: none;" />
+                                </div>
+                            </div>
+
+                            <!--NID Back Image-->
+                            <div class="col-lg-6" ng-hide="hasNidImage">
+                                <div class="form-group">
+                                    <p>
+                                        এনআইডি এর ছবি (পিছনের দিক):<br />
+                                        <input type="file" name="image" onchange="angular.element(this).scope().uploadedFileNidBackSideImage(this);" class="form-control" required>
+                                    </p>
+                                    <img id="nidImageBack" ng-src="{{PreviewBackNidImage}}" ng-show="PreviewBackNidImage != null" alt="" style="height:100px;width:200px" />
+                                    <i ng-show="PreviewBackNidImage != null" class="fa fa-times-circle" aria-hidden="true" style="font-size: 20px;" ng-click="closeImageReader('nidBack')"></i>
+                                    <input type="text" ng-model="nidBackImgUrl" style="display: none;" />
+                                </div>
+                            </div>
+
+                            @*Basket Value*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="basketValue">গড় বাস্কেট ভ্যালু:</label>
+                                    <select class="form-control" ng-model="basketValue" id="basketValue">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="৫০০০০-১০০০০০">৫০০০০-১০০০০০</option>
+                                        <option value="১০০০০০-২০০০০০">১০০০০০-২০০০০০</option>
+                                        <option value="২০০০০০-৪০০০০০">২০০০০০-৪০০০০০</option>
+                                        <option value="৪০০০০০-৬০০০০০">৪০০০০০-৬০০০০০</option>
+                                        <option value="৬০০০০০-৮০০০০০">৬০০০০০-৮০০০০০</option>
+                                        <option value="৮০০০০০-১০০০০০০">৮০০০০০-১০০০০০০</option>
+                                        <option value="১০০০০০০-১২০০০০০">১০০০০০০-১২০০০০০</option>
+                                        <option value="১২০০০০০-১৫০০০০০">১২০০০০০-১৫০০০০০</option>
+                                        <option value="১৫০০০০০-২০০০০০০">১৫০০০০০-২০০০০০০</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*Monthly Expense*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="monthlyExp">আপনার মাসিক ব্যয় কত:</label>
+                                    <select class="form-control" ng-model="monthlyExp" id="monthlyExp">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="০-৫০০০">০-৫,০০০</option>
+                                        <option value="৫০০০-১০০০০">৫,০০০-১০,০০০</option>
+                                        <option value="১০০০০-১৫০০০">১০,০০০-১৫,০০০</option>
+                                        <option value="১৫০০০-২০০০০">১৫,০০০-২০,০০০</option>
+                                        <option value="২০০০০-২৫০০০">২০,০০০-২৫,০০০</option>
+                                        <option value="২৫০০০-৩০০০০">২৫,০০০-৩০,০০০</option>
+                                        <option value="৩০০০০-৪০০০০">৩০,০০০-৪০,০০০</option>
+                                        <option value="৪০০০০-৬০০০০">৪০,০০০-৬০,০০০</option>
+                                        <option value="৬০০০০-১০০০০০">৬০,০০০-১,০০,০০০</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*Relation Merchant*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="relationMerchant">মার্চেন্টের সাথে কত বছরের পরিচয়:</label>
+                                    <select class="form-control" ng-model="relationMerchant" id="relationMerchant">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="০-১">০-১</option>
+                                        <option value="১-২">১-২</option>
+                                        <option value="২-৪">২-৪</option>
+                                        <option value="৪-৬">৪-৬</option>
+                                        <option value="৬-৮">৬-৮</option>
+                                        <option value="৮-১০">৮-১০</option>
+                                        <option value="১০-১৫">১০-১৫</option>
+                                        <option value="১৫-২০">১৫-২০</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*Interested Amount*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="interestedAmount">আপনি কত টাকা পর্যন্ত লোন নিতে ইচ্ছুক:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="interestedAmount" name="interestedAmount" id="interestedAmount" maxlength="8" placeholder="Ex: 100000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Required Tenor Month*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="reqTenorMonth">কত মাসের মধ্যে লোন পরিশোধ করতে ইচ্ছুক:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="reqTenorMonth" name="reqTenorMonth" id="reqTenorMonth" maxlength="2" placeholder="Ex: 60" autocomplete="off" />
+                                    @*<input type="number" class="form-control form-control-sm" ng-model="reqTenorMonth" name="reqTenorMonth" id="reqTenorMonth" min="1" max="60" />*@
+                                </div>
+                            </div>
+
+                            @*Loan Repayment Type*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="loanRepayTypeRadio">আপনি লোন টি কীভাবে পরিশোধ করতে চান:</label>
+                                    <input id="loanRepayTypeRadioWeekly" type="radio" name="loanRepayTypeRadio" ng-model="loanRepayType" value="weekly" />
+                                    <label for="loanRepayTypeRadioWeekly"><strong>সাপ্তাহিক</strong></label>
+                                    <input id="loanRepayTypeRadioMonthly" type="radio" name="loanRepayTypeRadio" ng-model="loanRepayType" value="monthly" />
+                                    <label for="loanRepayTypeRadioMonthly"><strong>মাসিক</strong></label>
+                                </div>
+                            </div>
+
+
+                            @*Transaction Amount*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="transactionAmount">অনলাইন বা ফেসবুকের মাধ্যমে মাসে কত বিক্রি:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="transactionAmount" name="transactionAmount" id="transactionAmount" maxlength="8" placeholder="Ex: 100000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Is Local Shop*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="localShopRadio">আপনার ফিজিক্যাল দোকান আছে:</label>
+                                    <input id="isLocalShopTrue" type="radio" name="localShopRadio" ng-model="isLocalShopChange" ng-value="true" ng-change="trackLocalShopChangeValue(isLocalShopChange)" />
+                                    <label for="isLocalShopTrue"><strong>হ্যা</strong></label>
+                                    <input id="isLocalShopFalse" type="radio" name="localShopRadio" ng-model="isLocalShopChange" ng-value="false" ng-change="trackLocalShopChangeValue(isLocalShopChange)" />
+                                    <label for="isLocalShopFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!isLocalShopChange" type="text" class="form-control form-control-sm" ng-model="monthlyTotalAverageSale"
+                                           name="monthlyTotalAverageSale" id="monthlyTotalAverageSale" maxlength="8"
+                                           placeholder="প্রতি মাসে ফিজিক্যাল দোকান থেকে কত বিক্রি" autocomplete="off" value="" />
+                                </div>
+                            </div>
+
+                            @*Shop Ownership*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="shopOwnership">আপনার দোকানের মালিকানা:</label>
+                                    <select class="form-control" ng-model="shopOwnership" id="shopOwnership">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="নিজের">নিজের</option>
+                                        <option value="ভাড়া">ভাড়া</option>
+                                        <option value="পরিবারের নিজস্ব">পরিবারের নিজস্ব</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*Monthly Total COD Amount*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="monthlyTotalCodAmount">ডেলিভারি টাইগার সহ অন্য কুরিয়ার থেকে মাসিক সর্বমোট কত টাকা COD কালেক্ট করেন:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="monthlyTotalCodAmount" name="monthlyTotalCodAmount" id="monthlyTotalCodAmount" maxlength="8" placeholder="Ex: 100000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Others Income*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="othersIncome">অন্যান্য উৎস থেকে সর্বমোট আয়:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="othersIncome" name="othersIncome" id="othersIncome" maxlength="8" placeholder="Ex: 100000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Others Income Source*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="othersIncomeSource">অন্যান্য সর্বমোট আয় এর উৎস এর নাম:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="othersIncomeSource" name="othersIncomeSource" id="othersIncomeSource" maxlength="100" placeholder="Ex: ব্যবসা" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Annual Total Income*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="annualTotalIncome">আপনার বাৎসরিক সর্বমোট আয়:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="annualTotalIncome" name="annualTotalIncome" id="annualTotalIncome" maxlength="8" placeholder="Ex: 100000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Couriers With Loan Survey*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>ডেলিভারি টাইগার ব্যতীত অন্য কার কার সার্ভিস গ্রহন করেন:</label><br />
+                                    <input type="checkbox" id="SA" name="SA" ng-value="4" ng-model="courierServiceCheckBox1" ng-click="changeCourierLoanSurvey($event, 'SA')">
+                                    <label for="SA"> SA</label><br />
+                                    <input type="checkbox" id="Sundarban" name="Sundarban" ng-value="5" ng-model="courierServiceCheckBox2" ng-click="changeCourierLoanSurvey($event, 'Sundarban')">
+                                    <label for="Sundarban"> Sundarban</label><br />
+                                    <input type="checkbox" id="Redx" name="Redx" ng-value="34" ng-model="courierServiceCheckBox3" ng-click="changeCourierLoanSurvey($event, 'Redx')">
+                                    <label for="Redx"> Redx</label><br />
+                                    <input type="checkbox" id="Pathao" name="Pathao" ng-value="22" ng-model="courierServiceCheckBox4" ng-click="changeCourierLoanSurvey($event ,'Pathao')">
+                                    <label for="Pathao"> Pathao</label><br />
+                                    <input type="checkbox" id="E-Courier" name="E-Courier" ng-value="3" ng-model="courierServiceCheckBox5" ng-click="changeCourierLoanSurvey($event, 'E-Courier')">
+                                    <label for="E-Courier"> E-Courier</label><br />
+                                    <input type="checkbox" id="Paperfly" name="Paperfly" ng-value="30" ng-model="courierServiceCheckBox6" ng-click="changeCourierLoanSurvey($event ,'Paperfly')">
+                                    <label for="Paperfly"> Paperfly</label><br />
+                                    <input type="checkbox" id="Steadfast" name="Steadfast" ng-value="49" ng-model="courierServiceCheckBox7" ng-click="changeCourierLoanSurvey($event, 'Steadfast')">
+                                    <label for="Steadfast"> Steadfast</label><br />
+                                    <input type="checkbox" id="Others" name="Others" ng-value="68" ng-model="courierServiceCheckBox8" ng-click="changeCourierLoanSurvey($event, 'Others')">
+                                    <label for="Others"> Others</label><br />
+                                </div>
+                            </div>
+
+                            @*Other Loan*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="otherLoanRadio">আপনার অন্য কোন লোন নেয়া আছে কিনা:</label>
+                                    <input id="otherLoanRadioTrue" type="radio" name="otherLoanRadio" ng-model="otherLoanChange" ng-value="true" ng-change="trackOtherLoanChangeValue(otherLoanChange)" />
+                                    <label for="otherLoanRadioTrue"><strong>হ্যা</strong></label>
+                                    <input id="otherLoanRadioFalse" type="radio" name="otherLoanRadio" ng-model="otherLoanChange" ng-value="false" ng-change="trackOtherLoanChangeValue(otherLoanChange)" />
+                                    <label for="otherLoanRadioFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!otherLoanChange" type="text" class="form-control form-control-sm" ng-model="loanAmount"
+                                           name="loanAmount" id="loanAmount" maxlength="8" placeholder="লোনের পরিমাণ"
+                                           autocomplete="off" />
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!otherLoanChange" type="text" class="form-control form-control-sm"
+                                           ng-model="bankName" name="bankName" id="bankName" maxlength="50"
+                                           placeholder="ব্যাংকের নাম" autocomplete="off" />
+                                </div>
+                                <div class="form-group">
+                                    <label ng-hide="!otherLoanChange" for="loanEmi">বর্তমান লোনের ই এম আই এর পরিমাণ:</label>
+                                    <select ng-hide="!otherLoanChange" class="form-control" ng-model="loanEmi" id="loanEmi">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="৫০০-১০০০">৫০০-১০০০</option>
+                                        <option value="১০০০-২০০০">১০০০-২০০০</option>
+                                        <option value="২০০০-৪০০০">২০০০-৪০০০</option>
+                                        <option value="৪০০০-৬০০০">৪০০০-৬০০০</option>
+                                        <option value="৬০০০-৮০০০">৬০০০-৮০০০</option>
+                                        <option value="৮০০০-১০০০০">৮০০০-১০০০০</option>
+                                        <option value="১০০০০-১২০০০">১০০০০-১২০০০</option>
+                                        <option value="১২০০০-১৫০০০">১২০০০-১৫০০০</option>
+                                        <option value="১৫০০০-২০০০০">১৫০০০-২০০০০</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label ng-hide="!otherLoanChange" for="repayTypeRadio">আপনার লোন পরিশোধের ধরন:</label>
+                                    <input ng-hide="!otherLoanChange" id="repayTypeRadioWeekly" type="radio" name="repayTypeRadio" ng-model="repayType" value="weekly" />
+                                    <label ng-hide="!otherLoanChange" for="repayTypeRadioWeekly"><strong>সাপ্তাহিক</strong></label>
+                                    <input ng-hide="!otherLoanChange" id="repayTypeRadioMonthly" type="radio" name="repayTypeRadio" ng-model="repayType" value="monthly" />
+                                    <label ng-hide="!otherLoanChange" for="repayTypeRadioMonthly"><strong>মাসিক</strong></label>
+                                </div>
+                            </div>
+
+                            @*Repay Type*@
+                            @*<div class="col-lg-6">
+
+        </div>*@
+
+                            @*Company Bank Account*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="companyBankAccountRadio">আপনার প্রতিষ্ঠানের নামে কী কোন ব্যাংক একাউন্ট আছে:</label>
+                                    <input id="isBankAccountTrue" type="radio" name="companyBankAccountRadio" ng-model="companyBankAccount" ng-value="true" ng-change="trackCompanyBankChangeValue(companyBankAccount)" />
+                                    <label for="isBankAccountTrue"><strong>হ্যা</strong></label>
+                                    <input id="isBankAccountFalse" type="radio" name="companyBankAccountRadio" ng-model="companyBankAccount" ng-value="false" ng-change="trackCompanyBankChangeValue(companyBankAccount)" />
+                                    <label for="isBankAccountFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!companyBankAccount" type="text" class="form-control form-control-sm"
+                                           ng-model="companyBankAccName" name="companyBankAccName" id="companyBankAccName" maxlength="50"
+                                           placeholder="ব্যাংকের নাম" autocomplete="off" />
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!companyBankAccount" type="text" class="form-control form-control-sm"
+                                           ng-model="companyBankAccNo" name="companyBankAccNo" id="companyBankAccNo" maxlength="50"
+                                           placeholder="ব্যাংক একাউন্ট নাম্বার" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Has Credit Card*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="hasCreditCardRadio">আপনার কোন ক্রেডিট কার্ড আছে:</label>
+                                    <input id="hasCreditCardRadioTrue" type="radio" name="hasCreditCardRadio" ng-model="hasCreditCardChange" ng-value="true" ng-change="trackCreditCardChangeValue(hasCreditCardChange)" />
+                                    <label for="hasCreditCardRadioTrue"><strong>হ্যা</strong></label>
+                                    <input id="hasCreditCardRadioFalse" type="radio" name="hasCreditCardRadio" ng-model="hasCreditCardChange" ng-value="false" ng-change="trackCreditCardChangeValue(hasCreditCardChange)" />
+                                    <label for="hasCreditCardRadioFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!hasCreditCardChange" type="text" class="form-control form-control-sm" ng-model="creditCardNumber"
+                                           name="creditCardNumber" id="creditCardNumber" maxlength="100" placeholder="কার্ডের নাম্বার"
+                                           autocomplete="off" />
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!hasCreditCardChange" type="text" class="form-control form-control-sm" ng-model="cardHolder"
+                                           name="cardHolder" id="cardHolder" maxlength="50" placeholder="ব্যাংকের নাম"
+                                           autocomplete="off" />
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!hasCreditCardChange" type="text" class="form-control form-control-sm"
+                                           ng-model="cardLimit" name="cardLimit" id="cardLimit" maxlength="8"
+                                           placeholder="কার্ডের লিমিট" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Has Tin Number*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="hasTinNumberRadio">আপনার কী কোন TIN নাম্বার আছে:</label>
+                                    <input id="hasTinNumberRadioTrue" type="radio" name="hasTinNumberRadio" ng-model="hasTinNumberChange" ng-value="true" ng-change="trackTinChangeValue(hasTinNumberChange)" />
+                                    <label for="hasTinNumberRadioTrue"><strong>হ্যা</strong></label>
+                                    <input id="hasTinNumberFalse" type="radio" name="hasTinNumberRadio" ng-model="hasTinNumberChange" ng-value="false" ng-change="trackTinChangeValue(hasTinNumberChange)" />
+                                    <label for="hasTinNumberFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!hasTinNumberChange" type="text" class="form-control form-control-sm" ng-model="tinNumber"
+                                           name="tinNumber" id="tinNumber" maxlength="60"
+                                           placeholder="TIN নাম্বার" autocomplete="off" />
+                                </div>
+                                <!--TIN Image-->
+                                <div class="form-group" ng-hide="!hasTinNumberChange">
+                                    <p>
+                                        টিন সার্টিফিকেট এর ছবি/পিডিএফ :<br />
+                                        <input type="file" name="image" onchange="angular.element(this).scope().uploadedFileTinImage(this);" class="form-control" required>
+                                    </p>
+                                    @*<button type="button" data-toggle="modal" data-target="#modalShowTin">Show</button>
+                <input type="text" ng-model="tinImgUrl" style="display: none;" />*@
+
+                                    <img id="tinImage" ng-src="{{PreviewTinImage}}" ng-show="PreviewTinImage != null" alt="" style="height:200px;width:100px" />
+                                    <i ng-show="PreviewTinImage != null" class="fa fa-times-circle" aria-hidden="true" style="font-size: 20px;" ng-click="closeImageReader('tinImage')"></i>
+                                    <input type="text" ng-model="tinImgUrl" style="display: none;" />
+                                </div>
+                            </div>
+
+                            @*Trade License*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="hasTradeLicenseRadio">আপনার প্রতিষ্ঠানের ট্রেড লাইসেন্স আছে:</label>
+                                    <input id="hasTradeLicenseTrue" type="radio" name="hasTradeLicenseRadio" ng-model="hasTradeLicenseChange" ng-value="true" ng-change="trackTradeLicenseChangeValue(hasTradeLicenseChange)" />
+                                    <label for="hasTradeLicenseTrue"><strong>হ্যা</strong></label>
+                                    <input id="hasTradeLicenseFalse" type="radio" name="hasTradeLicenseRadio" ng-model="hasTradeLicenseChange" ng-value="false" ng-change="trackTradeLicenseChangeValue(hasTradeLicenseChange)" />
+                                    <label for="hasTradeLicenseFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!hasTradeLicenseChange" type="text" class="form-control form-control-sm"
+                                           ng-model="TradeLicenseNo" name="TradeLicenseNo" id="TradeLicenseNo" maxlength="60"
+                                           placeholder="ট্রেড লাইসেন্স নাম্বার" autocomplete="off" />
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!hasTradeLicenseChange" type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="tradeLicenseExpireDate"
+                                           id="TradeLicenseExpireDate" name="TradeLicenseExpireDate" class="btn flatpickr" placeholder="Expire Date"
+                                           autocomplete="off" />
+                                </div>
+                                <div class="form-group">
+                                    <p ng-hide="!hasTradeLicenseChange">
+                                        ট্রেড লাইসেন্স এর ছবি:<br />
+                                        <input type="file" name="image" onchange="angular.element(this).scope().uploadedFile(this);" class="form-control" required>
+                                    </p>
+                                    <img id="tradeLicense" ng-src="{{PreviewImage}}" ng-show="PreviewImage != null" alt="" style="height:200px;width:100px" />
+                                    <i ng-show="PreviewImage != null" class="fa fa-times-circle" aria-hidden="true" style="font-size: 20px;" ng-click="closeImageReader('tradeLicense')"></i>
+                                    <input type="text" ng-model="tradeLicenseUrl" style="display: none;" />
+                                </div>
+                            </div>
+
+                            @*Bank Statement*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="hasBankStatementRadio">আপনার প্রতিষ্ঠানের ব্যাংক স্টেটমেন্ট আছে:</label>
+                                    <input id="hasBankStatementTrue" type="radio" name="hasBankStatementRadio" ng-model="hasBankStatementChange" ng-value="true" ng-change="trackBankStatementChangeValue(hasBankStatementChange)" />
+                                    <label for="hasBankStatementTrue"><strong>হ্যা</strong></label>
+                                    <input id="hasBankStatementFalse" type="radio" name="hasBankStatementRadio" ng-model="hasBankStatementChange" ng-value="false" ng-change="trackBankStatementChangeValue(hasBankStatementChange)" />
+                                    <label for="hasBankStatementFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <p ng-hide="!hasBankStatementChange">
+                                        ব্যাংক স্টেটমেন্ট এর ছবি:<br />
+                                        <input type="file" name="image" onchange="angular.element(this).scope().uploadedFileBankStatement(this);" class="form-control" required>
+                                    </p>
+                                    <img id="bankStatement" ng-src="{{PreviewImageBankStatement}}" ng-show="PreviewImageBankStatement != null" alt="" style="height:200px;width:100px" />
+                                    <i ng-show="PreviewImageBankStatement != null" class="fa fa-times-circle" aria-hidden="true" style="font-size: 20px;" ng-click="closeImageReader('bankStatement')"></i>
+                                    <input type="text" ng-model="bankStatementUrl" style="display: none;" />
+                                </div>
+                            </div>
+
+                            @*Gurantor*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="hasGurantorRadio">আপনার কী কোন গ্যারেন্টর আছে:</label>
+                                    <input id="hasGurantorTrue" type="radio" name="hasGurantorRadio" ng-model="hasGurantorChange" ng-value="true" ng-change="trackGurantorChangeValue(hasGurantorChange)" />
+                                    <label for="hasGurantorTrue"><strong>হ্যা</strong></label>
+                                    <input id="hasGurantorFalse" type="radio" name="hasGurantorRadio" ng-model="hasGurantorChange" ng-value="false" ng-change="trackGurantorChangeValue(hasGurantorChange)" />
+                                    <label for="hasGurantorFalse"><strong>না</strong></label>
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!hasGurantorChange" type="text" class="form-control form-control-sm" ng-model="guarantorName"
+                                           name="guarantorName" id="guarantorName" maxlength="70" placeholder="গ্যারেন্টর এর নাম"
+                                           autocomplete="off" />
+                                </div>
+                                <div class="form-group">
+                                    <input ng-hide="!hasGurantorChange" type="text" class="form-control form-control-sm" ng-model="guarantorMobile"
+                                           name="guarantorMobile" id="guarantorMobile" maxlength="11" placeholder="গ্যারেন্টর এর ফোন নাম্বার"
+                                           autocomplete="off" />
+                                </div>
+                            </div>
+
+                            @*Monthly Order*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="monthlyOrder">আপনার গড় অর্ডার:</label>
+                                    <select class="form-control" ng-model="monthlyOrder" id="monthlyOrder">
+                                        <option value="-1">নির্বাচন করুন</option>
+                                        <option value="০-৫০০">০-৫০০</option>
+                                        <option value="৫০০-১০০০">৫০০-১০০০</option>
+                                        <option value="১০০০-১৫০০">১০০০-১৫০০</option>
+                                        <option value="১৫০০-২০০০">১৫০০-২০০০</option>
+                                        <option value="২০০০-৩০০০">২০০০-৩০০০</option>
+                                        <option value="৩০০০-৪০০০">৩০০০-৪০০০</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            @*Recommend*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="recommendRadio">সুপারিশ করুন:</label>
+                                    <input id="recommendRadio1" type="radio" name="recommendRadio" ng-model="recommend" value="মোটামুটি" />
+                                    <label for="recommendRadio1"><strong>মোটামুটি</strong></label>
+                                    <input id="recommendRadio2" type="radio" name="recommendRadio" ng-model="recommend" value="ভাল" />
+                                    <label for="recommendRadio2"><strong>ভাল</strong></label>
+                                    <input id="recommendRadio3" type="radio" name="recommendRadio" ng-model="recommend" value="খুব ভাল" />
+                                    <label for="recommendRadio3"><strong>খুব ভাল</strong></label>
+                                    <input id="recommendRadio4" type="radio" name="recommendRadio" ng-model="recommend" value="চমৎকার" />
+                                    <label for="recommendRadio4"><strong>চমৎকার</strong></label>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12">
+                                <div class="form-group">
+                                    <button class="btn btn-w-m btn-success" type="button" ng-click="submitLoanSurveyApplication()">Submit</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+
+                @*Show Tin Pdf*@
+                @*<div id="modalShowTin" class="modal fade" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Tin</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <p ng-if="tinImgUrl == 'change'">Please Upload Pdf</p>
+                                <embed ng-if="tinImgUrl == 'true'" type="application/pdf" ng-src="{{PreviewTinImage}}" ng-show="PreviewTinImage != null" width="450" height="500">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>*@
+                @*End*@
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+    var app = angular.module('loanApplicationModule', ['ui.select', 'ngSanitize']);
+    app.controller('loanApplicationController', function ($scope, $http) {
+        $scope.age = $scope.eduLevel = $scope.famMem = $scope.homeOwnership =
+            $scope.residenceLocation = $scope.married =
+            $scope.basketValue = $scope.relationMerchant =
+            $scope.shopOwnership = $scope.monthlyOrder = $scope.loanEmi =
+            $scope.monthlyExp = "-1";
+        //$scope.gender = 'male';
+        $scope.EntryUpdateStatus = 0;
+        $scope.PresentDistrict = '0';
+        $scope.PermanentDistrict = '0';
+        $scope.PresentThana = '0';
+        $scope.PermanentThana = '0';
+
+        $scope.familyMembers = [];
+        $scope.existLoanSurveyData = "";
+
+        var admBaseOnlyUrl = "https://adm.ajkerdeal.com/";
+        $scope.merchantMobileNumber = "";
+        $scope.merchantUserId = 0;
+        let extention, loanSurveyId;
+
+        $scope.getAllDistrict = function () {
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + 0, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    var districts = response.data.model.filter(d => d.parentId === 0 && d.isActive === true);
+                    $scope.presentDistricts = districts;
+                    $scope.permanentDistricts = districts;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.getAllThana = function (district, changeFlag, setValue) {
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + district, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (changeFlag == 1) { //load on district change for present address thana
+                        $scope.presentThanas = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+                    }
+                    else if (changeFlag == 2) { //load on district change for permanent address thana
+                        $scope.permanentThanas = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+                    }
+                    else if (changeFlag == 3) { //load on district change for present address thana and set value
+                        $scope.presentThanas = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+                        $scope.PresentThana = String(setValue);
+                    }
+                    else if (changeFlag == 4) { //load on district change for permanent address thana and set value
+                        $scope.permanentThanas = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+                        $scope.PermanentThana = String(setValue);
+                    }
+                }, function error(error) {
+                    console.log(error);
+                })
+        }
+
+        $scope.addNewMember = () => {
+            //var addFamilyMember = document.getElementById("family-member-details-section");
+            //const tempWrapper = document.createElement('div');
+            //var dynamicForm = '';
+            //dynamicForm += '<div class="col-lg-6"><div class="form-group"><label for="FamilyMemberName">নাম:</label><input type="text" class="form-control form-control-sm" ng-model="FamilyMemberName" name="FamilyMemberName" id="FamilyMemberName" maxlength="100" placeholder="Ex: সদস্যের নাম" autocomplete="off" /></div></div>';
+            //tempWrapper.innerHTML = dynamicForm;
+            //addFamilyMember.appendChild(tempWrapper.firstChild);
+            var newMemeber = {};
+            $scope.familyMembers.push(newMemeber);
+        }
+
+        $scope.removeUser = function (user) {
+            var index = $scope.familyMembers.indexOf(user);
+            $scope.familyMembers.splice(index, 1);
+        }
+
+        //Function for getting the mobile number of merchant from ui-select
+        $scope.getMerchantMobile = (merchantMobile, merchantId) => {
+            //$scope.merchantMobileNumber = merchantMobile;
+            //$scope.showFullPageLoader = true;
+        }
+
+        $scope.loadMerchantData = (merchantSearch) => {
+            if (merchantSearch.length > 1) {
+                let url = apiBaseURL + "Fetch/GetAllCourierUsersList/" + merchantSearch;
+                $http.get(url, { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                    .then(function (response) {
+                        $scope.allMerchantInfo = response.data.model;
+                    })
+            }
+
+        }
+
+        $scope.getLoanSurveyData = function (courierUserId) {
+
+            $scope.showFullPageLoader = true;
+            $http.get(apiBaseURL + 'Loan/GetLoanSurveyByCourierUser/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (response.data.model.length == 0) {
+                        $scope.showFullPageLoader = false;
+                        alert("নির্বাচিত মার্চেন্ট এর জন্য কোন লোন আবেদন করা হয়নি!!!");
+                    }
+                    else {
+                        $scope.EntryUpdateStatus = 1;
+                        var data = response.data.model[0];
+                        $scope.existLoanSurveyData = data;
+                        console.log(data);
+                        loanSurveyId = data["loanSurveyId"];
+                        $scope.gender = data["gender"] == "" || data["gender"] == null ? "" : data["gender"];
+
+                        if (data["applicantPhotoUrl"] != "" || data["applicantPhotoUrl"] != null) {
+                            $scope.PreviewLoanApplicantImage  = data["applicantPhotoUrl"];
+                            $scope.loanApplicantPhotoUrl = "true";
+                        }
+                        else {
+                            $scope.loanApplicantPhotoUrl = "false";
+                        }
+
+                        $scope.age = data["age"] == "" || data["gender"] == null ? "-1" : data["age"];
+                        $scope.eduLevel = data["eduLevel"] == "" || data["eduLevel"] == null ? "-1" : data["eduLevel"];
+                        $scope.famMem = data["famMem"] == "" || data["famMem"] == null ? "-1" : data["famMem"];
+                        $scope.homeOwnership = data["homeOwnership"] == "" || data["homeOwnership"] == null ? "-1" : data["homeOwnership"];
+                        $scope.residenceLocation = data["residenceLocation"] == "" || data["residenceLocation"] == null ? "-1" : data["residenceLocation"];
+                        $scope.married = data["married"] == "" || data["married"] == null ? "-1" : data["married"];
+                        $scope.applicantOccupation = data["occupation"] == "" || data["occupation"] == null ? "" : data["occupation"];
+                        $scope.applicantExperience = data["experience"] == "" || data["experience"] == null ? "" : data["experience"];
+
+                        if (data["dateOfBirth"] != null) {
+                            //$scope.dateOfBirth = data["dateOfBirth"];
+                            const dateOfBirthSetDate = flatpickr("#dateOfBirth", {});
+                            //console.log(dateOfBirthSetDate + '~' + data["dateOfBirth"]);
+                            dateOfBirthSetDate.setDate(data["dateOfBirth"], true, 'Y/m/d');
+                        }
+
+                        //Business Start
+                        if (data["businessStartDate"] != null) {
+                            const businessStartSetDate = flatpickr("#businessStartDate", {});
+                            businessStartSetDate.setDate(data["businessStartDate"], true, 'Y/m/d');
+                        }
+
+                        $scope.fatherName = data["fatherName"];
+                        $scope.motherName = data["motherName"];
+                        $scope.spouseName = data["spouseName"];
+                        $scope.nidNo = data["nidNo"] == "" || data["nidNo"] == null ? "" : data["nidNo"];
+                        $scope.reqTenorMonth = data["reqTenorMonth"] == "" || data["reqTenorMonth"] == null ? "" : data["reqTenorMonth"];
+                        $scope.othersIncome = data["othersIncome"];
+                        $scope.annualTotalIncome = data["annualTotalIncome"] == "" || data["annualTotalIncome"] == null ? "" : data["annualTotalIncome"];
+
+                        $scope.basketValue = data["basketValue"] == "" || data["basketValue"] == null ? "-1" : data["basketValue"];
+
+                        if (data["monthlyExp"] == "" || data["monthlyExp"] == null) {
+                            $scope.monthlyExp = "-1";
+                        }
+                        else {
+                            if (data["monthlyExp"].search(",") == -1) {
+                                $scope.monthlyExp = data["monthlyExp"];
+                            }
+                            else {
+                                $scope.monthlyExp = data["monthlyExp"].replaceAll(",", "");
+                            }
+                        }
+
+                        //$scope.monthlyExp = data["monthlyExp"] == "" || data["monthlyExp"] == null ? "-1" : data["monthlyExp"];
+                        $scope.relationMerchant = data["relationMarchent"] == "" || data["relationMarchent"] == null ? "-1" : data["relationMarchent"];
+                        $scope.interestedAmount = data["interestedAmount"];
+                        $scope.loanRepayType = data["loanRepayType"] == "" || data["loanRepayType"] == null ? "" : data["loanRepayType"];
+                        $scope.transactionAmount = data["transactionAmount"];
+                        $scope.isLocalShopChange = data["isLocalShop"];
+                        $scope.monthlyTotalAverageSale = data["monthlyTotalAverageSale"];
+                        $scope.shopOwnership = data["shopOwnership"] == "" || data["shopOwnership"] == null ? "-1" : data["shopOwnership"];
+                        $scope.monthlyTotalCodAmount = data["monthlyTotalCodAmount"];
+                        angular.forEach(data["courierWithLoanSurvey"], function (value) {
+                            var singleObj = {};
+                            singleObj['courierId'] = value.courierId;
+                            singleObj['courierName'] = value.courierName;
+                            singleObj['couriersWithLoanSurveyId'] = 0;//value.couriersWithLoanSurveyId;
+                            singleObj['loanSurveyId'] = loanSurveyId;
+                            courierWithLoanSurvey.push(singleObj);
+
+                            if (value.courierName == "SA")
+                                $scope.courierServiceCheckBox1 = true;
+                            else if (value.courierName == "Sundarban")
+                                $scope.courierServiceCheckBox2 = true;
+                            else if (value.courierName == "Redx")
+                                $scope.courierServiceCheckBox3 = true;
+                            else if (value.courierName == "Pathao")
+                                $scope.courierServiceCheckBox4 = true;
+                            else if (value.courierName == "E-Courier")
+                                $scope.courierServiceCheckBox5 = true;
+                            else if (value.courierName == "Paperfly")
+                                $scope.courierServiceCheckBox6 = true;
+                            else if (value.courierName == "Steadfast")
+                                $scope.courierServiceCheckBox7 = true;
+                            else if (value.courierName == "Others")
+                                $scope.courierServiceCheckBox8 = true;
+                        })
+
+                        if ($scope.familyMembers.length != 0) $scope.familyMembers = [];
+                        angular.forEach(data["applicantFamMem"], function (value) {
+                            var newMemeber = {
+                                "FamilyMemberName": value.familyMemberName,
+                                "FamilyMemberRelation": value.relation,
+                                "FamilyMemberAge": value.age,
+                                "FamilyMemberEducation": value.education,
+                                "FamilyMemberMaritalStatus": value.isMarried == true ? "1" : "0",
+                                "FamilyMemberOccupation": value.occupation
+                            };
+                            $scope.familyMembers.push(newMemeber);
+                        })
+                        if (data["hasPreviousLoan"] == true) {
+                            $scope.otherLoanChange = true;
+                            $scope.loanAmount = data["loanAmount"] == 0 ? 0 : data["loanAmount"];
+                            $scope.bankName = data["bankName"] == "" || data["bankName"] == null ? "" : data["bankName"];
+                            $scope.loanEmi = data["loanEmi"] == "" || data["loanEmi"] == null ? "-1" : data["loanEmi"];
+                            $scope.repayType = data["repayType"] == "" || data["repayType"] == null ? "" : data["repayType"];
+                        }
+                        else {
+                            $scope.otherLoanChange = false;
+                        }
+                        $scope.companyBankAccount = data["isBankAccount"];
+                        if (data["isBankAccount"] == true) {
+                            $scope.companyBankAccName = data["companyBankAccName"] == "" || data["companyBankAccName"] == null ? "" : data["companyBankAccName"];
+                            $scope.companyBankAccNo = data["companyBankAccNo"] == "" || data["companyBankAccNo"] == null ? "" : data["companyBankAccNo"];
+                        }
+                        //$scope.companyBankAccount = data["isBankAccount"];
+                        $scope.hasCreditCardChange = data["hasCreditCard"];
+                        if (data["hasCreditCard"] == true) {
+                            $scope.creditCardNumber = data["creditCardNumber"] == "" || data["creditCardNumber"] == null ? "" : data["creditCardNumber"];
+                            $scope.cardHolder = data["cardHolder"] == "" || data["cardHolder"] == null ? "" : data["cardHolder"];
+                            $scope.cardLimit = data["cardLimit"] == "" || data["cardLimit"] == null ? "" : data["cardLimit"];
+                        }
+                        $scope.hasTinNumberChange = data["hasTin"];
+                        if (data["hasTin"] == true) {
+                            $scope.hasTinNumberChange = true;
+                            $scope.tinNumber = data["tinNumber"];
+
+                            //TIN Image 
+                            if (data["tinImageUrl"] == "" || data["tinImageUrl"] == null) {
+                                //$scope.hasTinImage = false;
+                                $scope.tinImgUrl = "false";
+                            }
+                            else {
+                                //$scope.content = $sce.trustAsResourceUrl(data["tinImageUrl"]);
+
+                                //$scope.PreviewTinImage = $scope.content;
+                                //$scope.tinImgUrl = "true";
+
+                                $scope.PreviewTinImage = data["tinImageUrl"];
+                                $scope.tinImgUrl = "true";
+                            }
+                        }
+
+                        if (data["tradeLicenseImageUrl"] != "" || data["tradeLicenseImageUrl"] != null) {
+                            //$scope.hasTradeLicenseChange = true;
+                            $scope.PreviewImage = data["tradeLicenseImageUrl"];
+                            $scope.tradeLicenseUrl = "true";
+                        }
+                        else {
+                            $scope.hasTradeLicenseChange = false;
+                            $scope.tradeLicenseUrl = "false";
+                        }
+
+                        //NID front Image 
+                        if (data["nidImageUrl"] == "" || data["nidImageUrl"] == null) {
+                            $scope.hasNidImage = false;
+                            $scope.nidImgUrl = false;
+                        }
+                        else {
+                            //$scope.hasTradeLicenseChange = true;
+                            $scope.PreviewNidImage = data["nidImageUrl"];
+                            $scope.nidImgUrl = "true";
+                        }
+
+                        //NID back Image 
+                        if (data["nidBackImageUrl"] == "" || data["nidBackImageUrl"] == null) {
+                            $scope.hasNidImage = false;
+                            $scope.nidBackImgUrl = false;
+                        }
+                        else {
+                            //$scope.hasTradeLicenseChange = true;
+                            $scope.PreviewBackNidImage = data["nidBackImageUrl"];
+                            $scope.nidBackImgUrl = "true";
+                        }
+
+                        $scope.hasTradeLicenseChange = data["hasTradeLicense"];
+                        if (data["hasTradeLicense"] == true) {
+                            $scope.TradeLicenseNo = data["tradeLicenseNo"];
+                            //$scope.TradeLicenseExpireDate = data["tradeLicenseExpireDate"];
+                            const tradeLicenseExpireDate = flatpickr("#TradeLicenseExpireDate", {});
+                            tradeLicenseExpireDate.setDate(data["tradeLicenseExpireDate"], true, 'Y/m/d');
+                        }
+
+                        if (data["bankStatementUrl"] == "" || data["bankStatementUrl"] == null) {
+                            $scope.hasBankStatementChange = false;
+                            $scope.bankStatementUrl = "false";
+                        }
+                        else {
+                            $scope.hasBankStatementChange = true;
+                            $scope.PreviewImageBankStatement = data["bankStatementUrl"];
+                            $scope.bankStatementUrl = "true";
+                        }
+
+                        if (data["guarantorName"] == "" || data["guarantorName"] == null) {
+                            $scope.hasGurantorChange = false;
+                        }
+                        else {
+                            $scope.hasGurantorChange = true;
+                            $scope.guarantorName = data["guarantorName"];
+                            $scope.guarantorMobile = data["guarantorMobile"];
+                        }
+
+                        $scope.monthlyOrder = data["monthlyOrder"] == "" || data["monthlyOrder"] == null ? "-1" : data["monthlyOrder"];
+                        $scope.recommend = data["recommend"] == "" || data["recommend"] == null ? "" : data["recommend"];
+
+                        $scope.PresentHouseNo = data["presentAddHouseNo"] == "" || data["presentAddHouseNo"] == null ? "" : data["presentAddHouseNo"];
+                        $scope.PresentRoadNo = data["presentAddRoadNo"] == "" || data["presentAddRoadNo"] == null ? "" : data["presentAddRoadNo"];
+                        $scope.PresentRoadName = data["presentAddRoadName"] == "" || data["presentAddRoadName"] == null ? "" : data["presentAddRoadName"];
+                        $scope.PresentAreaName = data["presentAddArea"] == "" || data["presentAddArea"] == null ? "" : data["presentAddArea"];
+                        $scope.PresentPostOffice = data["presentAddPostOffice"] == "" || data["presentAddPostOffice"] == null ? "" : data["presentAddPostOffice"];
+                        $scope.PresentDistrict = String(data["presentAddDistrictId"]);
+                        $scope.getAllThana(data["presentAddDistrictId"], 3, data["presentAddThanaId"]);
+                        //$scope.PresentThana = data["presentAddThanaId"];
+
+                        if (data["isOwner"] == true) {
+                            $scope.isHouseOwnerChange = data["isOwner"];
+                        }
+                        else {
+                            $scope.isHouseOwnerChange = data["isOwner"];
+                        }
+
+                        $scope.PresentAddHouseOwner = data["houseOwner"] == "" || data["houseOwner"] == null ? "" : data["houseOwner"];
+                        $scope.PresentAddDurationOfLiving = data["durationOfLiving"] == "" || data["durationOfLiving"] == 0 ? "" : data["durationOfLiving"];
+
+                        $scope.PermanentHouseNo = data["permanentAddHouseNo"] == "" || data["permanentAddHouseNo"] == null ? "" : data["permanentAddHouseNo"];
+                        $scope.PermanentRoadNo = data["permanentAddRoadNo"] == "" || data["permanentAddRoadNo"] == null ? "" : data["permanentAddRoadNo"];
+                        $scope.PermanentRoadName = data["permanentAddRoadName"] == "" || data["permanentAddRoadName"] == null ? "" : data["permanentAddRoadName"];
+                        $scope.PermanentAreaName = data["permanentAddArea"] == "" || data["permanentAddArea"] == null ? "" : data["permanentAddArea"];
+                        $scope.PermanentAddOwnerName = data["permanentAddHouseOwnerName"] == "" || data["permanentAddHouseOwnerName"] == null ? "" : data["permanentAddHouseOwnerName"];
+                        $scope.PermanentPostOffice = data["permanentAddPostOffice"] == "" || data["permanentAddPostOffice"] == null ? "" : data["permanentAddPostOffice"];
+                        $scope.PermanentDistrict = String(data["permanentAddDistrictId"]);
+                        $scope.getAllThana(data["permanentAddDistrictId"], 4, data["permanentAddThanaId"]);
+                        $scope.othersIncomeSource = data["otherIncomeSource"] == "" || data["otherIncomeSource"] == null ? "" : data["otherIncomeSource"];
+
+                        $scope.showFullPageLoader = false;
+                    }
+                    console.log(response);
+                }, function (error) {
+                    $scope.showFullPageLoader = false;
+                    console.log(error);
+                });
+        }
+
+        $scope.onSelectGetData = function (item, model) {
+            let courierUserId = item["courierUserId"];
+            $scope.merchantUserId = courierUserId;
+            $scope.merchantMobileNumber = item["mobile"];
+            $scope.getLoanSurveyData(courierUserId);
+        }
+
+        var courierWithLoanSurvey = [];
+        $scope.changeCourierLoanSurvey = function (event, courierName) {
+            var courierId = event.target.value;
+            if (event.target.checked) { //add
+                var singleObj = {};
+                singleObj['courierId'] = parseInt(courierId);
+                singleObj['courierName'] = courierName;
+                if ($scope.EntryUpdateStatus == 1) {
+                    singleObj['couriersWithLoanSurveyId'] = 0;
+                    singleObj['loanSurveyId'] = loanSurveyId;//courierWithLoanSurvey[0]["loanSurveyId"];
+                }
+                courierWithLoanSurvey.push(singleObj);
+            }
+            else { //remove
+                //var index = courierWithLoanSurvey.indexOf(courierId);
+                var index = courierWithLoanSurvey.map(function (e) { return e.courierId; }).indexOf(parseInt(courierId));
+                if (index != -1)
+                    courierWithLoanSurvey.splice(index, 1);
+            }
+        }
+
+        $scope.addCouriersWithLoanSurvey = function (loanSurveyId) {
+            courierWithLoanSurvey.forEach(function (data) {
+                data['loanSurveyId'] = loanSurveyId;
+            });
+
+            $scope.showFullPageLoader = true;
+            $http.post(apiBaseURL + 'Entry/AddCouriersWithLoanSurvey', courierWithLoanSurvey, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.addFamilyMembers(loanSurveyId, $scope.familyMembers);
+                    //$scope.showFullPageLoader = false;
+                }, function (error) {
+                    console.log(error);
+                    $scope.showFullPageLoader = false;
+                });
+        }
+
+        $scope.updateCouriersWithLoanSurvey = function (loanSurveyId) {
+            var userToken = sessionStorage.getItem('token');
+
+            $scope.showFullPageLoader = true;
+            $http.put(apiBaseURL + 'Update/UpdateCourierWithLoanSurvey/' + loanSurveyId, courierWithLoanSurvey,
+                {
+                    headers: { 'Content-Type': 'application/json', 'Authorization': "Bearer " + userToken }
+                })
+                .then(function (response) {
+                    //window.location.reload();
+                    $scope.updateFamilyMembers(loanSurveyId);
+                    //$scope.showFullPageLoader = false;
+                }, function (error) {
+                    console.log(error);
+                    $scope.showFullPageLoader = false;
+                });
+        }
+
+        $scope.uploadedFileNidImage = function (file) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $scope.PreviewNidImage = e.target.result;
+                $scope.$apply(function ($scope) {
+                    $scope.filesNidImg = file.files;
+                    extention = $scope.filesNidImg[0]["name"].split('.').pop();
+                });
+            };
+            reader.readAsDataURL(file.files[0]);
+            $scope.nidImgUrl = "change";
+
+            //$scope.$apply(function ($scope) {
+            //    $scope.files = file.files;
+            //    extention = $scope.files[0]["name"].split('.').pop();
+            //});
+        }
+
+        $scope.uploadedFileNidBackSideImage = function (file) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $scope.PreviewBackNidImage = e.target.result;
+                $scope.$apply(function ($scope) {
+                    $scope.filesBackNidImg = file.files;
+                    extention = $scope.filesBackNidImg[0]["name"].split('.').pop();
+                });
+            };
+            reader.readAsDataURL(file.files[0]);
+            $scope.nidBackImgUrl = "change";
+
+            //$scope.$apply(function ($scope) {
+            //    $scope.files = file.files;
+            //    extention = $scope.files[0]["name"].split('.').pop();
+            //});
+        }
+
+        $scope.uploadedFileTinImage = function (file) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $scope.PreviewTinImage = e.target.result;;
+                $scope.$apply(function ($scope) {
+                    $scope.filesTinImg = file.files;
+                    extention = $scope.filesTinImg[0]["name"].split('.').pop();
+                });
+            };
+            reader.readAsDataURL(file.files[0]);
+            $scope.tinImgUrl = "change";
+
+            //$scope.$apply(function ($scope) {
+            //    $scope.files = file.files;
+            //    extention = $scope.files[0]["name"].split('.').pop();
+            //});
+        }
+
+        $scope.uploadedFile = function (file) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $scope.PreviewImage = e.target.result;
+                $scope.$apply(function ($scope) {
+                    $scope.files = file.files;
+                    extention = $scope.files[0]["name"].split('.').pop();
+                });
+            };
+            reader.readAsDataURL(file.files[0]);
+            $scope.tradeLicenseUrl = "change";
+
+            //$scope.$apply(function ($scope) {
+            //    $scope.files = file.files;
+            //    extention = $scope.files[0]["name"].split('.').pop();
+            //});
+        }
+
+        $scope.uploadedFileBankStatement = function (file) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $scope.PreviewImageBankStatement = e.target.result;
+                $scope.$apply(function ($scope) {
+                    $scope.filesBankStatement = file.files;
+                    extention = $scope.filesBankStatement[0]["name"].split('.').pop();
+                });
+            };
+            reader.readAsDataURL(file.files[0]);
+            $scope.bankStatementUrl = "change";
+
+            //$scope.$apply(function ($scope) {
+            //    $scope.files = file.files;
+            //    extention = $scope.files[0]["name"].split('.').pop();
+            //});
+        }
+
+        $scope.uploadApplicantPhotoFile = function (file) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $scope.PreviewLoanApplicantImage = e.target.result;
+                $scope.$apply(function ($scope) {
+                    $scope.filesApplicantPhoto = file.files;
+                    extention = $scope.filesApplicantPhoto[0]["name"].split('.').pop();
+                });
+            };
+            reader.readAsDataURL(file.files[0]);
+            $scope.loanApplicantPhotoUrl = "change";
+
+            //$scope.$apply(function ($scope) {
+            //    $scope.files = file.files;
+            //    extention = $scope.files[0]["name"].split('.').pop();
+            //});
+        }
+
+        $scope.uploadImageToServer = async function (fileName, imageUrl, files) {
+            //let fileName = "trade_" + merchantUserId + '.jpg';
+            //const imageUrl = "delivery_tiger/trade_license";
+            
+            //$scope.showFullPageLoader = true;
+            $http({
+                url: admBaseOnlyUrl + 'Image/ImageUploadForFile'.toLowerCase(),
+                method: "POST",
+                processData: false,
+                headers: { 'Content-Type': undefined },
+                data: $scope.formdata,
+                transformRequest: function (data) {
+                    var formData = new FormData();
+                    var file = files;
+                    formData.append('FileName', fileName);
+                    formData.append('ImageUrl', imageUrl);
+                    formData.append('file', file);
+
+                    angular.forEach(data, function (value, key) {
+                        formData.append(key, value);
+                    });
+
+                    return formData;
+                },
+
+            }).success(function (response) {
+                //return response;
+                //if ($scope.EntryUpdateStatus == 0)
+                    //$scope.addLoanSurvey();
+                //else// if ($scope.tradeLicenseUrl == "change")
+                    //$scope.updateLoanSurvey();
+                //$scope.showFullPageLoader = false;
+            }).error(function (error) {
+                alert('Image upload failed...!!');
+                //$scope.showFullPageLoader = false;
+            });
+        }
+
+        $scope.closeImageReader = function (flag) {
+            if (flag == 'nidFront') {
+                $scope.PreviewNidImage = '';
+                $scope.nidImgUrl = "true";
+                document.getElementById('nidImageFront').src = "";
+            }
+            if (flag == 'nidBack') {
+                $scope.PreviewBackNidImage = '';
+                $scope.nidBackImgUrl = "true";
+                document.getElementById('nidImageBack').src = "";
+            }
+            if (flag == 'bankStatement') {
+                $scope.PreviewImageBankStatement = '';
+                $scope.bankStatementUrl = "true";
+                document.getElementById('bankStatement').src = "";
+            }
+            if (flag == 'tradeLicense') {
+                $scope.PreviewImage = '';
+                $scope.tradeLicenseUrl = "true";
+                document.getElementById('tradeLicense').src = "";
+            }
+            if (flag == 'loanApplicantPhoto') {
+                $scope.PreviewLoanApplicantImage  = '';
+                $scope.loanApplicantPhotoUrl = "true";
+                document.getElementById('loanApplicantPhoto').src = "";
+            }
+        }
+
+        $scope.addFamilyMembers = (loanSurveyId, familyMembers) => {
+            var familyMembersArr = [];
+            if ($scope.familyMembers.length != 0) {
+                $scope.familyMembers.forEach(function (elem) {
+                    var singleObj = {};
+                    singleObj['LoanSurveyId'] = loanSurveyId;
+                    singleObj['CourierUserId'] = $scope.merchantUserId;
+                    singleObj['FamilyMemberName'] = elem['FamilyMemberName'];
+                    singleObj['Relation'] = elem['FamilyMemberRelation'];
+                    singleObj['Age'] = parseInt(elem['FamilyMemberAge']);
+                    singleObj['Education'] = elem['FamilyMemberEducation'];
+                    singleObj['IsMarried'] = parseInt(elem['FamilyMemberMaritalStatus']);
+                    singleObj['Occupation'] = elem['FamilyMemberOccupation'];
+                    familyMembersArr.push(singleObj);
+                })
+                $scope.showFullPageLoader = true;
+                $http.post(apiBaseURL + 'Loan/AddLoanApplicantFamilyMember/' + loanSurveyId, familyMembersArr, { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        window.location.reload();
+                        $scope.showFullPageLoader = false;
+                    }, function (error) {
+                        console.log(error);
+                        $scope.showFullPageLoader = false;
+                    });
+            }
+            else {
+                $scope.showFullPageLoader = false;
+                window.location.reload();
+            }
+        }
+
+        $scope.updateFamilyMembers = (loanSurveyId, familyMembers) => {
+            var familyMembersArr = [];
+            if ($scope.familyMembers.length != 0) {
+                $scope.familyMembers.forEach(function (elem) {
+                    var singleObj = {};
+                    singleObj['LoanSurveyId'] = loanSurveyId;
+                    singleObj['CourierUserId'] = $scope.merchantUserId;
+                    singleObj['FamilyMemberName'] = elem['FamilyMemberName'];
+                    singleObj['Relation'] = elem['FamilyMemberRelation'];
+                    singleObj['Age'] = parseInt(elem['FamilyMemberAge']);
+                    singleObj['Education'] = elem['FamilyMemberEducation'];
+                    singleObj['IsMarried'] = parseInt(elem['FamilyMemberMaritalStatus']);
+                    singleObj['Occupation'] = elem['FamilyMemberOccupation'];
+                    familyMembersArr.push(singleObj);
+                })
+                $scope.showFullPageLoader = true;
+                $http.put(apiBaseURL + 'Loan/UpdateLoanApplicantFamilyMember/' + loanSurveyId, familyMembersArr, { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        window.location.reload();
+                        $scope.showFullPageLoader = false;
+                    }, function (error) {
+                        console.log(error);
+                        $scope.showFullPageLoader = false;
+                    });
+            }
+            else {
+                $scope.showFullPageLoader = false;
+                window.location.reload();
+            }
+        }
+
+        $scope.addLoanSurvey = function () {
+            let tradeLicenseImageUrl = "";
+            let nidImageUrlforUp = "";
+            let nidBackImageUrlforUp = "";
+            let tinImageUrlforUp = "";
+            let bankStatementUrlforUp = "";
+            let loanApplicantPhotoUrlforUp = "";
+
+            if ($scope.tradeLicenseUrl == "change") {
+                tradeLicenseImageUrl = "https://static.ajkerdeal.com/" + "delivery_tiger/trade_license" + "/" + "trade_" + $scope.merchantUserId + '.jpg';
+            }
+
+            if ($scope.nidImgUrl == "change") {
+                nidImageUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/nid" + "/" + "nid_" + $scope.merchantUserId + '.jpg';
+            }
+
+            if ($scope.nidBackImgUrl == "change") {
+                nidBackImageUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/nid" + "/" + "nid_back_" + $scope.merchantUserId + '.jpg'
+            }
+
+            if ($scope.bankStatementUrl == "change") {
+                bankStatementUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/bank_statement" + "/" + "bank_statement_" + $scope.merchantUserId + '.jpg';
+            }
+
+            if ($scope.tinImgUrl == "change") {
+                tinImageUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/tin_certificate" + "/" + "tin_certificate_" + $scope.merchantUserId + '.jpg'
+            }
+
+            if ($scope.loanApplicantPhotoUrl == "change") {
+                loanApplicantPhotoUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/applicant_photo" + "/" + "applicant_photo_" + $scope.merchantUserId + '.jpg'
+            }
+
+            var requestBodyModel = {
+                'Age': String($scope.age == "-1" ? "" : $scope.age),
+                'BankName': String($scope.bankName == null || $scope.bankName == "" || $scope.bankName == "undefined" || $scope.bankName == undefined ? "" : $scope.bankName),
+                'Basketvalue': $scope.basketValue == "-1" ? "" : $scope.basketValue,
+                'CardHolder': String($scope.cardHolder == null || $scope.cardHolder == "" || $scope.cardHolder == "undefined" || $scope.cardHolder == undefined ? "" : $scope.cardHolder),
+                'CardLimit': String($scope.cardLimit == null || $scope.cardLimit == "" || $scope.cardLimit == "undefined" || $scope.cardLimit == undefined ? "" : $scope.cardLimit),
+                'CourierUserId': parseInt($scope.merchantUserId),
+                'EduLevel': String($scope.eduLevel == "-1" ? "" : $scope.eduLevel),
+                'FamMem': String($scope.famMem == "-1" ? "" : $scope.famMem),
+                'Gender': String($scope.gender == null || $scope.gender == "" || $scope.gender == "undefined" || $scope.gender == undefined ? "" : $scope.gender),
+                'GuarantorMobile': String($scope.guarantorMobile == null || $scope.guarantorMobile == "" || $scope.guarantorMobile == "undefined" || $scope.guarantorMobile == undefined ? "" : $scope.guarantorMobile),
+                'GuarantorName': String($scope.guarantorName == null || $scope.guarantorName == "" || $scope.guarantorName == "undefined" || $scope.guarantorName == undefined ? "" : $scope.guarantorName),
+                'HasCreditCard': $scope.companyBankAccount == null || $scope.companyBankAccount == "" || $scope.companyBankAccount == "undefined" || $scope.companyBankAccount == undefined ? false : $scope.companyBankAccount,
+                'HasTin': $scope.hasTinNumberChange == null || $scope.hasTinNumberChange == "" || $scope.hasTinNumberChange == "undefined" || $scope.hasTinNumberChange == undefined ? false : $scope.hasTinNumberChange,
+                'HomeOwnership': String($scope.homeOwnership == "-1" ? "" : $scope.homeOwnership),
+                'InterestedAmount': parseInt($scope.interestedAmount == null || $scope.interestedAmount == "" || $scope.interestedAmount == "undefined" || $scope.interestedAmount == undefined ? 0 : $scope.interestedAmount),
+                'IsBankAccount': $scope.companyBankAccount == null || $scope.companyBankAccount == "" || $scope.companyBankAccount == "undefined" || $scope.companyBankAccount == undefined ? false : $scope.companyBankAccount,
+                'IsLocalShop': $scope.isLocalShopChange == null || $scope.isLocalShopChange == "" || $scope.isLocalShopChange == "undefined" || $scope.isLocalShopChange == undefined ? false : $scope.isLocalShopChange,
+                'HasPreviousLoan': $scope.otherLoanChange == null || $scope.otherLoanChange == "" || $scope.otherLoanChange == "undefined" || $scope.otherLoanChange == undefined ? false : $scope.otherLoanChange,
+                'LoanAmount': parseInt($scope.loanAmount == null || $scope.loanAmount == "" || $scope.loanAmount == "undefined" || $scope.loanAmount == undefined ? 0 : $scope.loanAmount),
+                'LoanEmi': String($scope.loanEmi == "-1" ? "" : $scope.loanEmi),
+                'Married': String($scope.married == "-1" ? "" : $scope.married),
+                'MerchantName': String($scope.merchantMobileNumber),
+                'MonthlyExp': String($scope.monthlyExp == "-1" ? "" : $scope.monthlyExp),
+                'MonthlyOrder': String($scope.monthlyOrder == "-1" ? "" : $scope.monthlyOrder),
+                'MonthlyTotalAverageSale': parseInt($scope.monthlyTotalAverageSale == null || $scope.monthlyTotalAverageSale == "" || $scope.monthlyTotalAverageSale == "undefined" || $scope.monthlyTotalAverageSale == undefined ? 0 : $scope.monthlyTotalAverageSale),
+                'MonthlyTotalCodAmount': parseInt($scope.monthlyTotalCodAmount == null || $scope.monthlyTotalCodAmount == "" || $scope.monthlyTotalCodAmount == "undefined" || $scope.monthlyTotalCodAmount == undefined ? 0 : $scope.monthlyTotalCodAmount),
+                'Recommend': String($scope.recommend == null || $scope.recommend == "" || $scope.recommend == "undefined" || $scope.recommend == undefined ? "" : $scope.recommend),
+                'RelationMarchent': String($scope.relationMerchant == "-1" ? "" : $scope.relationMerchant),
+                'RepayType': String($scope.repayType == null || $scope.repayType == "" || $scope.repayType == "undefined" || $scope.repayType == undefined ? "" : $scope.repayType),
+                'ShopOwnership': String($scope.shopOwnership == "-1" ? "" : $scope.shopOwnership),
+                'TinNumber': String($scope.tinNumber == null || $scope.tinNumber == "" || $scope.tinNumber == "undefined" || $scope.tinNumber == undefined ? "" : $scope.tinNumber),
+                'TradeLicenseImageUrl': $scope.tradeLicenseUrl == "change" ? tradeLicenseImageUrl : "",
+                'TransactionAmount': parseInt($scope.transactionAmount == null || $scope.transactionAmount == "" || $scope.transactionAmount == "undefined" || $scope.transactionAmount == undefined ? 0 : $scope.transactionAmount),
+                'HasTradeLicense': $scope.hasTradeLicenseChange == null || $scope.hasTradeLicenseChange == "" || $scope.hasTradeLicenseChange == "undefined" || $scope.hasTradeLicenseChange == undefined ? false : $scope.hasTradeLicenseChange,
+                'TradeLicenseNo': String($scope.TradeLicenseNo == null || $scope.TradeLicenseNo == "" || $scope.TradeLicenseNo == "undefined" || $scope.TradeLicenseNo == undefined ? "" : $scope.TradeLicenseNo),
+                'TradeLicenseExpireDate': $scope.tradeLicenseExpireDate == "" || $scope.tradeLicenseExpireDate == undefined || $scope.tradeLicenseExpireDate == "undefined" ? null : $scope.tradeLicenseExpireDate,
+                'CompanyBankAccNo': String($scope.companyBankAccNo == null || $scope.companyBankAccNo == "" || $scope.companyBankAccNo == "undefined" || $scope.companyBankAccNo == undefined ? "" : $scope.companyBankAccNo),
+                'CompanyBankAccName': String($scope.companyBankAccName == null || $scope.companyBankAccName == "" || $scope.companyBankAccName == "undefined" || $scope.companyBankAccName == undefined ? "" : $scope.companyBankAccName),
+                'AnnualTotalIncome': parseInt($scope.annualTotalIncome == null || $scope.annualTotalIncome == "" || $scope.annualTotalIncome == "undefined" || $scope.annualTotalIncome == undefined ? 0 : $scope.annualTotalIncome),
+                'DateOfBirth': $scope.dateOfBirth,
+                'NidNo': String($scope.nidNo == null || $scope.nidNo == "" || $scope.nidNo == "undefined" || $scope.nidNo == undefined ? "" : $scope.nidNo),
+                'ReqTenorMonth': parseInt($scope.reqTenorMonth == null || $scope.reqTenorMonth == "" || $scope.reqTenorMonth == "undefined" || $scope.reqTenorMonth == undefined ? 0 : $scope.reqTenorMonth),
+                'OthersIncome': parseInt($scope.othersIncome == null || $scope.othersIncome == "" || $scope.othersIncome == "undefined" || $scope.othersIncome == undefined ? 0 : $scope.othersIncome),
+                'ResidenceLocation': String($scope.residenceLocation == "-1" ? "" : $scope.residenceLocation),
+                'BankStatementUrl': $scope.bankStatementUrl == "change" ? bankStatementUrlforUp : "",
+                'businessStartDate': $scope.businessStartDate == "" || $scope.businessStartDate == undefined || $scope.businessStartDate == "undefined" ? null : $scope.businessStartDate,
+                'nidImageUrl': $scope.nidImgUrl == "change" ? nidImageUrlforUp : "",
+                'nidBackImageUrl': $scope.nidBackImgUrl == "change" ? nidBackImageUrlforUp : "",
+                'tinImageUrl': $scope.tinImgUrl == "change" ? tinImageUrlforUp : "",
+                'presentAddHouseNo': String($scope.PresentHouseNo == null || $scope.PresentHouseNo == "" || $scope.PresentHouseNo == "undefined" || $scope.PresentHouseNo == undefined ? "" : $scope.PresentHouseNo),
+                'presentAddRoadNo': String($scope.PresentRoadNo == null || $scope.PresentRoadNo == "" || $scope.PresentRoadNo == "undefined" || $scope.PresentRoadNo == undefined ? "" : $scope.PresentRoadNo),
+                'presentAddRoadName': String($scope.PresentRoadName == null || $scope.PresentRoadName == "" || $scope.PresentRoadName == "undefined" || $scope.PresentRoadName == undefined ? "" : $scope.PresentRoadName),
+                'presentAddArea': String($scope.PresentAreaName == null || $scope.PresentAreaName == "" || $scope.PresentAreaName == "undefined" || $scope.PresentAreaName == undefined ? "" : $scope.PresentAreaName),
+                'presentAddPostOffice': String($scope.PresentPostOffice == null || $scope.PresentPostOffice == "" || $scope.PresentPostOffice == "undefined" || $scope.PresentPostOffice == undefined ? "" : $scope.PresentPostOffice),
+                'presentAddDistrictId': parseInt($scope.PresentDistrict),
+                'presentAddThanaId': parseInt($scope.PresentThana),
+                'isOwner': $scope.isHouseOwnerChange == null || $scope.isHouseOwnerChange == "" || $scope.isHouseOwnerChange == "undefined" || $scope.isHouseOwnerChange == undefined ? false : $scope.isHouseOwnerChange,
+                'houseOwner': String($scope.PresentAddHouseOwner == null || $scope.PresentAddHouseOwner == "" || $scope.PresentAddHouseOwner == "undefined" || $scope.PresentAddHouseOwner == undefined ? "" : $scope.PresentAddHouseOwner),
+                'durationOfLiving': parseInt($scope.PresentAddDurationOfLiving == "" || $scope.PresentAddDurationOfLiving == undefined || $scope.PresentAddDurationOfLiving == "undefined" ? 0 : $scope.PresentAddDurationOfLiving),
+                'permanentAddHouseNo': String($scope.PermanentHouseNo == null || $scope.PermanentHouseNo == "" || $scope.PermanentHouseNo == "undefined" || $scope.PermanentHouseNo == undefined ? "" : $scope.PermanentHouseNo),
+                'permanentAddRoadNo': String($scope.PermanentRoadNo == null || $scope.PermanentRoadNo == "" || $scope.PermanentRoadNo == "undefined" || $scope.PermanentRoadNo == undefined ? "" : $scope.PermanentRoadNo),
+                'permanentAddRoadName': String($scope.PermanentRoadName == null || $scope.PermanentRoadName == "" || $scope.PermanentRoadName == "undefined" || $scope.PermanentRoadName == undefined ? "" : $scope.PermanentRoadName),
+                'permanentAddArea': String($scope.PermanentAreaName == null || $scope.PermanentAreaName == "" || $scope.PermanentAreaName == "undefined" || $scope.PermanentAreaName == undefined ? "" : $scope.PermanentAreaName),
+                'permanentAddPostOffice': String($scope.PermanentPostOffice == null || $scope.PermanentPostOffice == "" || $scope.PermanentPostOffice == "undefined" || $scope.PermanentPostOffice == undefined ? "" : $scope.PermanentPostOffice),
+                'permanentAddDistrictId': parseInt($scope.PermanentDistrict),
+                'permanentAddThanaId': parseInt($scope.PermanentThana),
+                'fatherName': String($scope.fatherName == null || $scope.fatherName == "" || $scope.fatherName == "undefined" || $scope.fatherName == undefined ? "" : $scope.fatherName),
+                'motherName': String($scope.motherName == null || $scope.motherName == "" || $scope.motherName == "undefined" || $scope.motherName == undefined ? "" : $scope.motherName),
+                'spouseName': String($scope.spouseName == null || $scope.spouseName == "" || $scope.spouseName == "undefined" || $scope.spouseName == undefined ? "" : $scope.spouseName),
+                'occupation': String($scope.applicantOccupation == null || $scope.applicantOccupation == "" || $scope.applicantOccupation == "undefined" || $scope.applicantOccupation == undefined ? "" : $scope.applicantOccupation),
+                'experience': parseInt($scope.applicantExperience == null || $scope.applicantExperience == "" || $scope.applicantExperience == "undefined" || $scope.applicantExperience == undefined ? 0 : $scope.applicantExperience),
+                'permanentAddHouseOwnerName': String($scope.permanentAddOwnerName == null || $scope.permanentAddOwnerName == "" || $scope.permanentAddOwnerName == "undefined" || $scope.permanentAddOwnerName == undefined ? "" : $scope.permanentAddOwnerName),
+                'creditCardNumber': String($scope.creditCardNumber == null || $scope.creditCardNumber == "" || $scope.creditCardNumber == "undefined" || $scope.creditCardNumber == undefined ? "" : $scope.creditCardNumber),
+                'applicantPhotoUrl': $scope.loanApplicantPhotoUrl == "change" ? loanApplicantPhotoUrlforUp : $scope.existLoanSurveyData["applicantPhotoUrl"],
+                'loanRepayType': String($scope.loanRepayType == null || $scope.loanRepayType == "" || $scope.loanRepayType == "undefined" || $scope.loanRepayType == undefined ? "" : $scope.loanRepayType),
+                'otherIncomeSource': String($scope.othersIncomeSource == null || $scope.othersIncomeSource == "" || $scope.othersIncomeSource == "undefined" || $scope.othersIncomeSource == undefined ? "" : $scope.othersIncomeSource),
+            }
+
+            $scope.showFullPageLoader = true;
+            $http.post(apiBaseURL + 'Loan/AddLoanSurvey', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (response.status == 200 || response.data != "") {
+                        $scope.addCouriersWithLoanSurvey(response.data.model["loanSurveyId"]);
+                        //$scope.showFullPageLoader = false;
+                    }
+                }, function (error) {
+                    console.log(error);
+                    $scope.showFullPageLoader = false;
+                });
+        }
+
+        $scope.updateLoanSurvey = async function () {
+            var userToken = sessionStorage.getItem('token');
+            let tradeLicenseImageUrl = "";
+            let nidImageUrlforUp = "";
+            let nidBackImageUrlforUp = "";
+            let tinImageUrlforUp = "";
+            let bankStatementUrlforUp = "";
+            let loanApplicantPhotoUrlforUp = "";
+
+            if ($scope.tradeLicenseUrl == "change") {
+                tradeLicenseImageUrl = "https://static.ajkerdeal.com/" + "delivery_tiger/trade_license" + "/" + "trade_" + $scope.merchantUserId + '.jpg';
+            }
+
+            if ($scope.nidImgUrl == "change") {
+                nidImageUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/nid" + "/" + "nid_" + $scope.merchantUserId + '.jpg';
+            }
+
+            if ($scope.nidBackImgUrl == "change") {
+                nidBackImageUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/nid" + "/" + "nid_back_" + $scope.merchantUserId + '.jpg'
+            }
+
+            if ($scope.bankStatementUrl == "change") {
+                bankStatementUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/bank_statement" + "/" + "bank_statement_" + $scope.merchantUserId + '.jpg';
+            }
+
+            if ($scope.tinImgUrl == "change") {
+                tinImageUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/tin_certificate" + "/" + "tin_certificate_" + $scope.merchantUserId + '.jpg'
+            }
+
+            if ($scope.loanApplicantPhotoUrl == "change") {
+                loanApplicantPhotoUrlforUp = "https://static.ajkerdeal.com/" + "delivery_tiger/applicant_photo" + "/" + "applicant_photo_" + $scope.merchantUserId + '.jpg'
+            }
+
+            var requestBodyModel = {
+                'Age': String($scope.age == "-1" ? "" : $scope.age),
+                'BankName': String($scope.bankName == null || $scope.bankName == "" || $scope.bankName == "undefined" || $scope.bankName == undefined ? "" : $scope.bankName),
+                'Basketvalue': $scope.basketValue == "-1" ? "" : $scope.basketValue,
+                'CardHolder': String($scope.cardHolder == null || $scope.cardHolder == "" || $scope.cardHolder == "undefined" || $scope.cardHolder == undefined ? "" : $scope.cardHolder),
+                'CardLimit': String($scope.cardLimit == null || $scope.cardLimit == "" || $scope.cardLimit == "undefined" || $scope.cardLimit == undefined ? "" : $scope.cardLimit),
+                'CourierUserId': parseInt($scope.merchantUserId),
+                'EduLevel': String($scope.eduLevel == "-1" ? "" : $scope.eduLevel),
+                'FamMem': String($scope.famMem == "-1" ? "" : $scope.famMem),
+                'Gender': String($scope.gender == null || $scope.gender == "" || $scope.gender == "undefined" || $scope.gender == undefined ? "" : $scope.gender),
+                'GuarantorMobile': String($scope.guarantorMobile == null || $scope.guarantorMobile == "" || $scope.guarantorMobile == "undefined" || $scope.guarantorMobile == undefined ? "" : $scope.guarantorMobile),
+                'GuarantorName': String($scope.guarantorName == null || $scope.guarantorName == "" || $scope.guarantorName == "undefined" || $scope.guarantorName == undefined ? "" : $scope.guarantorName),
+                'HasCreditCard': $scope.hasCreditCardChange == null || $scope.hasCreditCardChange == "" || $scope.hasCreditCardChange == "undefined" || $scope.hasCreditCardChange == undefined ? false : $scope.hasCreditCardChange,
+                'HasTin': $scope.hasTinNumberChange == null || $scope.hasTinNumberChange == "" || $scope.hasTinNumberChange == "undefined" || $scope.hasTinNumberChange == undefined ? false : $scope.hasTinNumberChange,
+                'HomeOwnership': String($scope.homeOwnership == "-1" ? "" : $scope.homeOwnership),
+                'InterestedAmount': parseInt($scope.interestedAmount == null || $scope.interestedAmount == "" || $scope.interestedAmount == "undefined" || $scope.interestedAmount == undefined ? 0 : $scope.interestedAmount),
+                'IsBankAccount': $scope.companyBankAccount == null || $scope.companyBankAccount == "" || $scope.companyBankAccount == "undefined" || $scope.companyBankAccount == undefined ? false : $scope.companyBankAccount,
+                'IsLocalShop': $scope.isLocalShopChange == null || $scope.isLocalShopChange == "" || $scope.isLocalShopChange == "undefined" || $scope.isLocalShopChange == undefined ? false : $scope.isLocalShopChange,
+                'HasPreviousLoan': $scope.otherLoanChange == null || $scope.otherLoanChange == "" || $scope.otherLoanChange == "undefined" || $scope.otherLoanChange == undefined ? false : $scope.otherLoanChange,
+                'LoanAmount': parseInt($scope.loanAmount == null || $scope.loanAmount == "" || $scope.loanAmount == "undefined" || $scope.loanAmount == undefined ? 0 : $scope.loanAmount),
+                'LoanEmi': String($scope.loanEmi == "-1" ? "" : $scope.loanEmi),
+                'Married': String($scope.married == "-1" ? "" : $scope.married),
+                'MerchantName': String($scope.merchantMobileNumber),
+                'MonthlyExp': String($scope.monthlyExp == "-1" ? "" : $scope.monthlyExp),
+                'MonthlyOrder': String($scope.monthlyOrder == "-1" ? "" : $scope.monthlyOrder),
+                'MonthlyTotalAverageSale': parseInt($scope.monthlyTotalAverageSale == null || $scope.monthlyTotalAverageSale == "" || $scope.monthlyTotalAverageSale == "undefined" || $scope.monthlyTotalAverageSale == undefined ? 0 : $scope.monthlyTotalAverageSale),
+                'MonthlyTotalCodAmount': parseInt($scope.monthlyTotalCodAmount == null || $scope.monthlyTotalCodAmount == "" || $scope.monthlyTotalCodAmount == "undefined" || $scope.monthlyTotalCodAmount == undefined ? 0 : $scope.monthlyTotalCodAmount),
+                'Recommend': String($scope.recommend == null || $scope.recommend == "" || $scope.recommend == "undefined" || $scope.recommend == undefined ? "" : $scope.recommend),
+                'RelationMarchent': String($scope.relationMerchant == "-1" ? "" : $scope.relationMerchant),
+                'RepayType': String($scope.repayType == null || $scope.repayType == "" || $scope.repayType == "undefined" || $scope.repayType == undefined ? "" : $scope.repayType),
+                'ShopOwnership': String($scope.shopOwnership == "-1" ? "" : $scope.shopOwnership),
+                'TinNumber': String($scope.tinNumber == null || $scope.tinNumber == "" || $scope.tinNumber == "undefined" || $scope.tinNumber == undefined ? "" : $scope.tinNumber),
+                'TradeLicenseImageUrl': $scope.tradeLicenseUrl == "change" ? tradeLicenseImageUrl : $scope.existLoanSurveyData["tradeLicenseImageUrl"],
+                'TransactionAmount': parseInt($scope.transactionAmount == null || $scope.transactionAmount == "" || $scope.transactionAmount == "undefined" || $scope.transactionAmount == undefined ? 0 : $scope.transactionAmount),
+                'HasTradeLicense': $scope.hasTradeLicenseChange == null || $scope.hasTradeLicenseChange == "" || $scope.hasTradeLicenseChange == "undefined" || $scope.hasTradeLicenseChange == undefined ? false : $scope.hasTradeLicenseChange,
+                'TradeLicenseNo': String($scope.TradeLicenseNo == null || $scope.TradeLicenseNo == "" || $scope.TradeLicenseNo == "undefined" || $scope.TradeLicenseNo == undefined ? "" : $scope.TradeLicenseNo),
+                'TradeLicenseExpireDate': $scope.tradeLicenseExpireDate == "" || $scope.tradeLicenseExpireDate == undefined || $scope.tradeLicenseExpireDate == "undefined" ? null : $scope.tradeLicenseExpireDate,
+                'CompanyBankAccNo': String($scope.companyBankAccNo == null || $scope.companyBankAccNo == "" || $scope.companyBankAccNo == "undefined" || $scope.companyBankAccNo == undefined ? "" : $scope.companyBankAccNo),
+                'CompanyBankAccName': String($scope.companyBankAccName == null || $scope.companyBankAccName == "" || $scope.companyBankAccName == "undefined" || $scope.companyBankAccName == undefined ? "" : $scope.companyBankAccName),
+                'AnnualTotalIncome': parseInt($scope.annualTotalIncome == null || $scope.annualTotalIncome == "" || $scope.annualTotalIncome == "undefined" || $scope.annualTotalIncome == undefined ? 0 : $scope.annualTotalIncome),
+                'DateOfBirth': $scope.dateOfBirth,
+                'NidNo': String($scope.nidNo == null || $scope.nidNo == "" || $scope.nidNo == "undefined" || $scope.nidNo == undefined ? "" : $scope.nidNo),
+                'ReqTenorMonth': parseInt($scope.reqTenorMonth == null || $scope.reqTenorMonth == "" || $scope.reqTenorMonth == "undefined" || $scope.reqTenorMonth == undefined ? 0 : $scope.reqTenorMonth),
+                'OthersIncome': parseInt($scope.othersIncome == null || $scope.othersIncome == "" || $scope.othersIncome == "undefined" || $scope.othersIncome == undefined ? 0 : $scope.othersIncome),
+                'ResidenceLocation': String($scope.residenceLocation == "-1" ? "" : $scope.residenceLocation),
+                'BankStatementUrl': $scope.bankStatementUrl == "change" ? bankStatementUrlforUp : $scope.existLoanSurveyData["bankStatementUrl"],
+                'businessStartDate': $scope.businessStartDate == "" || $scope.businessStartDate == undefined || $scope.businessStartDate == "undefined" ? null : $scope.businessStartDate,
+                'nidImageUrl': $scope.nidImgUrl == "change" ? nidImageUrlforUp : $scope.existLoanSurveyData["nidImageUrl"],
+                'nidBackImageUrl': $scope.nidBackImgUrl == "change" ? nidBackImageUrlforUp : $scope.existLoanSurveyData["nidBackImageUrl"],
+                'tinImageUrl': $scope.tinImgUrl == "change" ? tinImageUrlforUp : $scope.existLoanSurveyData["tinImageUrl"],
+                'presentAddHouseNo': String($scope.PresentHouseNo == null || $scope.PresentHouseNo == "" || $scope.PresentHouseNo == "undefined" || $scope.PresentHouseNo == undefined ? "" : $scope.PresentHouseNo),
+                'presentAddRoadNo': String($scope.PresentRoadNo == null || $scope.PresentRoadNo == "" || $scope.PresentRoadNo == "undefined" || $scope.PresentRoadNo == undefined ? "" : $scope.PresentRoadNo),
+                'presentAddRoadName': String($scope.PresentRoadName == null || $scope.PresentRoadName == "" || $scope.PresentRoadName == "undefined" || $scope.PresentRoadName == undefined ? "" : $scope.PresentRoadName),
+                'presentAddArea': String($scope.PresentAreaName == null || $scope.PresentAreaName == "" || $scope.PresentAreaName == "undefined" || $scope.PresentAreaName == undefined ? "" : $scope.PresentAreaName),
+                'presentAddPostOffice': String($scope.PresentPostOffice == null || $scope.PresentPostOffice == "" || $scope.PresentPostOffice == "undefined" || $scope.PresentPostOffice == undefined ? "" : $scope.PresentPostOffice),
+                'presentAddDistrictId': parseInt($scope.PresentDistrict),
+                'presentAddThanaId': parseInt($scope.PresentThana),
+                'isOwner': $scope.isHouseOwnerChange == null || $scope.isHouseOwnerChange == "" || $scope.isHouseOwnerChange == "undefined" || $scope.isHouseOwnerChange == undefined ? false : $scope.isHouseOwnerChange,
+                'houseOwner': String($scope.PresentAddHouseOwner == null || $scope.PresentAddHouseOwner == "" || $scope.PresentAddHouseOwner == "undefined" || $scope.PresentAddHouseOwner == undefined ? "" : $scope.PresentAddHouseOwner),
+                'durationOfLiving': parseInt($scope.PresentAddDurationOfLiving == "" || $scope.PresentAddDurationOfLiving == undefined || $scope.PresentAddDurationOfLiving == "undefined" ? 0 : $scope.PresentAddDurationOfLiving),
+                'permanentAddHouseNo': String($scope.PermanentHouseNo == null || $scope.PermanentHouseNo == "" || $scope.PermanentHouseNo == "undefined" || $scope.PermanentHouseNo == undefined ? "" : $scope.PermanentHouseNo),
+                'permanentAddRoadNo': String($scope.PermanentRoadNo == null || $scope.PermanentRoadNo == "" || $scope.PermanentRoadNo == "undefined" || $scope.PermanentRoadNo == undefined ? "" : $scope.PermanentRoadNo),
+                'permanentAddRoadName': String($scope.PermanentRoadName == null || $scope.PermanentRoadName == "" || $scope.PermanentRoadName == "undefined" || $scope.PermanentRoadName == undefined ? "" : $scope.PermanentRoadName),
+                'permanentAddArea': String($scope.PermanentAreaName == null || $scope.PermanentAreaName == "" || $scope.PermanentAreaName == "undefined" || $scope.PermanentAreaName == undefined ? "" : $scope.PermanentAreaName),
+                'permanentAddPostOffice': String($scope.PermanentPostOffice == null || $scope.PermanentPostOffice == "" || $scope.PermanentPostOffice == "undefined" || $scope.PermanentPostOffice == undefined ? "" : $scope.PermanentPostOffice),
+                'permanentAddDistrictId': parseInt($scope.PermanentDistrict),
+                'permanentAddThanaId': parseInt($scope.PermanentThana),
+                'fatherName': String($scope.fatherName == null || $scope.fatherName == "" || $scope.fatherName == "undefined" || $scope.fatherName == undefined ? "" : $scope.fatherName),
+                'motherName': String($scope.motherName == null || $scope.motherName == "" || $scope.motherName == "undefined" || $scope.motherName == undefined ? "" : $scope.motherName),
+                'spouseName': String($scope.spouseName == null || $scope.spouseName == "" || $scope.spouseName == "undefined" || $scope.spouseName == undefined ? "" : $scope.spouseName),
+                'occupation': String($scope.applicantOccupation == null || $scope.applicantOccupation == "" || $scope.applicantOccupation == "undefined" || $scope.applicantOccupation == undefined ? "" : $scope.applicantOccupation),
+                'experience': parseInt($scope.applicantExperience == null || $scope.applicantExperience == "" || $scope.applicantExperience == "undefined" || $scope.applicantExperience == undefined ? 0 : $scope.applicantExperience),
+                'permanentAddHouseOwnerName': String($scope.PermanentAddOwnerName == null || $scope.PermanentAddOwnerName == "" || $scope.PermanentAddOwnerName == "undefined" || $scope.PermanentAddOwnerName == undefined ? "" : $scope.PermanentAddOwnerName),
+                'creditCardNumber': String($scope.creditCardNumber == null || $scope.creditCardNumber == "" || $scope.creditCardNumber == "undefined" || $scope.creditCardNumber == undefined ? "" : $scope.creditCardNumber),
+                'applicantPhotoUrl': $scope.loanApplicantPhotoUrl == "change" ? loanApplicantPhotoUrlforUp : $scope.existLoanSurveyData["applicantPhotoUrl"],
+                'loanRepayType': String($scope.loanRepayType == null || $scope.loanRepayType == "" || $scope.loanRepayType == "undefined" || $scope.loanRepayType == undefined ? "" : $scope.loanRepayType),
+                'otherIncomeSource': String($scope.othersIncomeSource == null || $scope.othersIncomeSource == "" || $scope.othersIncomeSource == "undefined" || $scope.othersIncomeSource == undefined ? "" : $scope.othersIncomeSource),
+            }
+
+            $scope.showFullPageLoader = true;
+            $http.put(apiBaseURL + 'Update/UpdateLoanSurvey/' + loanSurveyId, requestBodyModel,
+                {
+                    headers: { 'Content-Type': 'application/json', 'Authorization': "Bearer " + userToken }
+                })
+                .then(function (response) {
+                    if (response.status == 200 || response.data > 0) {
+                        $scope.updateCouriersWithLoanSurvey(loanSurveyId);
+                        //$scope.showFullPageLoader = false;
+                    }
+                }, function (error) {
+                    console.log(error);
+                    $scope.showFullPageLoader = false;
+                });
+        }
+
+        $scope.submitLoanSurveyApplication = async function () {
+            if ($scope.merchantMobileNumber == undefined || $scope.merchantMobileNumber == '') {
+                alert("Please select merchant...!!!");
+                return false;
+            }
+            //if ($scope.gender == undefined) {
+            //    alert("Please select gender...!!!");
+            //    return false;
+            //}
+            //if ($scope.age == "-1") {
+            //    alert("বয়সসীমা নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.eduLevel == "-1") {
+            //    alert("শিক্ষাগত যোগ্যতা নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.famMem == "-1") {
+            //    alert("পরিবারের সদস্য সংখ্যা নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //else if ($scope.homeOwnership == "-1") {
+            //    alert("বাসার মালিকানা নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.residenceLocation == "-1") {
+            //    alert("বাসার অবস্থান নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.married == "-1") {
+            //    alert("বৈবাহিক অবস্থা নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.dateOfBirth == undefined || $scope.dateOfBirth == "") {
+            //    alert("আপনার জন্মতারিখ নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.nidNo == undefined || $scope.nidNo == "" || $scope.nidNo == "0") {
+            //    alert("আপনার এনআইডি নাম্বার লিখুন !!!");
+            //    return false;
+            //}
+            //if ($scope.basketValue == "-1") {
+            //    alert("গড় বাস্কেট ভ্যালু নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.monthlyExp == "-1") {
+            //    alert("আপনার মাসিক ব্যয় কত নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.relationMerchant == "-1") {
+            //    alert("মার্চেন্টের সাথে কত বছরের পরিচয় নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.interestedAmount == undefined || $scope.interestedAmount == "" || $scope.interestedAmount == "0") {
+            //    alert("আপনার লোনের পরিমান উল্লেখ করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.reqTenorMonth == undefined || $scope.reqTenorMonth == "") {
+            //    alert("কত মাসের মধ্যে লোন পরিশোধ করতে চান নির্বাচন করুন !!!");
+            //    return false;
+            //}
+            //if ($scope.reqTenorMonth < "1" || $scope.reqTenorMonth > "60") {
+            //    alert("লোন পরিশোধ এর মাস ১-৬০ এর মধ্যে হতে হবে !!!");
+            //    return false;
+            //}
+            //if ($scope.transactionAmount == undefined || $scope.transactionAmount == "") {
+            //    alert("অনলাইন বা ফেসবুকের মাধ্যমে মাসে কত টাকা বিক্রি লিখুন !!!");
+            //    return false;
+            //}
+            //if ($scope.isLocalShopChange == undefined) {
+            //    alert("আপনার ফিজিক্যাল দোকান আছে কিনা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.isLocalShopChange != undefined) {
+            //    if ($scope.isLocalShopChange == true) {
+            //        if ($scope.monthlyTotalAverageSale == undefined || $scope.monthlyTotalAverageSale == "" || $scope.monthlyTotalAverageSale == "0") {
+            //            alert("প্রতি মাসে ফিজিক্যাল দোকান থেকে কত টাকা বিক্রি লিখুন !!!");
+            //            return false;
+            //        }
+            //    }
+            //}
+            //if ($scope.shopOwnership == "-1") {
+            //    alert("আপনার দোকানের মালিকানা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.monthlyTotalCodAmount == undefined || $scope.monthlyTotalCodAmount == "") {
+            //    alert("ডেলিভারি টাইগার সহ অন্য কুরিয়ার থেকে মাসিক সর্বমোট কত টাকা COD কালেক্ট করেন লিখুন!!!");
+            //    return false;
+            //}
+            //if ($scope.othersIncome == undefined || $scope.othersIncome == "") {
+            //    alert("অন্যান্য উৎস থেকে সর্বমোট আয় লিখুন!!!");
+            //    return false;
+            //}
+            //if ($scope.annualTotalIncome == undefined || $scope.annualTotalIncome == "") {
+            //    alert("আপনার বাৎসরিক সর্বমোট আয় লিখুন!!!");
+            //    return false;
+            //}
+            //if (courierWithLoanSurvey.length == 0) {
+            //    alert("ডেলিভারি টাইগার ব্যতিত অন্য কার সার্ভিস গ্রহণ করেন নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.otherLoanChange == undefined) {
+            //    alert("আপনার অন্য কোন লোন আছে কিনা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.otherLoanChange != undefined) {
+            //    if ($scope.otherLoanChange == true) {
+            //        if ($scope.loanAmount == undefined || $scope.loanAmount == "") {
+            //            alert("লোনের পরিমাণ উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //        else if ($scope.bankName == undefined || $scope.bankName == "") {
+            //            alert("কোন ব্যাংক থেকে লোন নেয়া হয়েছে উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //        else if ($scope.repayType == undefined) {
+            //            alert("আপনার লোন পরিশোধের ধরন নির্বাচন করুন !!!");
+            //            return false;
+            //        }
+            //    }
+            //}
+            //if ($scope.companyBankAccount == undefined) {
+            //    alert("আপনার প্রতিষ্ঠানের নামে কী কোন ব্যাংক একাউন্ট আছে কিনা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.companyBankAccount != undefined) {
+            //    if ($scope.companyBankAccount == true) {
+            //        if ($scope.companyBankAccName == undefined || $scope.companyBankAccName == "") {
+            //            alert("ব্যাংকের নাম উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //        else if ($scope.companyBankAccNo == undefined || $scope.companyBankAccNo == "") {
+            //            alert("ব্যাংক একাউন্ট নাম্বার উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //    }
+            //}
+            //if ($scope.companyBankAccount == undefined) {
+            //    alert("প্রতিষ্ঠানের নামে কী কোন ব্যাংক একাউন্ট আছে কিনা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.hasCreditCardChange == undefined) {
+            //    alert("আপনার কোন ক্রেডিট কার্ড আছে কিনা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.hasCreditCardChange != undefined) {
+            //    if ($scope.hasCreditCardChange == true) {
+            //        if ($scope.cardHolder == undefined || $scope.cardHolder == "") {
+            //            alert("ব্যাংকের নাম উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //        else if ($scope.cardLimit == undefined || $scope.cardLimit == "") {
+            //            alert("কার্ডের লিমিট উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //    }
+            //}
+            //if ($scope.hasTinNumberChange == undefined) {
+            //    alert("আপনার কোন টিন নাম্বার আছে কিনা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.hasTinNumberChange != undefined) {
+            //    if ($scope.hasTinNumberChange == true) {
+            //        if ($scope.tinNumber == undefined || $scope.tinNumber == "") {
+            //            alert("টিন নাম্বার উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //    }
+            //}
+            //if ($scope.hasTradeLicenseChange == undefined) {
+            //    alert("আপনার কোন ট্রেড লাইসেন্স আছে কিনা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.hasTradeLicenseChange != undefined) {
+            //    if ($scope.hasTradeLicenseChange == true) {
+            //        if ($scope.TradeLicenseNo == undefined || $scope.TradeLicenseNo == "") {
+            //            alert("ট্রেড লাইসেন্স নাম্বার লিখুন !!!");
+            //            return false;
+            //        }
+            //        else if ($scope.tradeLicenseExpireDate == undefined || $scope.tradeLicenseExpireDate == "") {
+            //            alert("ট্রেড লাইসেন্স এর Expire date নির্বাচন করুন !!!");
+            //            return false;
+            //        }
+            //        else if ($scope.PreviewImage == undefined) {
+            //            alert("ট্রেড লাইসেন্স এর ছবি আপলোড করুন !!!");
+            //            return false;
+            //        }
+            //    }
+            //}
+            //if ($scope.hasGurantorChange == undefined) {
+            //    alert("আপনার গ্যারেন্টর আছে কিনা নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.hasGurantorChange != undefined) {
+            //    if ($scope.hasGurantorChange == true) {
+            //        if ($scope.guarantorName == undefined || $scope.guarantorName == "") {
+            //            alert("গ্যারেন্টর এর নাম উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //        else if ($scope.guarantorMobile == undefined || $scope.guarantorMobile == "") {
+            //            alert("গ্যারেন্টর এর ফোন নাম্বার উল্লেখ করুন !!!");
+            //            return false;
+            //        }
+            //    }
+            //}
+            //if ($scope.monthlyOrder == "-1") {
+            //    alert("আপনার গড় অর্ডার নির্বাচন করুন!!!");
+            //    return false;
+            //}
+            //if ($scope.recommend == undefined) {
+            //    alert("এই মার্চেন্টকে সুপারিশ করুন!!!");
+            //    return false;
+            //}
+
+            if ($scope.EntryUpdateStatus == 0) {
+                $scope.showFullPageLoader = true;
+                if ($scope.tradeLicenseUrl == "change") {
+                    let fileName = "trade_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/trade_license";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.files[0]);
+                }
+                if ($scope.bankStatementUrl == "change") {
+                    let fileName = "bank_statement_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/bank_statement";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesBankStatement[0]);
+                }
+                if ($scope.nidImgUrl == "change") {
+                    let fileName = "nid_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/nid";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesNidImg[0]);
+                }
+                if ($scope.nidBackImgUrl == "change") {
+                    let fileName = "nid_back_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/nid";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesBackNidImg[0]);
+                }
+                if ($scope.tinImgUrl == "change") {
+                    let fileName = "tin_certificate_" + $scope.merchantUserId + '.pdf';
+                    const imageUrl = "delivery_tiger/tin_certificate";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesTinImg[0]);
+                }
+                if ($scope.loanApplicantPhotoUrl == "change") {
+                    let fileName = "applicant_photo_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/applicant_photo";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesApplicantPhoto[0]);
+                }
+
+                setTimeout(async function () {
+                    await $scope.addLoanSurvey();
+                }, 4000);
+                //$scope.addLoanSurvey();
+                //await $scope.uploadImageToServer();
+            }
+            else {
+                $scope.showFullPageLoader = true;
+                if ($scope.tradeLicenseUrl == "change") {
+                    let fileName = "trade_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/trade_license";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.files[0]);
+                }
+                if ($scope.bankStatementUrl == "change") {
+                    let fileName = "bank_statement_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/bank_statement";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesBankStatement[0]);
+                }
+                if ($scope.nidImgUrl == "change") {
+                    let fileName = "nid_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/nid";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesNidImg[0]);
+                }
+                if ($scope.nidBackImgUrl == "change") {
+                    let fileName = "nid_back_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/nid";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesBackNidImg[0]);
+                }
+                if ($scope.tinImgUrl == "change") {
+                    let fileName = "tin_certificate_" + $scope.merchantUserId + '.pdf';
+                    const imageUrl = "delivery_tiger/tin_certificate";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesTinImg[0]);
+                }
+                if ($scope.loanApplicantPhotoUrl == "change") {
+                    let fileName = "applicant_photo_" + $scope.merchantUserId + '.jpg';
+                    const imageUrl = "delivery_tiger/applicant_photo";
+                    await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesApplicantPhoto[0]);
+                }
+
+                setTimeout(async function () {
+                    await $scope.updateLoanSurvey();
+                }, 4000);
+                
+            }
+
+        }
+
+        /*track radio button change value*/
+        //$scope.trackOwnerChangeValue = (value) => {
+        //    if (value == false) {
+        //        $scope.PresentAddHouseOwner = "";
+        //        $scope.PresentAddDurationOfLiving = 0;
+        //    }
+        //}
+
+        $scope.trackLocalShopChangeValue = (value) => {
+            if (value == false) {
+                $scope.monthlyTotalAverageSale = 0;
+            }
+        }
+
+        $scope.trackOtherLoanChangeValue = (value) => {
+            if (value == false) {
+                $scope.loanAmount = 0;
+                $scope.bankName = "";
+                $scope.loanEmi = "-1";
+                $scope.repayType = "";
+            }
+        }
+
+        $scope.trackCompanyBankChangeValue = (value) => {
+            if (value == false) {
+                $scope.companyBankAccName = "";
+                $scope.companyBankAccNo = "";
+            }
+        }
+
+        $scope.trackCreditCardChangeValue = (value) => {
+            if (value == false) {
+                $scope.cardHolder = "";
+                $scope.cardLimit = "";
+            }
+        }
+
+        $scope.trackTinChangeValue = (value) => {
+            if (value == false) {
+                $scope.tinNumber = "";
+                $scope.tinImgUrl = "false";
+            }
+        }
+
+        $scope.trackTradeLicenseChangeValue = (value) => {
+            if (value == false) {
+                $scope.TradeLicenseNo = "";
+                $scope.tradeLicenseExpireDate = "";
+                $scope.tradeLicenseUrl = "false";
+            }
+        }
+
+        $scope.trackBankStatementChangeValue = (value) => {
+            $scope.bankStatementUrl = "false";
+        }
+
+        $scope.trackGurantorChangeValue = (value) => {
+            $scope.guarantorName = "";
+            $scope.guarantorMobile = "";
+        }
+        /*track radio button change value end*/
+    });
+</script>

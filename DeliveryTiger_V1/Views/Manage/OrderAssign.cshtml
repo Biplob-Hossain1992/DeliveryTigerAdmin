@@ -1,0 +1,469 @@
+﻿
+@{
+    /**/
+
+    ViewBag.Title = "OrderAssign";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#datepickerOrders').datepicker({
+            keyboardNavigation: false,
+            forceParse: false,
+            autoclose: true,
+            endDate: new Date(new Date().setDate(new Date().getDate()))
+        });
+    });
+</script>
+
+<script type="text/javascript">
+
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http) {
+
+
+        //var OnlineUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+
+
+        $scope.assignTypes = [
+            {
+                'id': '',
+                'name': 'Select Assign Type'
+            },
+            {
+                'id': 'merchantTocustomer',
+                'name': 'Merchant To Customer'
+            },
+            {
+                'id': 'merchantTohub',
+                'name': 'Merchant To Hub'
+            },
+            {
+                'id': 'hubTocustomer',
+                'name': 'Hub To Customer'
+            }
+        ]
+
+        var addDeliveryManDefault =
+        {
+            "id": 0,
+            "name": "Select Delivery Man"
+        }
+
+        $scope.deliveryMan = 0;
+        $scope.orderStatus = -1;
+        $scope.assignType = '';
+
+        getDeliveryMan();
+        loadCourierOrderStatus();
+
+        function getDeliveryMan() {
+            $http.get(apiBaseURL + 'Fetch/GetAllDeliveryMan', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.deliveryMans = response.data.model;
+
+                    $scope.deliveryMans.push(addDeliveryManDefault);
+
+                    $scope.deliveryMans.sort((a, b) => parseFloat(a.id) - parseFloat(b.id));
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        function loadCourierOrderStatus() {
+            $http.get(apiBaseURL + 'Fetch/LoadCourierOrderStatus', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.orderStatuses = response.data.model;
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        $scope.getOrders = function (fromDate, toDate) {
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate
+            };
+
+            //$scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/OrderAssign', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(response.data.model);
+                    $scope.orders = response.data.model;
+                    //$scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        $scope.changeAssign = function (deliveryManId, orderIds) {
+
+            if (deliveryManId == 0) {
+                alert("Please must be select DeliveryMan");
+                return false;
+            }
+            else if (typeof orderIds == 'undefined' || orderIds == "") {
+                alert("Please must be select OrderIds");
+                return false;
+            }
+
+            var deliveryBonduAssign = [];
+
+            var orderIds = orderIds.trim().split(',');
+
+            for (var i = 0; i < orderIds.length; i++) {
+                let deliveryBonduObj = {
+                    "CourierUserId": 0,
+                    "DeliveryManUserId": deliveryManId,
+                    "AssignType": "delivery",
+                    "UpdatedBy": sessionStorage.getItem("userId"),
+                    "OrderId": orderIds[i]
+                };
+
+                deliveryBonduAssign.push(deliveryBonduObj);
+            }
+            confirmationBox(deliveryBonduAssign);
+        }
+
+        function confirmationBox(deliveryBonduAssign) {
+            if (confirm("Bondu Assign: Confirmation Box For Change Assign")) {
+                UpdateDeliveryBonduAssignMultiple(deliveryBonduAssign)
+            } else {
+                console.log("'Cancel' button was pressed.");
+            }
+        }
+
+        $scope.orderAssign = function (deliveryManId, orderIds, statusId, assignType) {
+
+            if (deliveryManId == 0) {
+                alert("Please must be select DeliveryMan");
+                return false;
+            }
+            else if (typeof orderIds == 'undefined' || orderIds == "") {
+                alert("Please must be select OrderIds");
+                return false;
+            }
+
+            else if (statusId == -1) {
+                alert("Please must be select status");
+                return false;
+            }
+
+            var deliveryBonduAssign = [];
+
+            var orderIds = orderIds.trim().split(',');
+            //merchantTocustomer
+            //hubTocustomer
+            //merchantTohub
+            for (var i = 0; i < orderIds.length; i++) {
+                let deliveryBonduObj = {
+                    "CourierUserId": 0,
+                    "DeliveryManUserId": deliveryManId,
+                    "AssignType": assignType,
+                    "UpdatedBy": sessionStorage.getItem("userId"),
+                    "OrderId": orderIds[i]
+                };
+                deliveryBonduAssign.push(deliveryBonduObj);
+            }
+            AddDeliveryBonduAssignMultiple(deliveryBonduAssign, statusId)
+        }
+
+        function AddDeliveryBonduAssignMultiple(deliveryBonduAssign, statusId) {
+            $http.post(apiBaseURL + 'Entry/AddDeliveryBonduAssignMultiple', deliveryBonduAssign,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    if (response.data.model.length > 0) {
+                        alert(response.data.model.length + " Done");
+                        $scope.orderIds = "";
+
+                        //let returnOrderIds = response.data.model.orderId.join(",");
+
+                        let returnOrderIds = Array.prototype.map.call(response.data.model, s => s.orderId).toString();
+                        var orderIds = returnOrderIds.trim().split(',');
+
+                        var str = '';
+                        for (var i = 0; i < orderIds.length; i++) {
+                            str += "DT-" + orderIds[i] + ","
+                        }
+                        let newOrderIds = str.substring(0, str.length - 1);
+
+                        
+                        let loadCourierOrderBodyModel =
+                        {
+                            "status": -1,
+                            "statusList": [-1],
+                            "statusGroup": ["-1"],
+                            "fromDate": "1/1/2001",
+                            "toDate": "1/1/2001",
+                            "courierUserId": -1,
+                            "podNumber": "",
+                            "orderIds": newOrderIds,
+                            "collectionName": "",
+                            "index": 0,
+                            "count": 20,
+                            "mobile": "",
+                            "districtIds": [
+                                -1
+                            ],
+                            "districtGroupName": "Select City / Sadar",
+                            "courierId": 0,
+                            "districtId": 0,
+                            "thanaId": 0,
+                            "areaId": 0,
+                            "paymentType": "-1"
+                        }
+                        LoadOrders(loadCourierOrderBodyModel, statusId);
+                    }
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        function getStatusName(statusId) {
+            for (var i = 0; i < $scope.orderStatuses.length; i++) {
+                if ($scope.orderStatuses[i].statusId == statusId) {
+                    return $scope.orderStatuses[i].statusNameEng;
+                }
+            }
+            return "";
+        }
+
+        function getMessageFormat(statusId) {
+            for (var i = 0; i < $scope.orderStatuses.length; i++) {
+                if ($scope.orderStatuses[i].statusId == statusId) {
+                    return $scope.orderStatuses[i].message;
+                }
+            }
+            return "";
+        }
+        function getEmailFormat(statusId) {
+            for (var i = 0; i < $scope.orderStatuses.length; i++) {
+                if ($scope.orderStatuses[i].statusId == statusId) {
+                    return $scope.orderStatuses[i].email;
+                }
+            }
+            return "";
+        }
+        function getCustomerMessageFormat(statusId) {
+            for (var i = 0; i < $scope.orderStatuses.length; i++) {
+                if ($scope.orderStatuses[i].statusId == statusId) {
+                    return $scope.orderStatuses[i].customerMessage;
+                }
+            }
+            return "";
+        }
+        function getCustomerEmailFormat(statusId) {
+            for (var i = 0; i < $scope.orderStatuses.length; i++) {
+                if ($scope.orderStatuses[i].statusId == statusId) {
+                    return $scope.orderStatuses[i].customerEmail;
+                }
+            }
+            return "";
+        }
+
+
+        function LoadOrders(orderIds, statusId) {
+            $http.post(apiBaseURL + 'Fetch/LoadOrders', orderIds,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    if (response.data.model.totalCount > 0) {
+                        //console.log(response.data.model);
+
+                        var orderList = [];
+
+                        for (var i = 0; i < response.data.model.courierOrderViewModel.length; i++) {
+
+                            let model = response.data.model.courierOrderViewModel[i];
+
+                            let orderObj = {
+                                id: 0,
+                                courierOrderId: model.courierOrdersId,
+                                orderDate: model.courierOrderDateDetails.orderDate,
+                                isConfirmedBy: "admin",
+                                courierId: 35, // Delivey Bondhu courierId
+                                status: statusId, // Order has been collected from collection point
+                                postedBy: parseInt(sessionStorage.getItem("userId").trim()),
+                                comment: getStatusName(statusId),//"Order has been collected from collection point",
+                                podNumber: model.courierOrdersId + "-" + "deliveybondhu",
+                                bkashNumber: model.userInfo.bkashNumber,
+                                companyName: model.userInfo.companyName,
+                                courierName: model.courierName,
+                                customerName: model.customerName,
+                                districtName: model.courierAddressContactInfo.districtName,
+                                thanaName: model.courierAddressContactInfo.thanaName,
+                                areaName: model.courierAddressContactInfo.areaName,
+                                merchantId: model.userInfo.courierUserId,
+                                merchantName: model.userInfo.companyName,
+                                merchantEmail: model.userInfo.emailAddress,
+                                merchantMobile: model.userInfo.mobile,
+                                merchantPaymentAmount: model.courierPrice.collectionAmount - model.courierPrice.totalServiceCharge,
+                                messageFormat: getMessageFormat(statusId),
+                                emailFormat: getEmailFormat(statusId),
+                                customerMessageFormat: getCustomerMessageFormat(statusId),
+                                customerEmailFormat: getCustomerEmailFormat(statusId),
+                                isSms: model.adCourierCommunicationInfo.isSms,
+                                isEmail: model.adCourierCommunicationInfo.isEmail,
+                                isCustomerSms: model.adCourierCommunicationInfo.isCustomerSms,
+                                isCustomerEmail: model.adCourierCommunicationInfo.isCustomerEmail,
+                                customerMobile: model.courierAddressContactInfo.mobile,
+                                courierCharge: model.courierPrice.courierCharge,
+                                hubName: ""
+                            };
+                            orderList.push(orderObj);
+                        }
+
+                        UpdateBulkOrders(orderList)
+
+                    }
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        function UpdateBulkOrders(courierOrderStatusHistory) {
+            $http.put(apiBaseURL + 'Order/UpdateBulkOrders', courierOrderStatusHistory,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    //response.data.model
+                    //console.log(response.data.model.length);
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        function UpdateDeliveryBonduAssignMultiple(deliveryBonduAssign) {
+            $http.put(apiBaseURL + 'Update/UpdateDeliveryBonduAssignMultiple', deliveryBonduAssign,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    //response.data.model
+                    alert("Done " + response.data.model);
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+    });
+
+</script>
+
+<h4>Order Assign</h4>
+<div ng-app="myModule">
+    <div ng-controller="myController">
+        <div class="row">
+            <div class="col-lg-12">
+
+                <div class="form-group">
+                    <label for="comment">Order-Ids:</label>
+                    <textarea placeholder="Ex: 1111,2222" ng-model="orderIds" class="form-control" style="height:auto" rows="5"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-lg-3">
+                        <div class="form-group">
+                            <label>Select Delivery Man</label>
+                            <select class="form-control" ng-model="deliveryMan" ng-options="deliveryMan.id as deliveryMan.name for deliveryMan in deliveryMans"></select>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="form-group">
+                            <label>Select Assign Type</label>
+                            <select class="form-control" ng-model="assignType" ng-options="assignType.id as assignType.name for assignType in assignTypes"></select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <label>Select Status</label>
+                            <select class="form-control" ng-model="orderStatus" ng-options="orderStatus.statusId as orderStatus.statusNameEng for orderStatus in orderStatuses"></select>
+                        </div>
+                    </div>
+                </div>
+
+
+                <button type="button" ng-click="orderAssign(deliveryMan,orderIds, orderStatus, assignType)" class="btn btn-primary">Save</button>
+                <button type="button" ng-click="changeAssign(deliveryMan,orderIds)" class="btn btn-danger">Change Assign</button>
+                <p><b>Note:</b> Only order assign change, no status update work when change Assign</p>
+            </div>
+        </div>
+
+        <br />
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h3>Rider wise order assgin</h3>
+                            <div class="input-daterange input-group" id="datepickerOrders">
+                                <input type="text" class="form-control-sm form-control" ng-model="fromDate" name="start" placeholder="From Date" />
+                                <span class="input-group-addon">to</span>
+                                <input type="text" class="form-control-sm form-control" ng-model="toDate" name="end" placeholder="To Date" />
+                                <button type="button" class="btn btn-w-m btn-success" ng-click="getOrders(fromDate, toDate, dateFormat)">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <table class="table table-bordered" id="tlb">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        #
+                                    </th>
+                                    <th>
+                                        <a href="#tlb" ng-click="orderByField='name'; reverseSort = !reverseSort">
+                                            Rider Name
+                                        </a>
+                                    </th>
+
+                                    <th>
+                                        <a href="#tlb" ng-click="orderByField='assginOrder'; reverseSort = !reverseSort">
+                                            Assgin Order Count
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#tlb" ng-click="orderByField='assginOrderStr'; reverseSort = !reverseSort">
+                                            Assgin Orders List
+                                        </a>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in orders | orderBy:orderByField:reverseSort">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>
+                                        {{ o.name}}
+                                    </td>
+                                    <td>
+                                        {{ o.assginOrder}}
+                                    </td>
+                                    <td style="word-break:break-word">
+                                        {{ o.assginOrderStr}}<br /><hr>
+                                        {{o.assginOrderStrDt}}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

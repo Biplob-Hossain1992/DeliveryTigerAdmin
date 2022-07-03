@@ -1,0 +1,439 @@
+﻿
+@{
+    ViewBag.Title = "Rider Wise Order Collection Details";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+
+<div ng-app="RiderWiseOrderCollectionDetailsModule">
+    <div ng-controller="RiderWiseOrderCollectionDetailsCtrl">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 class="text-center">Rider Wise Order Collection Details</h4>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            @*Delivery Tiger Section Start*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <h3>Delivery Tiger</h3>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-inline">
+                                        <input type="text" class="form-control-sm form-control" ng-model="mainSearchDt" placeholder="Search" autocomplete="off" />
+                                        <select style="border: 1px solid #46b8da;margin-left: 5px;" class="form-control" ng-model="loadStatusDT" ng-options="status.DtStatus as status.StatusName for status in loadAllStatus"></select>
+                                    </div>
+                                </div>
+                                <table class="table table-bordered table-responsive" ng-show="showDtRiderTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Rider Name</th>
+                                            <th>Mobile Number</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="d in dtDeliveryMans | orderBy:orderByField:reverseSort | filter:mainSearchDt">
+                                            <td>{{$index+1}}</td>
+                                            <td>{{d.name}}</td>
+                                            <td>{{d.mobile}}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-info" ng-click="DTOrderCollectionDetails(d.id, d.riderType)" data-toggle='modal' data-target='#dtOrderCollectionDetailsModal'>
+                                                    <i class="fa fa-info-circle"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            @*Delivery Tiger Section End*@
+
+                            @*Ajkerdeal Section Start*@
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <h3>Ajkerdeal</h3>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-inline">
+                                        <input type="text" class="form-control-sm form-control" ng-model="mainSearchAd" placeholder="Search" autocomplete="off" />
+                                        <select style="border: 1px solid #46b8da;margin-left: 5px;" class="form-control" ng-model="loadStatusAd" ng-options="status.DtStatus as status.StatusName for status in loadAllStatus"></select>
+                                    </div>
+                                </div>
+                                <table class="table table-bordered table-responsive" ng-show="showAdRiderTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Rider Name</th>
+                                            <th>Mobile Number</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="d in adDeliveryMans | orderBy:orderByField:reverseSort | filter:mainSearchAd">
+                                            <td>{{$index+1}}</td>
+                                            <td>{{d.name}}</td>
+                                            <td>{{d.mobile}}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-info" ng-click="ADOrderCollectionDetails(d.id, d.riderType)" data-toggle='modal' data-target='#AdOrderCollectionDetailsModal'>
+                                                    <i class="fa fa-info-circle"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            @*Ajkerdeal Section End*@
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+
+                @*Dt Order Collection Details Modal*@
+                <div id="dtOrderCollectionDetailsModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Delivery Tiger Order Collection Details Modal</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="spiner-example" ng-show="showLoaderModal">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1"></div>
+                                    <div class="sk-rect2"></div>
+                                    <div class="sk-rect3"></div>
+                                    <div class="sk-rect4"></div>
+                                    <div class="sk-rect5"></div>
+                                </div>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="searchModalDt" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered table-responsive">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Merchant Name</th>
+                                                <th>Location</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in dtOrderCollectionDetails | orderBy:orderByField:reverseSort | filter:searchModalDt">
+                                                <td>{{$index +1}}</td>
+                                                <td style="cursor: pointer;" ng-click="dtMerchantWiseOrderDetails(a.merchantId)" data-toggle='modal' data-target='#merchantWiseOrderDetailsModal'>
+                                                    {{a.name}}
+                                                    <i class="fa fa-hand-o-left"></i>
+                                                </td>
+                                                <td>{{a.district}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Dt Order Collection Details Modal End*@
+
+                @*Ad Order Collection Details Modal*@
+                <div id="AdOrderCollectionDetailsModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Ajkerdeal Order Collection Details Modal</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="spiner-example" ng-show="showLoaderModal">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1"></div>
+                                    <div class="sk-rect2"></div>
+                                    <div class="sk-rect3"></div>
+                                    <div class="sk-rect4"></div>
+                                    <div class="sk-rect5"></div>
+                                </div>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="searchModalAd" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered table-responsive">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Merchant Name</th>
+                                                <th>Location</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in adOrderCollectionDetails | orderBy:orderByField:reverseSort | filter:searchModalAd">
+                                                <td>{{$index +1}}</td>
+                                                <td style="cursor: pointer;" ng-click="adMerchantWiseOrderDetails(a.merchantId)" data-toggle='modal' data-target='#merchantWiseOrderDetailsModal'>
+                                                    {{a.name}}
+                                                    <i class="fa fa-hand-o-left"></i>
+                                                </td>
+                                                <td>{{a.district}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Ad Order Collection Details Modal End*@
+
+                @*Merchant Wise Order Details Modal*@
+                <div id="merchantWiseOrderDetailsModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Order Details Modal</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="searchModal2" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    Product Title
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='dealId'; reverseSort = !reverseSort">
+                                                        Order Id
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='deliveryType'; reverseSort = !reverseSort">
+                                                        Delivery Type
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    Quantity
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='productPrice'; reverseSort = !reverseSort">
+                                                        Product Price
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    Delivery Charge
+                                                </th>
+                                                <th>
+                                                    Total
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in merchantWiseOrderDetailsData | orderBy:orderByField:reverseSort | filter:searchModal2">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{a.productTitle}}</td>
+                                                <td>{{a.couponId}}</td>
+                                                <td>{{a.deliveryType}}</td>
+                                                <td>{{a.productQtn}}</td>
+                                                <td>{{a.productPrice}}</td>
+                                                <td>{{a.deliveryCharge}}</td>
+                                                <td>{{a.productPrice * a.productQtn + a.deliveryCharge}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Merchant Wise Order Details Modal End*@
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script type="text/javascript">
+    var app = angular.module('RiderWiseOrderCollectionDetailsModule', []);
+    app.controller('RiderWiseOrderCollectionDetailsCtrl', function ($scope, $http, $timeout) {
+        //URL
+        var AdmOnlineUrl = "https://adm.ajkerdeal.com/";
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+        var AdOnlineUrl = "https://api.ajkerdeal.com/api/";
+
+        $scope.riderId = "0";
+        $scope.deliverRiderType = "";
+
+        angular.element(document).ready(function () {
+            $http.get(AdOnlineUrl + 'SelfDelivery/LoadStatusNew/collection', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.loadAllStatus = response.data.Data;
+                }, function error(error) {
+                    console.log(error);
+                });
+
+            $timeout(function () {
+                $scope.showLoader = true;
+                //dt delivery man
+                $http.get(CoreOnlineUrl + 'Fetch/GetAllDeliveryMan', { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        $scope.showLoader = false;
+                        $scope.dtDeliveryMans = response.data.model;
+                        $scope.showDtRiderTable = true;
+                    }, function error(error) {
+                        console.log(error);
+                    });
+            }, 500);
+
+            $timeout(function () {
+                $scope.showLoader = true;
+                //ad delivery man
+                $http.get(AdmOnlineUrl + 'DeliveryZone/GetAllDeliveryMan', { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        $scope.showLoader = false;
+                        $scope.adDeliveryMans = response.data;
+                        $scope.showAdRiderTable = true;
+                    }, function error(error) {
+                        console.log(error);
+                    });
+            }, 1500);
+
+        });
+
+        $scope.loadStatusDT = "40";
+        $scope.loadStatusAd = "40";
+
+        //$scope.SaveOrderCollectionData = function (id, riderType) {
+        //    $scope.RiderId = id.toString();
+        //    $scope.deliverRiderType = riderType;
+        //    $scope.DTOrderCollectionDetails();
+        //}
+
+        $scope.DTOrderCollectionDetails = function (id, riderType) {
+            var currentLoadStatus = $scope.loadAllStatus.filter(x => x.DtStatus === $scope.loadStatusDT);
+            let bodyModel = {
+                "DeliveryUserId": id.toString(),
+                "Index": 0,
+                "Count": 500,
+                "ProductTitle": "-1",
+                "Flag": currentLoadStatus[0].CollectionFilter,
+                "StatusId": currentLoadStatus[0].Status,
+                "DtStatusId": currentLoadStatus[0].DtStatus,
+                "type": "collection",
+                "CustomType": currentLoadStatus[0].CustomType,
+                "RiderType": riderType,
+                "OrderId": "-1"
+            };
+
+            $scope.showLoaderModal = true;
+            $http.post(CoreOnlineUrl + 'Bondhu/LoadOrderForBondhuApp', bodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.dtOrderCollectionDetails = response.data.model.customerOrderResponseModel;
+                    $scope.showLoaderModal = false;
+                }, function error(error) {
+                    console.log(error);
+                })
+        }
+
+        $scope.ADOrderCollectionDetails = function (id, riderType) {
+            var currentLoadStatus = $scope.loadAllStatus.filter(x => x.DtStatus === $scope.loadStatusAd);
+            let bodyModel = {
+                "DeliveryUserId": id.toString(),
+                "Index": 0,
+                "Count": 500,
+                "ProductTitle": "-1",
+                "Flag": currentLoadStatus[0].CollectionFilter,
+                "StatusId": currentLoadStatus[0].Status,
+                "DtStatusId": currentLoadStatus[0].DtStatus,
+                "type": "collection",
+                "CustomType": currentLoadStatus[0].CustomType,
+                "RiderType": riderType,
+                "OrderId": "-1"
+            };
+
+            $scope.showLoaderModal = true;
+            $http.post(AdOnlineUrl + 'SelfDelivery/LoadOrderNewForAD', bodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.adOrderCollectionDetails = response.data.model.customerOrderResponseModel;
+                    $scope.showLoaderModal = false;
+                }, function error(error) {
+                    console.log(error);
+                })
+        }
+
+        $scope.dtMerchantWiseOrderDetails = function (merchantId) {
+            $scope.merchantWiseOrderDetailsData = $scope.dtOrderCollectionDetails.filter(x => x.merchantId === merchantId)[0].customerOrderDataModel;
+        }
+
+        $scope.adMerchantWiseOrderDetails = function (merchantId) {
+            $scope.merchantWiseOrderDetailsData = $scope.adOrderCollectionDetails.filter(x => x.merchantId === merchantId)[0].customerOrderDataModel;
+        }
+
+    });
+</script>

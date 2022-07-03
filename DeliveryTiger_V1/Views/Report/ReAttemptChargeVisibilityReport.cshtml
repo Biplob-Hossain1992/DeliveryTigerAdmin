@@ -1,0 +1,127 @@
+﻿
+@{
+    ViewBag.Title = "ReAttempt Charge Visibility Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<div ng-app="ReAttemptChargeVisibilityReportModule">
+    <div ng-controller="ReAttemptChargeVisibilityReportCtrl">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">ReAttempt Charge Visibility Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input type="text" style="margin-right: 2px;" class="form-control-sm form-control" placeholder="search" ng-model="mainSearch" />
+                                <div class="input-group input-daterange">
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="fromDate" name="fromDate" id="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="toDate" name="toDate" id="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                </div>
+                                <button type="button" style="margin-left: 2px;" class="btn btn-w-m btn-success" ng-click="getReAttemptChargeData(fromDate,toDate)">Show</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="col-lg-12">
+                            <table class="table table-bordered table-responsive">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>
+                                            <a href="" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                                CompanyName
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="" ng-click="orderByField='customerName'; reverseSort = !reverseSort">
+                                                Customer Name
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="" ng-click="orderByField='mobile'; reverseSort = !reverseSort">
+                                                Customer Mobile
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="" ng-click="orderByField='orderDate'; reverseSort = !reverseSort">
+                                                Order Date
+                                            </a>
+                                        </th>
+                                        <th>ReAttemptCharge(Tk.)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="d in reAttemptChargeData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                        <td>{{$index+1}}</td>
+                                        <td>{{d.companyName}}</td>
+                                        <td>{{d.customerName}}</td>
+                                        <td>{{d.mobile}}</td>
+                                        <td>{{d.orderDate | date:'medium'}}</td>
+                                        <td>{{d.reAttemptCharge}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('ReAttemptChargeVisibilityReportModule', []);
+    app.controller('ReAttemptChargeVisibilityReportCtrl', function ($scope, $http) {
+        var LocalCoreUrl = "http://localhost:58676/api/";
+
+        $scope.getReAttemptChargeData = function (fromDate, toDate) {
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/ReAttemptOrdersList', orderBodyModel)
+                .then(function (response) {
+                    $scope.reAttemptChargeData = response.data.model;
+                    $scope.showLoader = false;
+                }, function (error) {
+                    $scope.showLoader = false;
+                    console.log(error);
+                });
+        }
+    });
+</script>

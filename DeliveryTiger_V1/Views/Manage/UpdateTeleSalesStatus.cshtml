@@ -1,0 +1,286 @@
+﻿
+@{
+    ViewBag.Title = "UpdateTeleSalesStatus";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.min.js" integrity="sha512-IO99nu6TitXdydITTnjerPUo0HffdgLC9yIfv5gwglcsSR7nN008a7QDynI5Ih0mGLlnNnt8tGIuBCFRZaNjqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-sanitize.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.css" integrity="sha512-3MNyrZTIbIT7sGASBSy4HeOwFNhRephd5RfnYcyr7Nbs0CX3/KaNcpPivPOAkOfrKBLL2VtyNzXgphX1i71nEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+
+<style>
+    #spinner-front {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        top: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        z-index: 998;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+     }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+
+
+<!--Page Header-->
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<!--Page Header End-->
+<!--Page Start-->
+<div class="row" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-app="updateTelesalesModule">
+        <div class="ibox" ng-controller="updateTelesalesController">
+            <div id="spinner-front" ng-show="showFullPageLoader">
+                <img src="~/Content/loading-spinner.gif" />
+            </div>
+
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <div class="col-lg-12">
+                    <div class="row form-group">
+                        <!--Merchant ID-->
+
+                        <div class="form-group">
+                            <label class="col-form-label" style="margin-top:5px; font-size:medium;"><strong>Merchant</strong></label>
+                        </div>
+                        <div class="col-lg-3">
+                            <ui-select ng-model="merchantId" theme="select2" style="min-width:200px;margin-top:10px;" ng-change="getMerchantId($select.selected.courierUserId)">
+                                <ui-select-match>
+                                    <span ng-bind="$select.selected.companyName"></span>
+                                </ui-select-match>
+                                <ui-select-choices repeat="item in (allMerchantInfo | filter: $select.search)" refresh="loadMerchantData($select.search)" refresh-delay="100" minimum-input-length="1">
+                                    <span ng-bind="item.companyName +' - '+item.mobile"></span>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+
+
+
+                        <div class="form-group">
+                            <label class="col-form-label" style="margin-top:5px; font-size:medium;"><strong>Telesales Status</strong></label>
+                        </div>
+                        <div class="col-lg-3">
+                            <select style="margin-top:10px;" class="form-control" ng-model="teleSalesStatus" ng-change="changeStatus(teleSalesStatus)">
+                                <option value="0">Select Telesales</option>
+                                <option value="1">Recently Interested</option>
+                                <option value="5">Late Interested</option>
+                                <option value="2">Not Interested</option>
+                                <option value="3">Business Closed</option>
+                                <option value="4">Didn't Pick</option>
+
+                            </select>
+                        </div>
+
+                        <!--Button-->
+                        <div class="col-lg-2">
+                            <button style="margin-top:10px" type="button" class="btn btn-info" ng-click="updateTeleSales(teleSalesStatus,courierIds)"><strong>Update</strong></button>
+                        </div>
+
+                    </div>
+
+                    <div class="row" ng-show="showCouriers">
+                        <div class="form-group">
+                            <label class="col-form-label" style="margin-top:5px; font-size:medium;"><strong>Couriers</strong></label>
+                        </div>
+                        <div class="col-lg-4 form-group">
+                            <multiple-autocomplete ng-model="courierIds"
+                                                   object-property="courierName"
+                                                   suggestions-arr="couriers">
+                            </multiple-autocomplete>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--Page End-->
+
+<script type="text/javascript">
+
+    let customerUserId;
+    var app = angular.module('updateTelesalesModule', ['ui.select', 'ngSanitize', 'multipleSelect']);
+    app.controller('updateTelesalesController', function ($scope, $http) {
+
+        $scope.teleSalesStatus = "0";
+        //Courier User Info select
+
+        $scope.couriers = [
+            {
+                'courierId': 5,
+                'courierName': 'Sundarban'
+            },
+            {
+                'courierId': 34,
+                'courierName': 'Redx'
+            },
+            {
+                'courierId': 22,
+                'courierName': 'Pathao'
+            },
+            {
+                'courierId': 3,
+                'courierName': 'E-Courier'
+            },
+            {
+                'courierId': 30,
+                'courierName': 'Paperfly'
+            },
+            {
+                'courierId': 49,
+                'courierName': 'Steadfast'
+            },
+            {
+                'courierId': 68,
+                'courierName': 'Others'
+            }
+        ];
+
+        $scope.loadMerchantData = (merchantSearch) => {
+            if (merchantSearch.length > 1) {
+                let url = apiBaseURL + "Fetch/GetAllCourierUsersList/" + merchantSearch;
+                $http.get(url, { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                    .then(function (response) {
+                        $scope.allMerchantInfo = response.data.model;
+                    })
+            }
+
+        }
+
+        $scope.getMerchantId = (merchantId) => {
+
+            customerUserId = merchantId;
+            $scope.checkMerchant = $scope.allMerchantInfo.filter(id => id.courierUserId == merchantId);
+
+            $scope.teleSalesStatus = '' + $scope.checkMerchant[0].teleSales;//strored as string to initialize scope
+
+            $scope.changeStatus($scope.teleSalesStatus);
+        }
+
+        $scope.changeStatus = (status) => {
+            if (status == 2 || status == 3 || status == 5) {
+                $scope.showFullPageLoader = true;
+                //call tele sales couriers list
+                $http.get(apiBaseURL + "Fetch/GetTeleSaleCourierUsersList/" + customerUserId + "/" + parseInt(status), { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        var teleSaleCourierUsersList = response.data.model;
+                        if (teleSaleCourierUsersList.length == 0) { //if no data
+                            $scope.courierIds = [];
+                        }
+                        else {
+                            if ($scope.courierIds.length != 0) {
+                                $scope.courierIds = [];
+                            }
+                            teleSaleCourierUsersList.map(function (elem) { //if data exist then push to courierIds
+                                var singleObj = {
+                                    'courierId': elem.courierId,
+                                    'courierName': elem.courierName
+                                }
+                                $scope.courierIds.push(singleObj);
+                            })
+                        }
+                        $scope.showFullPageLoader = false;
+                    })
+                //show multiple select option
+                $scope.showCouriers = true;
+            }
+
+            //hide multiple select option
+            else $scope.showCouriers = false;
+        }
+
+        $scope.updateTeleSales = (teleSalesStatus, courierIds) => {
+            //isTelesales = false;
+            if (customerUserId == undefined || customerUserId == "") {
+                alert("Select Merchant..!!");
+                return false;
+            }
+            if (teleSalesStatus == undefined || teleSalesStatus == "" || teleSalesStatus == "0") {
+                alert("Select Status...!!");
+                return false;
+            }
+
+            var teleSaleCourierUsers = [];
+            courierIds.map(function (elem) {
+                var singleObj = {
+                    'courierUserId': customerUserId,
+                    'courierId': elem.courierId,
+                    'courierName': elem.courierName,
+                    'teleSales': teleSalesStatus
+                }
+                teleSaleCourierUsers.push(singleObj);
+            })
+
+            var requestBodyModel = {
+                //"courierUserId": customerUserId,
+                "teleSales": teleSalesStatus,
+                "teleSaleCourierUsers": teleSaleCourierUsers
+            }
+
+            let url = apiBaseURL + 'Update/UpdateTelesalesStatus/' + customerUserId;
+            $scope.showFullPageLoader = true;
+            $http.put(url, requestBodyModel, { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token').trim() } })
+                .then(function (response) {
+                    if (response.status == 400) {
+                        alert("Something went wrong!!!");
+                        $scope.showFullPageLoader = false;
+                        return false;
+                    }
+                    else {
+                        alert("Merchant's Telesales status updated Successfully!!!");
+                        $scope.showFullPageLoader = false;
+                        window.location.reload();
+                    }
+
+                }, function error(response) {
+                    if (response.status == 500)
+                        alert("Server Error!!");
+                    console.log(response.message);
+                    $scope.showFullPageLoader = false;
+                });
+
+        }
+
+    });
+
+</script>

@@ -1,0 +1,104 @@
+﻿<div class="row border-bottom">
+    <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
+        <div class="navbar-header">
+            <div>
+                <a class="navbar-minimalize minimalize-styl-2 btn btn-primary" href="#" id="navbarMinimizeBtn" style="display:none;margin-right:6%;"><i class="fa fa-bars"></i> </a>
+                @*<a href="https://deliverytiger.ajkerdeal.com" target="_blank" data-placement="bottom" data-toggle="tooltip" data-original-title="Main Site" style="margin-left:10px;" id="topNavbarLogo">
+                    <img src="~/Content/logo_1.png" alt="Logo Image" class="logo-medium" />
+                </a>*@
+            </div>
+        </div>
+        <div class="nav">
+            <div>
+                <a href="https://deliverytiger.ajkerdeal.com" target="_blank" data-placement="bottom" data-toggle="tooltip" data-original-title="Main Site" @*style="margin-left:10px;"*@ id="topNavbarLogo">
+                    <img src="~/Content/Assets/logo_1.png" alt="Logo Image" class="logo-medium" />
+                </a>
+            </div>
+        </div>
+        <ul class="nav navbar-top-links navbar-right">
+            @*<li>
+            <span class="m-r-sm text-muted welcome-message" data-i18n="topnav.welcometext">Welcome <strong id="fullName"></strong></span>
+        </li>*@
+            <li>
+                <a onclick="myAccount()" @*href="@Url.Action("UserProfile", "Account")"*@>
+                    <i class="fa fa-user"></i> My Account
+                </a>
+            </li>
+            <li>
+                <a onclick="logOut()">
+                    <i class="fa fa-sign-out"></i> Log out
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+<script>
+    var flexDivs = [];
+    $(document).ready(function () {
+        if (window.location.href == 'https://admin.deliverytiger.com.bd/Report/GetDeliveryBondhuShowOrderAutomatic'
+            || window.location.href == 'https://admin.deliverytiger.com.bd/Report/GetUpdateTimeSlotAutomatic') {
+
+        }
+        else {
+            if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+                $("#fullName").html(sessionStorage.getItem("fullName"));
+                navBarBtnDisplay();
+            }
+            else {
+                window.location.href = "/Account/Login";
+            }
+        }
+        
+        navBarBtnDisplay();
+    });
+    $(window).resize(function () {
+        navBarBtnDisplay();
+    });
+    function navBarBtnDisplay() {
+        if ($(window).width() < 769 && $(window).width() > 450) {
+            document.getElementById("navbarMinimizeBtn").style.display = "block";
+            //document.getElementById("topNavbarLogo").style.marginLeft = "35%";
+            setMobileView();
+        }
+        else if ($(window).width() < 450) {
+            document.getElementById("navbarMinimizeBtn").style.display = "block";
+            //document.getElementById("topNavbarLogo").style.marginLeft = "25%";
+            setMobileView();
+        }
+        else {
+            //document.getElementById("navbarMinimizeBtn").style.display = "none";
+            document.getElementById("navbarMinimizeBtn").style.display = "block";
+            //document.getElementById("topNavbarLogo").style.marginLeft = "35%";
+            setDesktopView();
+        }
+    }
+    function setMobileView() {
+        let allDivs = document.querySelectorAll("div");
+        for (let i = 0; i < allDivs.length; i++) {
+            if (allDivs[i].style.display == 'flex') {
+                flexDivs.push(allDivs[i]);
+            }
+        }
+        for (let i = 0; i < flexDivs.length; i++) {
+            flexDivs[i].style.display = "block";
+        }
+    }
+    function setDesktopView() {
+        for (let i = 0; i < flexDivs.length; i++) {
+            flexDivs[i].style.display = "flex";
+        }
+    }
+    function myAccount() {
+        window.location.href = "/Account/UserProfile";
+    }
+    function logOut() {
+        sessionStorage.removeItem('userName');
+        sessionStorage.removeItem('fullName');
+        sessionStorage.removeItem('isActive');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('userId');
+        sessionStorage.removeItem('adminType');
+        sessionStorage.removeItem('hubName');
+        window.location.href = "/Account/Login";
+    }
+</script>

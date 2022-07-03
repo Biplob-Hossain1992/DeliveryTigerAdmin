@@ -1,0 +1,144 @@
+﻿@{
+    Layout = null;
+    string message = ViewBag.Error ?? "";
+}
+<style>
+    .element {
+        background-image: url(/Content/Assets/tiger.svg);
+    }
+</style>
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width" />
+    <title>Login: Delivery Tiger</title>
+    <link rel="shortcut icon" href="~/Content/Assets/DT-01.ico" />
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet">
+    <link href="~/Fonts/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="~/Content/animate.css" rel="stylesheet">
+    <link href="~/Content/style.css" rel="stylesheet">
+    <script src="~/Scripts/baseurl.js"></script>
+    @*<link href="https://www.ajkerdeal.com/css/admin/Report/hover.css" rel="stylesheet" type="text/css" />*@
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+</head>
+<body class="gray-bg">
+    <div class="middle-box text-center loginscreen  animated fadeInDown">
+        <div>
+            <div>
+                <img src="~/Content/Assets/logo_1.png" alt="Logo Image" class="logo-large" />
+            </div>
+            <h3 style="margin-top:20px;">Welcome to Delivery Tiger Admin</h3>
+            <form class="m-t" role="form" action="#">
+                <div class="form-group">
+                    <input type="text" class="form-control" id="userName" placeholder="Username" required="">
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-control" id="password" placeholder="Password" required="">
+                </div>
+                <div class="form-group">
+                    <select class="form-control" id="hubName" placeholder="Hub Name" required="">
+                        <option value="-1" selected>Select Hub</option>
+                    </select>
+                </div>
+                <button type="button" onclick="userLogin();" class="btn btn-primary block full-width m-b">Login</button>
+                <a href="@Url.Action("Registration", "Account")" class="btn btn-primary block full-width m-b">Register</a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+<script>
+
+    GetAllHubs();
+
+    function GetAllHubs() {
+
+        let url = apiBaseURL + "Fetch/GetAllHubs";
+        $.ajax({
+            type: "GET",
+            url: url,
+            contentType: "application/json",
+            dataType: 'json',
+            complete: function (response) {
+                if (response.readyState == 4) {
+                    if (response.status == 200) {
+                        for (var i = 0; i < response.responseJSON.model.length; i++) {
+                            $('#hubName').append('<option value=' + response.responseJSON.model[i].value + '===' + response.responseJSON.model[i].redxPickUpStoreId + '>' + response.responseJSON.model[i].name + '</option>');
+                        }
+                        $('#hubName').val(-1);
+                    }
+                }
+                else {
+                    alert("Error.");
+                }
+            }
+        });
+    }
+
+
+    function userLogin() {
+        let userName = $("#userName").val();
+        let password = $("#password").val();
+        let hubName = $("#hubName").val();
+        if (userName === "") {
+            alert("Please Insert User Name.");
+            $("#userName").focus();
+            return false;
+        }
+        if (password === "") {
+            alert("Please Insert Password.");
+            $("#password").focus();
+            return false;
+        }
+        if (hubName === "-1") {
+            alert("Please Select Your Hub.");
+            $("#hubName").focus();
+            return false;
+        }
+        let hubWithRedxPSId = hubName.split('===');
+        //console.log("login");
+
+        let Obj = {
+            userName: userName,
+            passwrd: password,
+            userId: 0,
+            fullName: "",
+            adminType: 0,
+            isActive: 0
+        };
+        let json = JSON.stringify(Obj);
+        let url = apiBaseURL + "Account/AdminUserLogin";
+
+        $.ajax({
+            type: "POST",
+            //async:true,
+            //crossDomain: true,
+            url: url,
+            contentType: "application/json",
+            dataType: 'json',
+            data: json,
+            complete: function (response) {
+                if (response.readyState == 4) {
+                    if (response.status == 200) {
+                        sessionStorage.setItem("userName", response.responseJSON.model.userName);
+                        sessionStorage.setItem("fullName", response.responseJSON.model.fullName);
+                        sessionStorage.setItem("isActive", response.responseJSON.model.isActive);
+                        sessionStorage.setItem("token", response.responseJSON.model.token);
+                        sessionStorage.setItem("userId", response.responseJSON.model.userId);
+                        sessionStorage.setItem("adminType", response.responseJSON.model.adminType);
+                        sessionStorage.setItem("hubName", hubWithRedxPSId[0]);
+                        sessionStorage.setItem("redxPickUpStoreId", hubWithRedxPSId[1]);
+                        //window.location.href = "/Admin/Index";
+                        window.location.href = "/ControlPanel/ControlPanel";
+                    }
+                }
+                else {
+                    alert("Error.");
+                }
+            }
+        });
+    }
+</script>

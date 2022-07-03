@@ -1,0 +1,233 @@
+﻿
+@{
+    ViewBag.Title = "User Profile";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<style>
+    #spinner-front {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        top: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        z-index: 998;
+    }
+    textarea {
+        resize: none;
+    }
+    .txtarea{
+        height: 5rem;
+    }
+</style>
+
+<div class="row" ng-app="UserProfileModule">
+    <div class="col-lg-12" ng-controller="UserProfileController">
+        <div id="spinner-front" ng-show="showFullPageLoader">
+            <img src="~/Content/loading-spinner.gif" />
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <h4 class="text-center">Update User Profile</h4>
+                    </div>
+                    <div class="ibox-content" ng-init="getUser()">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="fullName">Full Name:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="fullName" name="fullName" id="fullName" maxlength="100" placeholder="Full Name" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="email">Email:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="email" name="email" id="email" maxlength="100" placeholder="Email" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="email">Password:</label>
+                                    @*<input type="password" class="form-control form-control-sm" ng-model="password" name="password" id="password" maxlength="100" placeholder="Password" autocomplete="new-password" />*@
+
+                                <div class="input-group">
+                                    <input id="password" type="password" class="form-control form-control-sm" ng-model="password" name="password" id="password" maxlength="100" placeholder="Password" autocomplete="new-password" />
+                                    <div class="input-group-append" ng-click="togglePassword()" style="cursor: pointer;">
+                                        <div class="input-group-text">
+                                            <i class="fa fa-eye" aria-hidden="true"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="mobile">Mobile:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="mobile" name="mobile" id="mobile" maxlength="11" placeholder="Mobile Number" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="bloodGroup">Blood Group:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="bloodGroup" name="bloodGroup" id="bloodGroup" maxlength="5" placeholder="Blood Group" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="address">Address:</label>
+                                    @*<input type="text" class="form-control form-control-sm" ng-model="address" name="address" id="address" placeholder="Address" autocomplete="off" />*@
+                                    <textarea class="txtarea form-control form-control-sm" ng-model="address" name="address" id="address" maxlength="200" placeholder="Address" autocomplete="off" rows="4"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="gender">Gender:</label>
+                                    <select class="form-control" ng-model="gender" name="gender" id="gender">
+                                        <option value="0">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <div class="form-group">
+                                    <button class="btn btn-w-m btn-success" type="button" ng-click="updateUserInfo()">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('UserProfileModule', []);
+    app.controller('UserProfileController', function ($scope, $http) {
+
+        $scope.gender = 0;
+
+        $scope.getUser = function () {
+            var userId = sessionStorage.getItem('userId');
+
+            $scope.showFullPageLoader = true;
+            $http.get(apiBaseURL + 'Fetch/GetUser/' + userId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showFullPageLoader = false;
+                    if (response.data.model != null) {
+                        var user = response.data.model;
+                        $scope.fullName = user.fullName.trim();
+                        $scope.email = user.email.trim();
+                        $scope.password = user.passwrd.trim();
+                        $scope.mobile = user.mobile.trim();
+                        $scope.bloodGroup = user.bloodGroup.trim();
+                        $scope.address = user.address;
+                        $scope.gender = user.gender.trim().charAt(0).toUpperCase() + user.gender.slice(1).trim(); //angular.uppercase(user.gender.trim());
+                    }
+                }, function (error) {
+                    $scope.showFullPageLoader = false;
+                    console.log(error);
+                });
+        }
+
+        $scope.updateUserInfo = function () {
+            var fullName = $scope.fullName;
+            var email = $scope.email;
+            var password = $scope.password;
+            var mobile = $scope.mobile;
+            var bloodGroup = $scope.bloodGroup;
+            var address = $scope.address;
+            var gender = $scope.gender;
+
+            var mobileNumberRegx = /^[0-9]+$/;
+            var emailRegx = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+
+            if (typeof fullName === 'undefined' || fullName == "") {
+                alert('Full Name field is empty');
+            }
+            else if (typeof email === 'undefined' || email == "") {
+                alert('Email field is empty');
+            }
+            else if (!email.match(emailRegx)) {
+                alert('Please enter a valid email address');
+            }
+            else if (typeof password === 'undefined' || password == "") {
+                alert('Password field is empty');
+            }
+            else if (typeof mobile === 'undefined' || mobile == "") {
+                alert('Mobile field is empty');
+            }
+            else if (!mobile.match(mobileNumberRegx)) {
+                alert('Please enter numbers only');
+            }
+            else if (mobile.length < 11) {
+                alert('Please enter 11 digit mobile number');
+            }
+            else if (typeof bloodGroup === 'undefined' || bloodGroup == "") {
+                alert('Blood Group field is empty');
+            }
+            else if (typeof address === 'undefined' || address == "") {
+                alert('Address field is empty');
+            }
+            else if (gender == 0) {
+                alert('Please select gender');
+            }
+            else {
+                var usersModel = {
+                    'FullName': fullName,
+                    'Passwrd': password,
+                    'Mobile': mobile,
+                    'Address': address,
+                    'PersonalEmail': email,
+                    'Gender': gender,
+                    'BloodGroup': bloodGroup
+                };
+
+                if (!confirm('Are you sure to update')) {
+                    return false;
+                }
+                else {
+                    var userToken = sessionStorage.getItem('token');
+                    var userId = sessionStorage.getItem('userId');
+
+                    $scope.showFullPageLoader = true;
+                    $http.put(apiBaseURL + 'Update/UpdateUserProfile/' + userId, usersModel,
+                        {
+                            headers: { 'Content-Type': 'application/json', 'Authorization': "Bearer " + userToken }
+                        })
+                        .then(function (response) {
+                            if (response.data.model == 1) {
+                                alert('Update Successfull');
+                                $scope.showFullPageLoader = false;
+                            }
+                        }, function (error) {
+                            console.log(error);
+                        });
+                }
+
+            }
+        }
+
+        $scope.togglePassword = function () {
+            var passwordInputField = document.getElementById('password');
+            if (passwordInputField.type === 'password') {
+                passwordInputField.type = "text";
+            }
+            else {
+                passwordInputField.type = "password";
+            }
+        }
+    });
+</script>

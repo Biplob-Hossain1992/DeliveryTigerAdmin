@@ -1,0 +1,137 @@
+﻿
+@{
+    ViewBag.Title = "LeadManagement";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+     }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+
+
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div class="row" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-app="leadManageModule">
+        <div class="ibox" ng-controller="leadManageController">
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <form class="col-lg-12" role="form" style="display:flex" name="myForm" novalidate>
+                    <!--Mobile Number-->
+                    <div class="col-lg-2">
+                        <label class="col-form-label-sm"><strong>Mobile Number</strong></label>
+                    </div>
+                    <div class="col-lg-2">
+                        <input type="tel" ng-model="mobile.Number" name="mobileNumber" placeholder="Mobile Number" class="form-control"
+                               ng-required="required" ng-pattern="/^(?:\+?(?:88|01)?)(?:\d{11}|\d{13})$/gm" autocomplete="off" />
+
+                        <span style="color:red" ng-show="myForm.mobileNumber.$dirty && myForm.mobileNumber.$invalid">
+                            <span ng-show="myForm.mobileNumber.$error.required">Mobile number is required.</span>
+                            <span class="help-block" ng-show="myForm.mobileNumber.$error.pattern" style="color:red"> Not valid mobile no.!</span>
+                        </span>
+                    </div>
+
+                    <!--Company Name-->
+                    <div class="col-lg-2">
+                        <label class="col-form-label-sm"><strong>Company Name</strong></label>
+                    </div>
+                    <div class="col-lg-2">
+                        <input type="text" ng-model="company.Name" name="companyName" class="form-control" placeholder="Company Name" autocomplete="off" required />
+                        <span style="color:red" ng-show="myForm.companyName.$dirty && myForm.companyName.$invalid">
+                            <span ng-show="myForm.companyName.$error.required">Company name is required.</span>
+
+                        </span>
+                    </div>
+
+                    <div class="col-lg-2">
+                        <button type="button" ng-click="submitInfo(mobile.Number,company.Name)" ng-disabled="myForm.mobileNumber.$dirty && myForm.mobileNumber.$invalid||
+                               myForm.companyName.$dirty && myForm.companyName.$invalid" class="btn btn-primary">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script type="text/javascript">
+    var app = angular.module('leadManageModule', []);
+    app.controller('leadManageController', function ($scope, $http) {
+        let acquisitionId = sessionStorage.userId;
+
+        $scope.submitInfo = (mobileNo, companyName) => {
+            if (mobileNo == undefined || mobileNo == "")
+            {
+                alert("Insert Mobile Number!!");
+                return false;
+            }
+            if(companyName == undefined || companyName == "")
+            {
+                alert("Insert Company Name!!");
+                return false;
+            }
+
+            var requestBodyModel = {
+                "mobile": mobileNo,
+                "companyName": companyName,
+                "acquisitionUserId": parseInt(acquisitionId)
+            }
+
+            
+
+            let url = apiBaseURL + '/Entry/AddAcquisitionLead';
+
+            $http.post(url, requestBodyModel, { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token').trim() } })
+                .then(function (response) {
+                    if (response.status == 400) {
+                        alert("Something went wrong!!!");
+                        return false;
+                    }
+                    else {
+                        alert("Acquired Successfully!!!");
+                    }
+
+                }, function error(response) {
+                    if (response.status == 500)
+                        alert("Server Error!!");
+                    console.log(response.message);
+                });
+        }
+
+
+
+    });
+
+</script>

@@ -1,0 +1,58 @@
+﻿
+@{
+    ViewBag.Title = "SendToCourier";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/Operation/Operation.js"></script>
+<script src="~/Scripts/Operation/SendToCourier.js"></script>
+<script>
+    var AllStatusGroupWiseData;
+    $(document).ready(function () {
+         if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+             loadAllStatusGroupWise();
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+    });
+</script>
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<input id="UserHidden" type="hidden" value="" />
+<div class="row" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12">
+        <div class="ibox">
+            <div class="ibox-title">
+                <h3>Send To Merchant</h3>
+            </div>
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <label class="col-lg-3"></label>
+                <div class="col-lg-6" id="sendToMerchantDiv">
+                    <div class="form-group row">
+                        <label class="col-lg-2 col-form-label"><strong>Scan</strong></label>
+                        <input type="text" class="col-lg-7 form-control" id="scanText" placeholder="Scan Order Id or POD Number" />
+                        <button type="submit" class="btn btn-success" style="margin-left:20px" onclick="loadOrderForSendToCourier();">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

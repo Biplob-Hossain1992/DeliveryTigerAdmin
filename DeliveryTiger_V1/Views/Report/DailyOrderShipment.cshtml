@@ -1,0 +1,143 @@
+﻿
+@{
+    ViewBag.Title = "DailyOrderShipment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+
+<style>
+    .col-form-label {
+        font-weight: bold;
+    }
+
+    .box-shadow {
+        cursor: pointer;
+    }
+
+        .box-shadow:hover {
+            background-color: #ededed;
+        }
+</style>
+<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/Report/Report.js"></script>
+
+<script>
+    $(document).ready(function () {
+         if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+             $("#searchBox").on("keyup", function () {
+                 var value = $(this).val().toLowerCase();
+                 $("#dailyOrdershipmentDetailsTable tbody tr").filter(function () {
+                     $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                 });
+             });
+
+             $(".datepicker").datepicker({
+                 autoclose: true,
+                 endDate: new Date(new Date().setDate(new Date().getDate()))
+             });
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+    });
+</script>
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<input id="UserHidden" type="hidden" value="" />
+<div class="row" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12">
+        <div class="ibox">
+            <div class="ibox-title">
+                <h3>Daily Order Shipment<small> Current Report On Ready For Shipment Orders</small></h3>
+            </div>
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <div class="col-lg-12" id="dailyOrderShipmentSearchDiv" style="display:flex">
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Status</label>
+                            <div class="col-lg-8">
+                                <select id="StatusList" class="form-control">
+                                    <option value="-1" selected>Select Status</option>
+                                    <option value="9,10">Paid/UnPaid Order Given to courier - 9,10</option>
+                                    <option value="8">Packaged to courier - 8</option>
+                                    <option value="11">Order received by 2LP - 11</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">Form</label>
+                            <div class="col-lg-10">
+                                <input type="text" id="fromDate" class="form-control datepicker" placeholder="From Date" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">To</label>
+                            <div class="col-lg-10">
+                                <input type="text" id="toDate" class="form-control datepicker" placeholder="To Date" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-1">
+                        <button type="submit" class="btn btn-info" onclick="loadDailyOrderShipmentDetails()"><strong>Load</strong></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12" style="display:none;" id="dailyOrderShipmentCourierCount">
+        <div class="ibox">
+            <div class="ibox-title">
+                <h3 id="dailyOrderShipmentCourierCountHeader"></h3>
+            </div>
+            <div class="ibox-content">
+                <div class="row" id="dailyOrderShipmentCourierCountDiv">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12" style="display:none;" id="dailyOrderShipmentDetail">
+        <div class="ibox">
+            <div class="ibox-title" style="display:flex;">
+                <div class="col-lg-8">
+                    <h3 id="dailyOrderShipmentDetailHeader"></h3>
+                </div>
+                <div class="col-lg-3">
+                    <input id="searchBox" type="text" class="form-control" placeholder="Search Order Id or Hub Name">
+                </div>
+                <div class="col-lg-1">
+                    <button type="button" class="btn btn-success btn-sm" onclick="CreateExcelSheet('dailyOrderShipmentDetailDiv')">Excel</button>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="col-lg-12" id="dailyOrderShipmentDetailDiv">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

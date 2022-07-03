@@ -1,0 +1,257 @@
+﻿
+@{
+    ViewBag.Title = "MerchantRegistration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        //GetAllDeliveryTypeList();
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+         $('#datepickerCollector').datepicker({
+             keyboardNavigation: false,
+             forceParse: false,
+             autoclose: true,
+             endDate: new Date(new Date().setDate(new Date().getDate()))
+         });
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('registrationFormModule', []);
+    app.controller('registrationEntryFormController', function ($scope, $http) {
+        //var localUrl = "http://localhost:58676/api/";
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/";
+
+        $scope.mobileNumber = /\+?0?1[3456789][0-9]{8}\b/;
+        $scope.bkashNumber = /\+?0?1[3456789][0-9]{8}\b/;
+        //UserRegister
+        $scope.UserRegistration = (companyName, mobileNo, password, refercode, bkashNo, payment) => {
+
+
+            if (typeof companyName == 'undefined' || companyName == '') {
+                alert("Please Enter Your CompanyName...!!!");
+                return false;
+            }
+            if (typeof mobileNo == 'undefined') {
+                alert("Please Enter Your MobileNo...!!!");
+                return false;
+            }
+            if (typeof password == 'undefined') {
+                alert("Please Enter Your Password...!!!");
+                return false;
+            }
+            if (payment == 'instant' && typeof bkashNo == 'undefined') {
+                alert("Please Enter bKash No...!!!");
+                return false;
+            }
+            if (typeof payment == 'undefined') {
+                alert("Please Select Payment Type...!!!");
+                return false;
+            }
+            var courierUsers = {
+                "CompanyName": companyName,
+                "Mobile": mobileNo,
+                "Password": password,
+                "Referrer": refercode,
+                "RegistrationFrom": "admin",
+                "IsActive": true,
+                "BkashNumber": bkashNo,
+                "PreferredPaymentCycle": payment
+            };
+            $scope.showLoader = true;
+
+            $scope.CheckMobileNo(courierUsers, refercode);
+            
+        }
+
+        //Check Mobile Already Registered Mobile No
+        $scope.CheckMobileNo = (courierUsers, refercode) => {
+            
+            $scope.showLoader = true;
+
+            $http.post(apiBaseURL +'Account/GetCourierUsers', courierUsers, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    alert("You have already Registered by this Mobile No...!!!");
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                },
+                function error(response) {
+                    //Check referrer Registered Mobile No
+                    if (typeof refercode == 'undefined') {
+                        $http.post(apiBaseURL + 'Account/UserRegister', courierUsers, { headers: { 'Content-Type': 'application/json' } })
+                            .then(function (response) {
+
+                                alert("You successfully Registered...!!!");
+
+                                $scope.showLoader = false;
+                                $scope.showTable = true;
+
+                            },
+                            function error(response) {
+                                $scope.showLoader = false;
+                            });
+
+                        $scope.showLoader = false;
+                        $scope.showTable = true;
+                    }
+                    else {
+                        $http.get(apiBaseURL + 'Account/CheckReferrerMobile/' + refercode, { headers: { 'Content-Type': 'application/json' } })
+                            .then(function (response) {
+                                alert("Your refer code has been found...!!!");
+                                $http.post(apiBaseURL + 'Account/UserRegister', courierUsers, { headers: { 'Content-Type': 'application/json' } })
+                                    .then(function (response) {
+
+                                        alert("You successfully Registered...!!!");
+
+                                        $scope.showLoader = false;
+                                        $scope.showTable = true;
+
+                                    },
+                                        function error(response) {
+                                            $scope.showLoader = false;
+                                        });
+
+                                $scope.showLoader = false;
+                                $scope.showTable = true;
+
+                            },
+                            function error(response) {
+
+                                alert("You Refer Code is Invalid...!!!");
+                                $scope.showLoader = false;
+                            });
+                    }
+
+                });
+                 
+        }
+
+    });
+</script>
+
+
+<div class="row" ng-app="registrationFormModule" style="display:flex;margin-top:10px;">
+    <div ng-form="myForm" class="col-lg-12" ng-controller="registrationEntryFormController" @*data-ng-init="init()"*@>
+        @*<div>
+            <span>
+                <strong>
+                    {{successMessage}}
+                </strong>
+            </span>
+        </div>*@
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label" for="CompanyNameLbl">Company Name:</label>
+                            <div class="col-lg-3">
+                                <input type="text" id="CompanyName" class="form-control" ng-model="companyName" placeholder="Ex: X Company" />
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgForCompanyNameEntry" for="CompanyNameLbl"></label>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label" for="MobileNoLbl">Mobile No:</label>
+                            <div class="col-lg-3">
+                                <input type="text" id="MobileNo" name="mobileNo" class="form-control" ng-model="mobileNo" ng-pattern="mobileNumber" placeholder="Ex: 01555555555" />
+
+                                <span class="error" ng-show="myForm.mobileNo.$error.required">Required!</span>
+                                <span class="error" ng-show="myForm.mobileNo.$error.minlength">Phone no not less that 10 char.</span>
+                                <span class="error" ng-show="myForm.mobileNo.$error.maxlength">Phone no not more than 11 char.</span>
+                                <br><span class="error" ng-show="myForm.mobileNo.$error.pattern"><b style="color:red;">সঠিক মোবাইল নম্বর লিখুন</b></span>
+
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgForMobileNoEntry" for="MobileNoLbl"></label>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label" for="PasswordLbl">Password:</label>
+                            <div class="col-lg-3">
+                                <input type="password" id="Password" class="form-control" ng-model="password" placeholder="Enter Your Password" />
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgForPasswordEntry" for="PasswordLbl"></label>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label" for="RefercodeLbl">Refercode:</label>
+                            <div class="col-lg-3">
+                                <input type="text" id="Refercode" class="form-control" ng-model="refercode" placeholder="রেফার কোড EX: 01711000000" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label"></label>
+                            <label class="checkbox-lbl">
+                                <input name="payment" type="radio" ng-value="'week'" ng-model="payment" ng-click="option='weeklyPayment'">
+                                সপ্তাহে একবার
+                            </label>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label"></label>
+                            <label class="checkbox-lbl">
+                                <input name="payment" type="radio" ng-value="'instant'" ng-model="payment" ng-click="option='instantPayment'">
+                                ইনস্ট্যান্ট পেমেন্ট
+                            </label>
+                        </div>
+                        <div class="form-group row" ng-show="option ==='instantPayment'">
+                            <label class="col-lg-2 col-form-label"></label>
+                            <div class="col-lg-3">
+                                <input type="text" class="form-control" name="bkashNo" ng-model="bkashNo" ng-pattern="bkashNumber" placeholder="বিকাশ মোবাইল নম্বর লিখুন" />
+                                <span class="error" ng-show="myForm.bkashNo.$error.required">Required!</span>
+                                <span class="error" ng-show="myForm.bkashNo.$error.minlength">Phone no not less that 10 char.</span>
+                                <span class="error" ng-show="myForm.bkashNo.$error.maxlength">Phone no not more than 11 char.</span>
+                                <br>
+                                <span class="error" ng-show="myForm.bkashNo.$error.pattern"><b style="color:red;">সঠিক বিকাশ নম্বর লিখুন</b></span>
+                            </div>
+                            <div>
+                                <label>* আপনার bkash একাউন্টে আগামী ১২ ঘণ্টার মধ্যে পেমেন্ট করা হবে</label><br />
+                                <label>* ১২ ঘণ্টার মধ্যে পেমেন্ট না পেলে যোগাযোগ করুন - ০৯৬৩৮০১০৩০৩</label>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label" for="PasswordLbl"></label>
+                            <div class="col-lg-3">
+                                <button style="width:227px;" type="button" id="registrationBtn" class="btn btn-success" ng-click="UserRegistration(companyName, mobileNo, password, refercode, bkashNo, payment)"><strong>Registration</strong></button>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,319 @@
+﻿
+@{
+    ViewBag.Title = "DistrictEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script type="text/javascript">
+    var app = angular.module('districtModule', []);
+    app.controller('districtController', function ($scope, $http) {
+
+        let userId = +sessionStorage.getItem('userId');
+
+        $scope.district = '-1';
+        //$scope.thana = '-1';
+        $scope.districts = '-1';
+        $scope.thanas = '-1';
+        //$scope.area = '-1';
+        $scope.isDisabled = true;
+
+        $scope.districts = [];
+        $scope.allThana = [];
+        //$scope.allArea = [];
+
+        //get All Districts
+        $scope.getAllDistrict = function () {
+
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + 0, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.districts = response.data.model.filter(d => d.parentId === 0 && d.isActive === true);
+                    $scope.allThana = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+
+                }, function error(response) {
+                })
+        };
+
+        //get All Thana
+        $scope.getAllThana = (district) => {
+            if ($scope.district != "-1") {
+                $scope.isDisabled = false;
+            }
+            else {
+                $scope.isDisabled = true;
+            }
+
+            $scope.thanas = '-1';
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + district, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allThanas = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+
+                }, function error(response) {
+                })
+
+        }
+        
+        $scope.addDistrict = (name,nameBng,postalCode) => {
+
+            if (name == undefined || name == '') {
+                alert("Please set the name...!!!");
+                return false;
+            }
+            if (nameBng == undefined || nameBng == '') {
+                alert("Please set the Bangla name...!!!");
+                return false;
+            }
+
+            var requestBodyModel = {
+
+                "District": name,
+                "DistrictBng": nameBng,
+                "PostalCode": postalCode,
+                "IsActive": true,
+                "ParentId": 0,
+                "AreaType": 2,
+                "UpdatedBy": userId
+            };
+
+            $http.post(apiBaseURL + 'Entry/AddDistrict', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    alert("District Added Succeefully...!!!")
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+            
+        }
+
+        $scope.addThana = (district, thana, nameBng, thanaPostalCode) => {
+
+            if (thana == undefined || thana == '') {
+                alert("Please set the name...!!!");
+                return false;
+            }
+            if (nameBng == undefined || nameBng == '') {
+                alert("Please set the Bangla name...!!!");
+                return false;
+            }
+            var requestBodyModel = {
+                "District": thana,
+                "DistrictBng": nameBng,
+                "PostalCode": thanaPostalCode,
+                "IsActive": true,
+                "ParentId": district,
+                "AreaType": 3,
+                "UpdatedBy": userId
+            };
+
+            $http.post(apiBaseURL + 'Entry/AddDistrict', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Thana Added Succeefully...!!!")
+                    
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        $scope.addArea = (thanas, area, nameBng, areaPostalCode) => {
+
+            if (area == undefined || area == '') {
+                alert("Please set the name...!!!");
+                return false;
+            }
+            if (nameBng == undefined || nameBng == '') {
+                alert("Please set the Bangla name...!!!");
+                return false;
+            }
+
+            var requestBodyModel = {
+                "District": area,
+                "DistrictBng": nameBng,
+                "PostalCode": areaPostalCode,
+                "IsActive": true,
+                "ParentId": thanas,
+                "AreaType": 4,
+                "UpdatedBy": userId
+            };
+
+            $http.post(apiBaseURL + 'Entry/AddDistrict', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Area Added Succeefully...!!!")
+
+                    //$scope.removeRedisCache();
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+        
+    });
+</script>
+
+<div class="row" ng-app="districtModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="districtController" data-ng-init="getAllDistrict()">
+
+        <div class="row">
+
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="col-lg-3">
+                                    <div class="form-group row">
+
+
+                                        <input type="text" ng-model="name" class="form-control" placeholder="District Name" />
+
+                                    </div>
+                                </div>
+                                <div class="col-lg-3">
+                                    <div class="form-group row">
+
+
+                                        <input type="text" ng-model="nameBng" class="form-control" placeholder="District Name in Bangla" />
+
+                                    </div>
+                                </div>
+                                <div class="col-lg-3">
+                                    <div class="form-group row">
+
+
+                                        <input type="text" ng-model="postalCode" class="form-control" placeholder="Postal Code" />
+
+                                    </div>
+                                </div>
+                                <div class="col-lg-3">
+                                    <button style="margin-top:6px;" type="button" ng-click="addDistrict(name, nameBng, postalCode)" class="btn btn-primary">Add District</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        <div class="row">
+
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title" style="text-align:center;display:flex;">
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <div class="col-lg">
+                                
+                                        <select ng-model="district" class="form-control">
+                                            <option value="-1" selected>Select District</option>
+                                            <option ng-repeat="d in districts" value="{{d.districtId}}">{{d.district}}</option>
+                                        </select>
+                                   
+                                </div>
+                                <div class="col-lg">
+                               
+                                        @*<label class="col-lg-1 col-form-label" for="thanaLbl">Thana</label>*@
+
+                                        <input type="text" ng-model="thana" class="form-control" placeholder="Thana Name" />
+
+                               
+                                </div>
+                                <div class="col-lg">
+                                    
+                                        @*<label class="col-lg-2 col-form-label" for="NameLbl">Bangla</label>*@
+
+                                        <input type="text" ng-model="nameBng" class="form-control" placeholder="Thana Name in Bangla" />
+
+                                 
+                                </div>
+                                <div class="col-lg">
+                                
+                                        @*<label class="col-lg-4 col-form-label" for="addressLbl">Postal Code</label>*@
+
+                                        <input type="text" ng-model="thanaPostalCode" class="form-control" placeholder="Postal Code" />
+
+                                  
+                                </div>
+                                <div class="col-lg">
+                                    <button style="margin-top:6px;" type="button" ng-click="addThana(district, thana, nameBng, thanaPostalCode)" class="btn btn-primary">Add Thana</button>
+                                </div>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="row">
+
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <div class="col-lg">
+
+                                    <select ng-model="district" class="form-control" ng-change="getAllThana(district)">
+                                        <option value="-1" selected>Select District</option>
+                                        <option ng-repeat="d in districts" value="{{d.districtId}}">{{d.district}}</option>
+                                    </select>
+
+                                </div>
+                                <div class="col-lg">
+
+                                    <select ng-model="thanas" class="form-control" ng-change="getAllArea(thanas)" ng-disabled="isDisabled">
+                                        <option value="-1" selected>Select Thana</option>
+                                        <option ng-repeat="t in allThanas" value="{{t.districtId}}">{{t.district}}</option>
+                                    </select>
+
+                                </div>
+                                <div class="col-lg">
+
+                                    @*<label class="col-lg-1 col-form-label" for="addressLbl">Area</label>*@
+
+                                    <input type="text" ng-model="area" class="form-control" placeholder="Area Name" />
+
+
+                                </div>
+                                <div class="col-lg">
+
+                                    @*<label class="col-lg-4 col-form-label" for="postalLbl">Bangla</label>*@
+
+                                    <input type="text" ng-model="nameBng" class="form-control" placeholder="Area Name in Bangla" />
+
+
+                                </div>
+                                <div class="col-lg">
+
+                                    @*<label class="col-lg-4 col-form-label" for="postalLbl">Postal Code</label>*@
+
+                                    <input type="text" ng-model="areaPostalCode" class="form-control" placeholder="Postal Code" />
+
+                                </div>
+                                <div class="col-lg text-right">
+
+                                    @*<label class="col-lg-4 col-form-label" for="postalLbl">Postal Code</label>*@
+
+                                    <button type="button" ng-click="addArea(thanas, area, nameBng, areaPostalCode)" class="btn btn-primary" style="margin-top: 10px;">Add Area</button>
+
+                                </div>
+
+                            </div>
+                         
+                           
+                            </div>
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+

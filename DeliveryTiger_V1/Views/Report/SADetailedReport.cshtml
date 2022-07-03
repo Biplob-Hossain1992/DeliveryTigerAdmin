@@ -1,0 +1,325 @@
+﻿
+@{
+    ViewBag.Title = "SADistrictwiseReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<script src="~/Scripts/Report/Report.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+<style>
+    .col-form-label {
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div ng-app="myModule">
+    <div ng-controller="myController" data-ng-init="init()">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <h5> SA Detailed Report |<small>{{smallTitle}}</small></h5>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content" style="padding:5px;">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input class="form-control" type="text" ng-model="fromDate" id="fromDate" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="From Date ..." />
+                            </div>
+
+                            <div class="col-md-4">
+                                <select ng-model="courierId" class="form-control">
+                                    <option value="-1">Select Courier</option>
+                                    <option ng-repeat="data in courier" value="{{data.id}}">{{data.name}}</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <input class="form-control" type="text" ng-model="toDate" id="toDate" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="To Date ..." />
+                            </div>
+                        </div>
+                        <div style="height:1cm">
+                        </div>
+                        <div class="form-group row" style="justify-content: center">
+                            <div>
+                                <button type="submit" id="loadBtn" class="btn btn-primary" ng-click="GetSAReport(fromDate, toDate, courierId)"><strong>LoadReport</strong></button>
+                            </div>
+                        </div>
+                        <div style="height:1cm">
+                        </div>
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div ng-show="showReport">
+                            <div class="row">
+                                <div class="col-md-12" id="reportHeader" align="center" style="font-size:large">
+                                    <b>SA Districtwise Report</b>
+                                </div>
+                            </div>
+                            <div style="height:1cm">
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12 align-content-center" id="reportDetails" style="height: 634px; overflow: auto;">
+                                    <div class="table table-responsive" id="exportTable">
+                                        <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                            <thead>
+                                                <tr>
+                                                    <th style="text-align: center;width: 96px;" class="text-lg">#</th>
+                                                    <th style="text-align: center;" class="text-lg">District</th>
+                                                    <th style="text-align: center;" class="text-lg">Send To Hub</th>
+                                                    <th style="text-align: center;" class="text-lg">Invoice Empty</th>
+                                                    <th style="text-align: center;" class="text-lg">SA Not Recieved</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="reportTable">
+                                                <tr ng-repeat="data in AllResponseData">
+                                                    <td style="text-align:center;">{{$index + 1}}</td>
+                                                    <td style="text-align:center;">{{data.district}}</td>
+                                                    <td style="text-align:center;"><a aria-hidden="true" data-toggle="modal" data-target="#reportModal" data-backdrop="static" data-keyboard="false" ng-click="DetailedReportModal(data.district,data.sentToHub.courierOrders, 'Sent To Hub')">{{data.sentToHub.totalCount}} <i class="fa fa-hand-o-left" aria-hidden="true" ng-if="data.sentToHub.totalCount > 0"></i></a></td>
+                                                    <td style="text-align:center;"><a aria-hidden="true" data-toggle="modal" data-target="#reportModal" data-backdrop="static" data-keyboard="false" ng-click="DetailedReportModal(data.district,data.invoiceEmpty.courierOrders, 'Invoice Empty')">{{data.invoiceEmpty.totalCount}} <i class="fa fa-hand-o-left" aria-hidden="true" ng-if="data.invoiceEmpty.totalCount > 0"></i></a></td>
+                                                    <td style="text-align:center;"><a aria-hidden="true" data-toggle="modal" data-target="#reportModal" data-backdrop="static" data-keyboard="false" ng-click="DetailedReportModal(data.district,data.notRecieved.courierOrders, 'Not Recieved')">{{data.notRecieved.totalCount}} <i class="fa fa-hand-o-left" aria-hidden="true" ng-if="data.notRecieved.totalCount > 0"></i></a></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal inmodal fade" id="reportModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateDistrictModalHeader">{{districtwise}} wise SA Report | {{modalType}}</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="col-lg-12 align-content-center" id="reportDetails" style="height: 634px; overflow: auto;">
+                            <div class="table table-responsive" id="exportTable">
+                                <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center;width: 96px;" class="text-lg">#</th>
+                                            <th style="text-align: center;" class="text-lg">Order Code</th>
+                                            <th style="text-align: center;" class="text-lg">POD</th>
+                                            <th style="text-align: center;" class="text-lg">SA Invoice No</th>
+                                            <th style="text-align: center;" class="text-lg">Courier</th>
+                                            <th style="text-align: center;" class="text-lg">Last Status</th>
+                                            <th style="text-align: center;" class="text-lg">Collection Amount</th>
+                                            <th style="text-align: center;" class="text-lg">Service Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTable">
+                                        <tr ng-repeat="data in reportData">
+                                            <td style="text-align:center;">{{$index + 1}}</td>
+                                            <td style="text-align:center;">DT-{{data.id}}</td>
+                                            <td style="text-align:center;">{{data.podNumber}}</td>
+                                            <td style="text-align:center;">{{data.invoiceNumber != ''? data.invoiceNumber: 'N/A'}}</td>
+                                            <td style="text-align:center;">{{data.couriers.courierName}}</td>
+                                            <td style="text-align:center;">{{data.courierOrderStatus.statusNameEng}}</td>
+                                            <td style="text-align:center;">{{data.collectionAmount}}</td>
+                                            <td style="text-align:center;">{{data.paymentType}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+
+<script>
+    var app = angular.module('myModule', [])
+    app.controller('myController', function ($scope, $http, $anchorScroll, $location) {
+
+        $scope.smallTitle = 'CourierOrders wise';
+        $scope.courierId = '-1';
+        $scope.courier = [
+            {
+                'id': 0,
+                'name': 'Select All Courier'
+            },
+            {
+                'id': 32,
+                'name': 'E-Desh'
+            },
+            {
+                'id': 49,
+                'name': 'Steadfast Courier'
+            },
+            {
+                'id': 50,
+                'name': 'Chittagong Tiger'
+            },
+            {
+                'id': 51,
+                'name': 'Sylhet Tiger'
+            },
+            {
+                'id': 52,
+                'name': 'Khulna Tiger'
+            },
+            {
+                'id': 53,
+                'name': 'Narayangonj Tiger'
+            },
+            {
+                'id': 54,
+                'name': 'Gazipur Tiger'
+            },
+            {
+                'id': 55,
+                'name': 'Dhaka Tiger'
+            },
+            {
+                'id': 56,
+                'name': 'Coxsbazar Tiger'
+            },
+        ];
+
+        $scope.init = () =>{
+
+            //$scope.showReport = true;
+            $scope.SetDate();
+        }
+
+
+        $scope.GetSAReport = (fromDate, toDate, courierId) => {
+
+            if (courierId == -1) {
+                alert('Please Select Courier');
+                return false;
+            }
+
+            let Obj = {
+                fromDate: fromDate,
+                toDate: toDate,
+                courierId: courierId
+            }
+
+            let url = apiBaseURL + 'Fetch/GetDetailedSAReport';
+            //let url = 'http://localhost:58676/api/Fetch/GetDetailedSAReport';
+            $scope.showLoader = true;
+            $http.post(url, Obj, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    if (response.data.didError) {
+                        alert(response.data.errorMessage);
+                        return false;
+                    }
+                    if (response.data.model.length <= 0) {
+                        alert('There is no Data to show');
+                        return false;
+                    }
+
+                    $scope.AllResponseData = response.data.model;
+                    $scope.showReport = true;
+                    
+                    $scope.gotoDiv('reportHeader');
+
+                }), function error(response) {
+                    $scope.showLoader = false;
+                    alert('Something went Wrong');
+                    return false;
+                }
+        }
+
+        $scope.SetDate = () => {
+
+            let date = new Date();
+            var dd = String(date.getDate()).padStart(2, '0');
+            var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = date.getFullYear();
+            var toDate = yyyy + '-' + mm + '-' + dd;
+
+            let days = 0; // 7 days behind current date
+            var last = new Date(date.getTime() - (days * 24 * 60 * 60 * 1000));
+            var day = String(last.getDate()).padStart(2, '0');
+            var month = String(last.getMonth() + 1).padStart(2, '0');
+            var year = last.getFullYear();
+            var fromDate = year + '-' + month + '-' + day;
+
+            $scope.fromDate = fromDate;
+            $scope.toDate = toDate;
+
+        }
+
+        $scope.gotoDiv = (x) => {
+
+            $location.hash(x);
+            $anchorScroll();
+
+        }
+
+
+        $scope.DetailedReportModal = (district, List, modalType) => {
+
+            $scope.districtwise = district;
+            $scope.reportData = List;
+            $scope.modalType = modalType;
+        }
+
+    });
+</script>

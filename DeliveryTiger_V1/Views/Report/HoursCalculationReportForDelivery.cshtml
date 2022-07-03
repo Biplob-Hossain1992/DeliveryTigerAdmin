@@ -1,0 +1,187 @@
+﻿
+@{
+    ViewBag.Title = "HoursCalculationReportForDelivery";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('hoursCalculationModule', []);
+    app.controller('hoursCalculationController', function ($scope, $http) {
+
+        $scope.getCalculatedHours = (fromDate, toDate) => {
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date...!!!");
+                return false;
+            }
+            var requestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/HoursCalculationReportForDelivery', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.calculatedHoursData = response.data.model;
+                    $scope.calculateAverage(response.data.model);
+                    
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+
+                    $scope.showLoader = false;
+                });
+
+
+        };
+
+        $scope.calculateAverage = (data) => {
+
+            //Sum
+            $scope.courierPickToCourierLastHub = $scope.calculatedHoursData.reduce((acc, curr) => acc + curr.courierPickToCourierLastHub, 0);
+            $scope.courierLastHubToOutForDelivery = $scope.calculatedHoursData.reduce((acc, curr) => acc + curr.courierLastHubToOutForDelivery, 0);
+            $scope.outForDeliveryToDelivery = $scope.calculatedHoursData.reduce((acc, curr) => acc + curr.outForDeliveryToDelivery, 0);
+
+            //Average
+            $scope.courierPickToCourierLastHubLength = data.filter(x => x.courierPickToCourierLastHub != null);
+            $scope.courierLastHubToOutForDeliveryLength = data.filter(x => x.courierLastHubToOutForDelivery != null);
+            $scope.outForDeliveryToDeliveryLength = data.filter(x => x.outForDeliveryToDelivery != null);
+        }
+
+    });
+</script>
+
+<div class="row" ng-app="hoursCalculationModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="hoursCalculationController">
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+
+                                    <button style="margin-left:5px;" type="button" class="btn btn-w-m btn-success" ng-click="getCalculatedHours(fromDate, toDate)">Search</button>
+                                </div>
+
+                                <div style="margin-top:5px;">
+
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ibox-content">
+                        <div class="row" style="margin-bottom:10px;">
+                            <div class="col-lg-3">
+                                <span>Total Count: <b style="color:orangered;">{{calculatedHoursData.length}}</b></span><br />
+                            </div>
+
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+
+                                            <th>District</th>
+                                            <th>Thana</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='courierPickToCourierLastHub'; reverseSort = !reverseSort">
+                                                    Courier Pick To Courier LastHub ({{courierPickToCourierLastHub / courierPickToCourierLastHubLength.length | number:4}} %)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='courierLastHubToOutForDelivery'; reverseSort = !reverseSort">
+                                                    Courier Last Hub To OutForDelivery ({{courierLastHubToOutForDelivery / courierLastHubToOutForDeliveryLength.length | number:4}} %)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='outForDeliveryToDelivery'; reverseSort = !reverseSort">
+                                                    OutForDelivery To Delivery ({{outForDeliveryToDelivery / outForDeliveryToDeliveryLength.length | number:4}} %)
+                                                </a>
+                                            </th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        <tr ng-repeat="c in calculatedHoursData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+
+                                            <td>{{c.district}}</td>
+                                            <td>{{c.thana}}</td>
+                                            <td>
+                                                <span ng-if="c.courierPickToCourierLastHub == null">NA</span>
+                                                <span ng-if="c.courierPickToCourierLastHub != null">{{c.courierPickToCourierLastHub | number:3}}</span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="c.courierLastHubToOutForDelivery == null">NA</span>
+                                                <span ng-if="c.courierLastHubToOutForDelivery != null">{{c.courierLastHubToOutForDelivery | number:3}}</span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="c.outForDeliveryToDelivery == null">NA</span>
+                                                <span ng-if="c.outForDeliveryToDelivery != null">{{c.outForDeliveryToDelivery | number:3}}</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+
+

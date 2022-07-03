@@ -1,0 +1,1020 @@
+﻿
+@{
+    ViewBag.Title = "Get All Merchant Information";
+}
+
+<script src="https://code.angularjs.org/1.7.2/angular.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.13.4/ui-bootstrap-tpls.min.js"></script>
+
+<style>
+    .tableMerchantInfo {
+        position: relative;
+        overflow-y: scroll;
+        height: 500px;
+    }
+
+        .tableMerchantInfo thead th {
+            position: sticky;
+            top: 0;
+        }
+
+    /*pagination css*/
+    .pagination {
+        display: inline-block;
+        padding-left: 0;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+
+        .pagination > li {
+            display: inline;
+        }
+
+            .pagination > li > a,
+            .pagination > li > span {
+                position: relative;
+                float: left;
+                padding: 6px 12px;
+                margin-left: -1px;
+                line-height: 1.42857143;
+                color: #337ab7;
+                text-decoration: none;
+                background-color: #fff;
+                border: 1px solid #ddd;
+            }
+
+            .pagination > li:first-child > a,
+            .pagination > li:first-child > span {
+                margin-left: 0;
+                border-top-left-radius: 4px;
+                border-bottom-left-radius: 4px;
+            }
+
+            .pagination > li:last-child > a,
+            .pagination > li:last-child > span {
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+            }
+
+            .pagination > li > a:hover,
+            .pagination > li > span:hover,
+            .pagination > li > a:focus,
+            .pagination > li > span:focus {
+                z-index: 2;
+                color: #23527c;
+                background-color: #eee;
+                border-color: #ddd;
+            }
+
+        .pagination > .active > a,
+        .pagination > .active > span,
+        .pagination > .active > a:hover,
+        .pagination > .active > span:hover,
+        .pagination > .active > a:focus,
+        .pagination > .active > span:focus {
+            z-index: 3;
+            color: #fff;
+            cursor: default;
+            background-color: #337ab7;
+            border-color: #337ab7;
+        }
+
+        .pagination > .disabled > span,
+        .pagination > .disabled > span:hover,
+        .pagination > .disabled > span:focus,
+        .pagination > .disabled > a,
+        .pagination > .disabled > a:hover,
+        .pagination > .disabled > a:focus {
+            color: #777;
+            cursor: not-allowed;
+            background-color: #fff;
+            border-color: #ddd;
+        }
+
+    .pagination-lg > li > a,
+    .pagination-lg > li > span {
+        padding: 10px 16px;
+        font-size: 18px;
+        line-height: 1.3333333;
+    }
+
+    .pagination-lg > li:first-child > a,
+    .pagination-lg > li:first-child > span {
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+    }
+
+    .pagination-lg > li:last-child > a,
+    .pagination-lg > li:last-child > span {
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+    }
+
+    .pagination-sm > li > a,
+    .pagination-sm > li > span {
+        padding: 5px 10px;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .pagination-sm > li:first-child > a,
+    .pagination-sm > li:first-child > span {
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+    }
+
+    .pagination-sm > li:last-child > a,
+    .pagination-sm > li:last-child > span {
+        border-top-right-radius: 3px;
+        border-bottom-right-radius: 3px;
+    }
+
+    .pager {
+        padding-left: 0;
+        margin: 20px 0;
+        text-align: center;
+        list-style: none;
+    }
+
+        .pager li {
+            display: inline;
+        }
+
+            .pager li > a,
+            .pager li > span {
+                display: inline-block;
+                padding: 5px 14px;
+                background-color: #fff;
+                border: 1px solid #ddd;
+                border-radius: 15px;
+            }
+
+                .pager li > a:hover,
+                .pager li > a:focus {
+                    text-decoration: none;
+                    background-color: #eee;
+                }
+
+        .pager .next > a,
+        .pager .next > span {
+            float: right;
+        }
+
+        .pager .previous > a,
+        .pager .previous > span {
+            float: left;
+        }
+
+        .pager .disabled > a,
+        .pager .disabled > a:hover,
+        .pager .disabled > a:focus,
+        .pager .disabled > span {
+            color: #777;
+            cursor: not-allowed;
+            background-color: #fff;
+        }
+    /*pagination css*/
+
+</style>
+
+<div ng-app="GetAllMerchantInformationModule">
+    <div ng-controller="GetAllMerchantInformationCtrl" ng-init="Init()">
+        <div class="row" ng-init="getAllMerchantData(0,20,'')">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">Get All Merchant Information Report</h4>
+                        </div>
+                        <div class="input-group">
+                            <input style="margin-right: 2px;" type="text" class="form-control-sm form-control" ng-model="mainSearch" name="mainSearch" id="mainSearch" placeholder="search company name or mobile" autocomplete="off" />
+                            <button type="button" class="btn btn-w-m btn-success" ng-click="getAllMerchantData(0,20,mainSearch)">Search</button>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <table id="tableMerchantInfo" class="table table-bordered table-responsive tableMerchantInfo">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='userName'; reverseSort = !reverseSort">
+                                                    UserName
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='password'; reverseSort = !reverseSort">
+                                                    Password
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='mobile'; reverseSort = !reverseSort">
+                                                    Mobile
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isActive'; reverseSort = !reverseSort">
+                                                    IsActive
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='address'; reverseSort = !reverseSort">
+                                                    Address
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='smsCharge'; reverseSort = !reverseSort">
+                                                    SmsCharge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='mailCharge'; reverseSort = !reverseSort">
+                                                    MailCharge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='returnCharge'; reverseSort = !reverseSort">
+                                                    ReturnCharge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='collectionCharge'; reverseSort = !reverseSort">
+                                                    CollectionCharge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isSms'; reverseSort = !reverseSort">
+                                                    IsSms
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isEMail'; reverseSort = !reverseSort">
+                                                    IsEMail
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='emailAddress'; reverseSort = !reverseSort">
+                                                    EmailAddress
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='bkashNumber'; reverseSort = !reverseSort">
+                                                    BkashNumber
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='alterMobile'; reverseSort = !reverseSort">
+                                                    AlterMobile
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='sourceType'; reverseSort = !reverseSort">
+                                                    SourceType
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='joinDate'; reverseSort = !reverseSort">
+                                                    JoinDate
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isDocument'; reverseSort = !reverseSort">
+                                                    IsDocument
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='remarks'; reverseSort = !reverseSort">
+                                                    Remarks
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                                    CompanyName
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isCustomerSms'; reverseSort = !reverseSort">
+                                                    IsCustomerSms
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isCustomerEmail'; reverseSort = !reverseSort">
+                                                    IsCustomerEmail
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='maxCodCharge'; reverseSort = !reverseSort">
+                                                    MaxCodCharge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isAutoProcess'; reverseSort = !reverseSort">
+                                                    IsAutoProcess
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='credit'; reverseSort = !reverseSort">
+                                                    Credit
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='fbUrl'; reverseSort = !reverseSort">
+                                                    FbUrl
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='webUrl'; reverseSort = !reverseSort">
+                                                    WebUrl
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isOfferActive'; reverseSort = !reverseSort">
+                                                    IsOfferActive
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='offerCodDiscount'; reverseSort = !reverseSort">
+                                                    OfferCodDiscount
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='offerType'; reverseSort = !reverseSort">
+                                                    OfferType
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='offerBkashDiscountDhaka'; reverseSort = !reverseSort">
+                                                    OfferBkashDiscountDhaka
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='offerBkashDiscountOutSideDhaka'; reverseSort = !reverseSort">
+                                                    OfferBkashDiscountOutSideDhaka
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='advancePayment'; reverseSort = !reverseSort">
+                                                    AdvancePayment
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='knowingSource'; reverseSort = !reverseSort">
+                                                    KnowingSource
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='priority'; reverseSort = !reverseSort">
+                                                    Priority
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='referrer'; reverseSort = !reverseSort">
+                                                    Referrer
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='referrerOrder'; reverseSort = !reverseSort">
+                                                    ReferrerOrder
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='referrerStartTime'; reverseSort = !reverseSort">
+                                                    ReferrerStartTime
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='referrerEndTime'; reverseSort = !reverseSort">
+                                                    ReferrerEndTime
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='orderType'; reverseSort = !reverseSort">
+                                                    OrderType
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='refereeOrder'; reverseSort = !reverseSort">
+                                                    RefereeOrder
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='referrerIsActive'; reverseSort = !reverseSort">
+                                                    ReferrerIsActive
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='refereeStartTime'; reverseSort = !reverseSort">
+                                                    RefereeStartTime
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='refereeEndTime'; reverseSort = !reverseSort">
+                                                    RefereeEndTime
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='preferredPaymentCycle'; reverseSort = !reverseSort">
+                                                    PreferredPaymentCycle
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='registrationFrom'; reverseSort = !reverseSort">
+                                                    RegistrationFrom
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isBlock'; reverseSort = !reverseSort">
+                                                    IsBlock
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='blockReason'; reverseSort = !reverseSort">
+                                                    BlockReason
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='preferredPaymentCycleDate'; reverseSort = !reverseSort">
+                                                    PreferredPaymentCycleDate
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='accountName'; reverseSort = !reverseSort">
+                                                    AccountName
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='accountNumber'; reverseSort = !reverseSort">
+                                                    AccountNumber
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='bankName'; reverseSort = !reverseSort">
+                                                    BankName
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='branchName'; reverseSort = !reverseSort">
+                                                    BranchName
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='routingNumber'; reverseSort = !reverseSort">
+                                                    RoutingNumber
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isQuickOrderActive'; reverseSort = !reverseSort">
+                                                    IsQuickOrderActive
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='customerSMSLimit'; reverseSort = !reverseSort">
+                                                    CustomerSMSLimit
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='customerVoiceSmsLimit'; reverseSort = !reverseSort">
+                                                    CustomerVoiceSmsLimit
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isLoanActive'; reverseSort = !reverseSort">
+                                                    IsLoanActive
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='loanCompany'; reverseSort = !reverseSort">
+                                                    LoanCompany
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='gender'; reverseSort = !reverseSort">
+                                                    Gender
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isBreakAble'; reverseSort = !reverseSort">
+                                                    IsBreakAble
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isTeleSales'; reverseSort = !reverseSort">
+                                                    IsTeleSales
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='teleSalesDate'; reverseSort = !reverseSort">
+                                                    TeleSalesDate
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='isHeavyWeight'; reverseSort = !reverseSort">
+                                                    IsHeavyWeight
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='teleSales'; reverseSort = !reverseSort">
+                                                    TeleSales
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='merchantReview'; reverseSort = !reverseSort">
+                                                    MerchantReview
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="" ng-click="orderByField='recommendation'; reverseSort = !reverseSort">
+                                                    Recommendation
+                                                </a>
+                                            </th>
+                                            <th ng-show="isAuthorized">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="d in merchantData | orderBy:orderByField:reverseSort">
+                                            <td>{{$index+1}}</td>
+                                            <td>{{d.userName}}</td>
+                                            <td>{{d.password}}</td>
+                                            <td>{{d.mobile}}</td>
+                                            <td>
+                                                <span ng-if="d.isActive==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isActive==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>{{d.address}}</td>
+                                            <td>{{d.smsCharge}}</td>
+                                            <td>{{d.mailCharge}}</td>
+                                            <td>{{d.returnCharge}}</td>
+                                            <td>{{d.collectionCharge}}</td>
+                                            <td>
+                                                <span ng-if="d.isSms==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isSms==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.isEmail==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isEmail==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>{{d.emailAddress}}</td>
+                                            <td>{{d.bkashNumber}}</td>
+                                            <td>{{d.alterMobile}}</td>
+                                            <td>
+                                                <span ng-if="d.sourceType!=''">
+                                                    {{d.sourceType}}
+                                                </span>
+                                                <span ng-if="d.sourceType==''">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>{{d.joinDate}}</td>
+                                            <td>
+                                                <span ng-if="d.isDocument==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isDocument==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.remarks!=''">
+                                                    {{d.remarks}}
+                                                </span>
+                                                <span ng-if="d.remarks==''">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>{{d.companyName}}</td>
+                                            <td>
+                                                <span ng-if="d.isCustomerSms==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isCustomerSms==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.isCustomerEmail==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isCustomerEmail==false">
+                                                    No
+                                                </span>
+                                            </td>
+
+                                            <td>{{d.maxCodCharge}}</td>
+                                            <td>
+                                                <span ng-if="d.isAutoProcess==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isAutoProcess==false">
+                                                    No
+                                                </span>
+                                            </td>
+
+                                            <td>{{d.credit}}</td>
+                                            <td>
+                                                <span ng-if="d.fburl!=''">
+                                                    {{d.fburl}}
+                                                </span>
+                                                <span ng-if="d.fburl==''">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.webURL!=''">
+                                                    {{d.webURL}}
+                                                </span>
+                                                <span ng-if="d.webURL==''">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.isOfferActive==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isOfferActive==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>{{d.offerCodDiscount}}</td>
+                                            <td>{{d.offerType}}</td>
+                                            <td>{{d.offerBkashDiscountDhaka}}</td>
+                                            <td>{{d.offerBkashDiscountOutSideDhaka}}</td>
+                                            <td>{{d.advancePayment}}</td>
+                                            <td>
+                                                <span ng-if="d.knowingSource!=null || d.knowingSource!=''">
+                                                    {{d.knowingSource}}
+                                                </span>
+                                                <span ng-if="d.knowingSource==null || d.knowingSource==''">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>{{d.priority}}</td>
+                                            <td>
+                                                <span ng-if="d.referrer!=''">
+                                                    {{d.referrer}}
+                                                </span>
+                                                <span ng-if="d.referrer==''">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>{{d.referrerOrder}}</td>
+                                            <td>
+                                                <span ng-if="d.referrerStartTime!=null">
+                                                    {{d.referrerStartTime}}
+                                                </span>
+                                                <span ng-if="d.referrerStartTime==null">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.referrerEndTime!=null">
+                                                    {{d.referrerEndTime}}
+                                                </span>
+                                                <span ng-if="d.referrerEndTime==null">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.orderType!=''">
+                                                    {{d.orderType}}
+                                                </span>
+                                                <span ng-if="d.orderType==''">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>{{d.refereeOrder}}</td>
+                                            <td>
+                                                <span ng-if="d.referrerIsActive==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.referrerIsActive==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.refereeStartTime!=null">
+                                                    {{d.refereeStartTime}}
+                                                </span>
+                                                <span ng-if="d.refereeStartTime==null">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.refereeEndTime!=null">
+                                                    {{d.refereeEndTime}}
+                                                </span>
+                                                <span ng-if="d.refereeEndTime==null">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>{{d.preferredPaymentCycle}}</td>
+                                            <td>
+                                                <span ng-if="d.registrationFrom!=''">
+                                                    {{d.registrationFrom}}
+                                                </span>
+                                                <span ng-if="d.registrationFrom==''">
+                                                    N/A
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.isBlock==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isBlock==false">
+                                                    No
+                                                </span>
+                                            </td>
+
+                                            <td>{{d.blockReason}}</td>
+                                            <td>{{d.preferredPaymentCycleDate}}</td>
+                                            <td>{{d.accountName}}</td>
+                                            <td>{{d.accountNumber}}</td>
+                                            <td>{{d.bankName}}</td>
+                                            <td>{{d.branchName}}</td>
+                                            <td>{{d.routingNumber}}</td>
+                                            <td>
+                                                <span ng-if="d.isQuickOrderActive==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isQuickOrderActive==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>{{d.customerSMSLimit}}</td>
+                                            <td>{{d.customerVoiceSmsLimit}}</td>
+                                            <td>
+                                                <span ng-if="d.isLoanActive==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isLoanActive==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>{{d.loanCompany}}</td>
+                                            <td>{{d.gender}}</td>
+                                            <td>
+                                                <span ng-if="d.isBreakAble==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isBreakAble==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.isTeleSales==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isTeleSales==false">
+                                                    No
+                                                </span>
+                                            </td>
+
+                                            <td>{{d.teleSalesDate}}</td>
+                                            <td>
+                                                <span ng-if="d.isHeavyWeight==true">
+                                                    Yes
+                                                </span>
+                                                <span ng-if="d.isHeavyWeight==false">
+                                                    No
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.teleSales==0">
+                                                    N\A
+                                                </span>
+                                                <span ng-if="d.teleSales==1">
+                                                    Interested
+                                                </span>
+                                                <span ng-if="d.teleSales==2">
+                                                    Not Interested
+                                                </span>
+                                                <span ng-if="d.teleSales==3">
+                                                    Business Closed
+                                                </span>
+                                                <span ng-if="d.teleSales==4">
+                                                    Didn't Pick
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.merchantReview==0">
+                                                    N\A
+                                                </span>
+                                                <span ng-if="d.merchantReview == 1">
+                                                    <span>&#9733;</span>
+                                                </span>
+                                                <span ng-if="d.merchantReview == 2">
+                                                    <span>&#9733; &#9733;</span> @*<span>&#9733;</span>*@
+                                                </span>
+                                                <span ng-if="d.merchantReview == 3">
+                                                    <span>&#9733; &#9733; &#9733;</span> @*<span>&#9733;</span> <span>&#9733;</span>*@
+                                                </span>
+                                                <span ng-if="d.merchantReview == 4">
+                                                    <span>&#9733; &#9733; &#9733; &#9733;</span> @*<span>&#9733;</span> <span>&#9733;</span> <span>&#9733;</span>*@
+                                                </span>
+                                                <span ng-if="d.merchantReview == 5">
+                                                    <span>&#9733; &#9733; &#9733; &#9733; &#9733;</span> @*<span>&#9733;</span> <span>&#9733;</span> <span>&#9733;</span> <span>&#9733;</span>*@
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="d.recommendation==0">
+                                                    N\A
+                                                </span>
+                                                <span ng-if="d.recommendation==1">
+                                                    Silver
+                                                </span>
+                                                <span ng-if="d.recommendation==2">
+                                                    Gold
+                                                </span>
+                                                <span ng-if="d.recommendation==3">
+                                                    Platinum
+                                                </span>
+                                            </td>
+                                            <td ng-show="isAuthorized">
+                                                <input type="button" class="btn btn-primary btn-sm" value="EDIT" ng-click="OnModalClick(d)" data-toggle="modal" data-target="#updateModal" data-backdrop="static" data-keyboard="false" />
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td align="left" colspan="65">
+                                                <pagination total-items="totalCount" ng-change="pageChanged()" items-per-page="pageSizeSelected"
+                                                            direction-links="true" ng-model="pageIndex" max-size="maxSize" class="pagination"
+                                                            boundary-links="true" rotate="false" num-pages="numPages">
+                                                </pagination>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal inmodal fade" id="updateModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateDistrictModalHeader">Update MerchantInfo ({{updatedMerchantName}})</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <h3 @*class="col-lg-4 col-form-label"*@>Merchant Review</h3>
+                            </div>
+                            <div class="col-md-4">
+                                <lable>
+                                    {{currentRating}} / 5
+                                </lable>
+                                <select ng-model="currentRating" class="form-control">
+                                    <option value="0" ng-selected="true">Please Select</option>
+                                    <option value="1">&#9733;</option>
+                                    <option value="2">&#9733; &#9733;</option>
+                                    <option value="3">&#9733; &#9733; &#9733;</option>
+                                    <option value="4">&#9733; &#9733; &#9733; &#9733;</option>
+                                    <option value="5">&#9733; &#9733; &#9733; &#9733; &#9733;</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <h3 @*class="col-lg-4 col-form-label"*@>Recommendations</h3>
+                            </div>
+                            <div class="col-md-4">
+                                <select ng-model="selectedRecommendation" class="form-control">
+                                    <option value="0" ng-selected="true">Please Select</option>
+                                    <option value="1">Silver</option>
+                                    <option value="2">Gold</option>
+                                    <option value="3">Platinum</option>
+                                </select>
+                            </div>
+                        </div>
+                        <input type="hidden" ng-model="selectedMerchantId"/>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="UpdatedMerchantInfo(currentRating, selectedRecommendation, selectedMerchantId)" data-dismiss="modal">Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+
+<script>
+    var app = angular.module('GetAllMerchantInformationModule', ['ui.bootstrap']);
+    app.controller('GetAllMerchantInformationCtrl', function ($scope, $http) {
+
+        $scope.maxSize = 5;     // limit number for pagination display number.
+        //$scope.totalCount = 0;  // total number of items in all pages. initialize as a zero
+        $scope.pageIndex = 1;   // current page number. first page is 1
+        $scope.pageSizeSelected = 20; // maximum number of items per page.
+        $scope.currentRating = '0';
+        $scope.selectedRecommendation = '0';
+
+        $scope.Init = () => {
+
+            let userId = parseInt(sessionStorage.getItem("userId"));
+            let adminType = parseInt(sessionStorage.getItem("adminType"));
+
+            if (userId == 442 || adminType == 11) {
+                $scope.isAuthorized = true;
+            }
+        }
+
+        //this method is called on page change
+        $scope.pageChanged = function () {
+            var index = ($scope.pageIndex - 1) * 20;
+            var count = 20;
+            var searchString = '';
+            $scope.getAllMerchantData(index, count, searchString);
+        };
+
+        $scope.getAllMerchantData = function (index, count, searchString) {
+            let requestBodyModel = {
+                "Index": index,
+                "Count": count,
+                "Search": searchString
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Fetch/GetCourierUsersInfo', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.allMerchatInformation = response.data.model;
+                    $scope.merchantData = $scope.allMerchatInformation.courierUsers;
+                    $scope.totalCount = $scope.allMerchatInformation.totalUsers;
+                }, function (error) {
+                    $scope.showLoader = false;
+                    console.log(error);
+                })
+        }
+
+        $scope.OnModalClick = (object) => {
+            $scope.currentRating = (object.merchantReview).toString();
+            $scope.selectedRecommendation = (object.recommendation).toString();
+            $scope.selectedMerchantId = object.courierUserId;
+            $scope.updatedMerchantName = object.companyName;
+        }
+
+
+        $scope.UpdatedMerchantInfo = (currentRating, selectedRecommendation, selectedMerchantId) => {
+
+            if (selectedMerchantId == 0 || selectedMerchantId == null) {
+                alert('Merchant Id nullable/Zero');
+                return false;
+            }
+            let url = apiBaseURL + 'Update/UpdateMerchantReview/' + selectedMerchantId;
+            let requestObj = {
+                merchantReview: currentRating,
+                recommendation: selectedRecommendation
+            }
+
+
+            $http.put(url, requestObj, { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token').trim() } })
+                .then(function (response) {
+                    if (response.data.didError) {
+                        alert('Something went Wrong');
+                        return false;
+                    }
+                    alert('Update Successfully');
+                    $scope.getAllMerchantData(0, 20, '');
+                }), function error(error) {
+                    alert(error);
+                }
+        }
+
+    });
+
+</script>

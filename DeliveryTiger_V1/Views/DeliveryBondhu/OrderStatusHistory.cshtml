@@ -1,0 +1,394 @@
+﻿
+@{
+    ViewBag.Title = "OrderStatusHistory";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('getOrderStatusHistoryCountDataModule', []);
+    app.controller('getOrderStatusHistoryCountDataController', function ($scope, $http) {
+
+        //Load Table Data
+        $scope.getOrderStatusHistoryCountData = (fromDate, toDate, deliveryMan, collectionTimeSlotId) => {
+
+            if (fromDate == '' || toDate == '') {
+                alert("Please must be select Date Range");
+                return false;
+            }
+            else if (deliveryMan == undefined || deliveryMan == null) {
+                deliveryMan = 0;
+            }
+
+            var requestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "DeliveryManId": deliveryMan,
+                "CollectionTimeSlotId": +collectionTimeSlotId
+            };
+            $scope.showLoader = true;
+
+            $http.post(apiBaseURL + 'Bondhu/GetDeliveryBondhuOrderStatusHistoryCountDeliveryManWise', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.orderStatusReportCountData = response.data.model;
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.init = () => {
+            $scope.collectionTimeSlotId = 0;
+            $scope.deliveryMan = 0;
+            $scope.getDeliveryMan();
+            $scope.getCollectionTimeSlot();
+        }
+
+        //get all delivery typelist
+        $scope.getDeliveryMan = () => {
+
+            $http.get(apiBaseURL + 'Fetch/GetAllDeliveryMan', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.deliveryMans = response.data.model;
+                    $scope.deliveryMans.sort((a, b) => parseFloat(a.id) - parseFloat(b.id));
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data.model);
+                    $scope.showLoader = false;
+                });
+        }
+
+        //get Collection Time Slot
+        $scope.getCollectionTimeSlot = function () {
+
+            $http.get(apiBaseURL + 'Fetch/GetCollectionTimeSlot', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.timeSlotData = response.data.model;
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+
+        };
+
+        //get Dt Order History Details
+        $scope.getDtOrderHistoryDetails = (fromDate, toDate, deliveryMan, statusId, statusName, collectionTimeSlotId) => {
+            if (deliveryMan == undefined || deliveryMan == null) {
+                deliveryMan = 0;
+            }
+            var deliveryManName = $("#deliveryMan option:selected").text();
+            var status = statusId.toString();
+            var DtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "DeliveryManId": parseInt(deliveryMan),
+                "Status": status,
+                "CollectionTimeSlotId": +collectionTimeSlotId
+            }
+
+            $scope.showDtDetailsLoader = true;
+            headerText = `${statusName} - ${fromDate} To: ${toDate} ${deliveryMan == 0 ? `` : `By: ${deliveryManName}`}`;
+            $scope.dtModalHeader = headerText;
+            $http.post(apiBaseURL + 'Bondhu/GetDtOrderHistoryDetailsReportForDeliveryMan', DtOrderSearchBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function success(response) {
+
+                    $scope.dtOrderReportDetails = response.data.model;
+                    $scope.DtTotalOrderCount = response.data.model.length;
+
+                    $scope.totalCollectionAmount = 0;
+                    if (statusId == 15 || statusId == 45) {
+                        $scope.totalCollectionAmount = $scope.dtOrderReportDetails.reduce((accum, item) => parseInt(accum) + parseInt(item.collectionAmount), 0);
+                    }
+                    
+                    $("#exportExcelBtn").show();
+                    $scope.showDtDetailsLoader = false;
+                }, function error(response) {
+                    $scope.showDtDetailsLoader = false;
+                    console.log(response);
+                });
+        }
+
+        //ExportToExcel
+        $scope.createExcelSheet = (tableName) => {
+
+            window.open('data:application/vnd.ms-excel,' + encodeURIComponent($('#' + tableName).html()));
+            e.preventDefault();
+        }
+
+    });
+</script>
+
+<div class="row" ng-app="getOrderStatusHistoryCountDataModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="getOrderStatusHistoryCountDataController" data-ng-init="init()">
+
+        @*modal starts*@
+        <div class="modal modal-primary" id="dtOrderDetailsModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document" style="width: 100%;">
+                <div class="modal-content">
+                    <div class="modal-header text-center">
+                        <h4 class="modal-title" id="dtOrderDetailsModalHeader">{{dtModalHeader}}</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="dtOrderDetailsModalBody" style="height: 400px; overflow: auto;">
+                        <div class="test-container form-inline" style="text-align: center;">
+                            <div style="margin-right:5px;"><b>Total DT-Order : {{DtTotalOrderCount}}</b></div>
+                            <input placeholder="Search" class="form-control " ng-model="search" type="text" style="margin-top: 5px;" />
+                            <div class="col-lg-12 text-center">
+                                <div class="spiner-example" ng-show="showDtDetailsLoader">
+                                    <img src="http://jiojac.com/images/loading3.gif" style="height: 106px;">
+                                </div>
+                            </div>
+                            <div id="showDetails">
+                                <table class="table table-bordered topdiv">
+                                    <thead>
+                                        <tr>
+                                            <th>SN.</th>
+                                            <th>Order Id</th>
+                                            <th>PodNumber</th>
+                                            <th>Collection Name</th>
+                                            <th>Shipment Charge</th>
+                                            <th>Cod Charge</th>
+                                            <th>Breakable Charge</th>
+                                            <th>RTO Charge</th>
+                                            <th>Packaging Charge</th>
+                                            <th>Total Service Charge</th>
+                                            <th>Total Collected Amount</th>
+                                            <th>Status Name</th>
+                                            <th>Status Type</th>
+                                            <th>Order Type</th>
+                                            <th>Merchant</th>
+                                            <th>Source</th>
+                                            <th>Courier</th>
+                                            <th>District</th>
+                                            <th>Thana</th>
+                                            <th>Area</th>
+                                            <th>Inside/OutSide</th>
+                                            <th>Order Date</th>
+                                            <th>Confirmation Date</th>
+                                            <th>Picked Date</th>
+                                            <th>Shipment Date</th>
+                                            <th>Delivered Date</th>
+                                            <th>Picked To Delivered</th>
+                                            <th>Bkash Number</th>
+                                            <th>Image</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="c in dtOrderReportDetails| filter:search">
+                                            <td style="text-align: center">{{$index+1}}</td>
+                                            <td style="text-align: center">{{c.courierOrdersId}}</td>
+                                            <td style="text-align: center">{{c.podNumber}}</td>
+                                            <td style="text-align: center">{{c.collectionName}}</td>
+                                            <td style="text-align: center">{{c.shipmentCharge|number}}</td>
+                                            <td style="text-align: center">{{c.codCharge|number}}</td>
+                                            <td style="text-align: center">{{c.breakableCharge|number}}</td>
+                                            <td style="text-align: center">{{c.returnCharge|number}}</td>
+                                            <td style="text-align: center">{{c.packagingCharge|number}}</td>
+                                            <td style="text-align: center">{{c.totalServiceCharge|number}}</td>
+                                            <td style="text-align: center">{{c.collectionAmount|number}}</td>
+                                            <td style="text-align: center">{{c.statusNameEng}} - {{c.status}}</td>
+                                            <td style="text-align: center">{{c.statusType}}</td>
+                                            <td style="text-align: center">{{c.orderType}}</td>
+                                            <td style="text-align: center">{{c.merchantName}}</td>
+                                            <td style="text-align: center">{{c.sourceType}}</td>
+                                            <td style="text-align: center">{{c.courierName}}</td>
+                                            <td style="text-align: center">{{c.district}}</td>
+                                            <td style="text-align: center">{{c.thanaName}}-{{c.thanaId}}</td>
+                                            <td style="text-align: center">{{c.areaName}}-{{c.areaId}}</td>
+                                            <td style="text-align: center">
+                                                <span ng-if="c.district=='Dhaka'">Inside</span>
+                                                <span ng-if="c.district!='Dhaka'">Outside</span>
+                                            </td>
+                                            <td style="text-align: center">{{c.postedOn | date:'medium'}}</td>
+                                            <td style="text-align: center">{{c.confirmationDate | date:'medium'}}</td>
+                                            <td style="text-align: center"><span ng-if="c.pickDate=='0001-01-01T00:00:00Z'?'':c.pickDate">{{c.pickDate | date:'medium'}}</span></td>
+                                            <td style="text-align: center"><span ng-if="c.shipmentDate=='0001-01-01T00:00:00Z'?'':c.shipmentDate">{{c.shipmentDate | date:'medium'}}</span></td>
+                                            <td style="text-align: center"><span ng-if="c.deliveredDate=='0001-01-01T00:00:00Z'?'':c.deliveredDate">{{c.deliveredDate | date:'medium'}}</span></td>
+                                            <td style="text-align: center"><span ng-if="c.pickedToDelivered=='0'?'':c.pickedToDelivered">{{c.pickedToDelivered | date:'medium'}}</span></td>
+                                            <td style="text-align: center">{{c.bkashNumber}}</td>
+                                            <td style="text-align: center"><a href="{{c.documentUrl}}" target="_blank"><img style="max-height:100px; max-width:100px;" src="{{c.documentUrl}}"></a></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="10" style="text-align: right; font-weight: bold;">Total Collection Amount:</td>
+                                            <td>{{totalCollectionAmount}}</td>
+                                            <td colspan="18"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="createExcelSheet('showDetails')">Excel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*modal ends*@
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" style="width:150px;" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+
+                                    <input type="text" autocomplete="off" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" autocomplete="off" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+
+                                    <select style="width: 160px; margin-left: 2px; margin-right: 2px;" ng-model="deliveryMan" class="form-control">
+                                        <option value="0" selected>Select Delivery Man</option>
+                                        <option ng-repeat="d in deliveryMans" value="{{d.id}}">{{d.name}}</option>
+                                    </select>
+
+                                    <select style="width:170px; margin-left:2px; margin-right:2px;" ng-model="collectionTimeSlotId" class="form-control">
+                                        <option value="0" selected>Select-Slot</option>
+                                        <option ng-repeat="d in timeSlotData" value="{{d.collectionTimeSlotId}}">{{d.formattingStartTime}} - {{d.formattingEndTime}}</option>
+                                    </select>
+                                </div>
+
+                                <button type="button" class="btn btn-w-m btn-success" ng-click="getOrderStatusHistoryCountData(fromDate, toDate, deliveryMan,collectionTimeSlotId)">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+
+                                <div class="col-lg-12" style="margin: 20px 0px 10px 0px" id="dtOrderStatusReportCountData">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr style="background-color: #F5F5F6">
+                                                <th colspan="3">
+                                                    Delivery Tiger Orders
+                                                </th>
+                                            </tr>
+                                            <tr style="background-color: #F5F5F6">
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveryManName'; reverseSort = !reverseSort">
+                                                        Delivery Man Name
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#">
+                                                        Order Counts
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="o in orderStatusReportCountData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                                <td style="text-align: center; vertical-align: middle;">
+                                                    {{$index +1}}
+                                                </td>
+                                                <td style="text-align: center; vertical-align: middle;">
+                                                    {{o.deliveryManName}}
+                                                </td>
+                                                <td style="text-align: left">
+                                                    <table class="table table-bordered">
+                                                        <tr style="background-color: #F5F5F6">
+                                                            <th style="width: 10%; text-align: center;">
+                                                                <a href="#" ng-click="orderByField='statusId'; reverseSort = !reverseSort">
+                                                                    Status Id
+                                                                </a>
+                                                            </th>
+                                                            <th style="width: 60%; text-align: center;">
+                                                                <a href="#" ng-click="orderByField='statusName'; reverseSort = !reverseSort">
+                                                                    Status Name
+                                                                </a>
+                                                            </th>
+                                                            <th style="width: 15%; text-align: center;">
+                                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                                    Order Count
+                                                                </a>
+                                                            </th>
+                                                            <th style="width: 15%; text-align: center;">
+                                                                <a href="#" ng-click="orderByField='merchantCount'; reverseSort = !reverseSort">
+                                                                    Merchant Count
+                                                                </a>
+                                                            </th>
+                                                        </tr>
+                                                        <tr ng-repeat="od in o.orderCounts | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                                            <td style="text-align: center">
+                                                                {{od.statusId}}
+                                                            </td>
+                                                            <td style="text-align: left">
+                                                                {{od.statusName}}
+                                                            </td>
+                                                            <td style="text-align: center">
+                                                                <input type="button" class="btn btn-sm btn-primary" data-toggle='modal' data-target='#dtOrderDetailsModal' style="cursor: pointer;" ng-click="getDtOrderHistoryDetails(fromDate,toDate,od.deliveryManId,od.statusId,od.statusName,collectionTimeSlotId)" value="{{od.orderCount}}">
+                                                            </td>
+                                                            <td style="text-align: center">
+                                                                {{od.merchantCount}}
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+

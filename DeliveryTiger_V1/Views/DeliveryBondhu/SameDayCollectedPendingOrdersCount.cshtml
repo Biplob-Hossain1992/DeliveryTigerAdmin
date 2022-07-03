@@ -1,0 +1,265 @@
+﻿
+@{
+    ViewBag.Title = "SameDayCollectedPendingOrdersCount";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<style>
+    .rounded:hover {
+        background: #ff4000;
+        color: #000000;
+    }
+
+    #hoverDiv:hover {
+        background: #f8ac59 !important;
+        border: #000000;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('sameDayCollectedPendingModule', []);
+    app.controller('sameDayCollectedPendingController', function ($scope, $http, $anchorScroll, $location) {
+
+
+        $scope.getOrdersCount = (fromDate, toDate) => {
+            $scope.showLoader = true;
+
+            if (fromDate == null || fromDate == "" || toDate == null || toDate == "") {
+                alert("Please Select Date Range");
+                $scope.showLoader = false;
+                return false;
+            }
+
+            let requestBody = {
+                "fromDate": fromDate,
+                "toDate": toDate
+            }
+
+            $http.post(apiBaseURL + "Fetch/SameDayCollectedPendingOrdersCount", requestBody, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.getOrdersCountData = response.data.model;
+                    $scope.cancel = $scope.getOrdersCountData.filter(c => c.Cancel == 1);
+                    $scope.collected = $scope.getOrdersCountData.filter(c => c.Collected == 1);
+                    //$scope.pending = $scope.getOrdersCountData.length - ($scope.cancel.length + $scope.collected.length);
+                    $scope.pending = $scope.getOrdersCountData.filter(p => p.Cancel == 0 && p.Collected == 0 && p.OfficeDrop == false);
+                    $scope.officeDrop = $scope.getOrdersCountData.filter(o => o.OfficeDrop == true && o.Cancel == 0 && o.Collected == 0);
+
+                    $scope.showCountDiv = true;
+
+                    $scope.showLoader = false;
+                }),
+                function error(response) {
+                    alert("Something Went Wrong!!");
+                }
+
+
+        };
+
+        $scope.getTotalOrderDetails = (flag) => {
+            $scope.showDataTable = true;
+            if (flag == 1) {
+                $scope.getTableData = $scope.getOrdersCountData;
+                $scope.uniqueMerchants($scope.getTableData);
+                $scope.clicked = 'TotalOrders...!!!';
+                $scope.percentageDiv = false;
+            }
+            else if (flag == 2) {
+                $scope.getTableData = $scope.cancel;
+                $scope.uniqueMerchants($scope.getTableData);
+                $scope.clicked = 'Cancel...!!!';
+                $scope.percentage = ($scope.cancel.length * 100) / $scope.getOrdersCountData.length;
+                $scope.percentageDiv = true;
+            }
+            else if (flag == 3) {
+                $scope.getTableData = $scope.collected;
+                $scope.uniqueMerchants($scope.getTableData);
+                $scope.clicked = 'Collected...!!!';
+                $scope.percentage = ($scope.collected.length * 100) / $scope.getOrdersCountData.length;
+                $scope.percentageDiv = true;
+            }
+            else if (flag == 4) {
+                $scope.getTableData = $scope.pending;
+                $scope.uniqueMerchants($scope.getTableData);
+                $scope.clicked = 'Pending...!!!';
+                $scope.percentage = ($scope.pending.length * 100) / $scope.getOrdersCountData.length;
+                $scope.percentageDiv = true;
+            }
+            else if (flag == 5) {
+                $scope.getTableData = $scope.officeDrop;
+                $scope.uniqueMerchants($scope.getTableData);
+                $scope.clicked = 'Office Drop...!!!';
+                $scope.percentage = ($scope.officeDrop.length * 100) / $scope.getOrdersCountData.length;
+                $scope.percentageDiv = true;
+            }
+
+
+        }
+
+        //Unique Merchant
+        $scope.uniqueMerchants = (getData) => {
+            $scope.totalMerchant = [...new Set(getData.map(x => x.MerchantId))];
+        }
+
+    });
+
+</script>
+
+<div class="row" ng-app="sameDayCollectedPendingModule">
+    <div class="col-lg-12" ng-controller="sameDayCollectedPendingController">
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+
+                                    <input type="text" autocomplete="off" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" autocomplete="off" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+
+                                    <button style="margin-left:5px;" type="button" class="btn btn-w-m btn-success" ng-click="getOrdersCount(fromDate, toDate)">Search</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ibox-content">
+
+                        <div class="row" ng-show="showCountDiv">
+
+                            <div id="hoverDiv" class="col-lg-2 form-control shadow-lg p-3 mb-5 bg-white rounded" style="width: 200px; height: 80px; text-align: center; cursor: pointer; margin-left: 20px;" ng-click="getTotalOrderDetails(1)">
+                                <label>Total Order</label><br />
+                                <span><b>{{getOrdersCountData.length}}</b></span>
+                            </div>
+                            <div id="hoverDiv" class="col-lg-2 form-control shadow-lg p-3 mb-5 bg-white rounded" style="width: 200px; height: 80px; text-align: center; cursor: pointer; margin-left: 20px;" ng-click="getTotalOrderDetails(2)">
+                                <label>Cancel</label><br />
+                                <span><b>{{cancel.length}}</b></span>
+                            </div>
+                            <div id="hoverDiv" class="col-lg-2 form-control shadow-lg p-3 mb-5 bg-white rounded" style="width: 200px; height: 80px; text-align: center; cursor: pointer; margin-left: 20px;" ng-click="getTotalOrderDetails(3)">
+                                <label>Collected</label><br />
+                                <span><b>{{collected.length}}</b></span>
+                            </div>
+                            <div id="hoverDiv" class="col-lg-2 form-control shadow-lg p-3 mb-5 bg-white rounded" style="width: 200px; height: 80px; text-align: center; cursor: pointer; margin-left: 20px;" ng-click="getTotalOrderDetails(4)">
+                                <label>Pending</label><br />
+                                <span><b>{{pending.length}}</b></span>
+                            </div>
+                            <div id="hoverDiv" class="col-lg-2 form-control shadow-lg p-3 mb-5 bg-white rounded" style="width: 200px; height: 80px; text-align: center; cursor: pointer; margin-left: 20px;" ng-click="getTotalOrderDetails(5)">
+                                <label>Office Drop</label><br />
+                                <span><b>{{officeDrop.length}}</b></span>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                    <div class="ibox-content">
+
+                        <div class="row" ng-show="showDataTable">
+                            <div class="col-lg-3" style="margin-top:14px">
+                                <span><b style="color:orangered;">{{clicked}} <b style="color:black;" ng-show="percentageDiv">( {{percentage | number: 2}} % )</b></b></span><br />
+                            </div>
+                            <div class="col-lg-2" style="margin-top:14px">
+                                <span>Total Merchant:<b style="color:orangered;"> {{totalMerchant.length}}</b></span><br />
+                            </div>
+                            <div class="col-lg-12" style="margin-top: 20px;">
+
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Merchant Name</th>
+                                            <th>Order Id</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='StatusNameEng'; reverseSort = !reverseSort">
+                                                    Last Status
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='District'; reverseSort = !reverseSort">
+                                                    Collection Thana
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CollectAddressDistrictId'; reverseSort = !reverseSort">
+                                                    ISD/OSD
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='PaymentType'; reverseSort = !reverseSort">
+                                                    Payment Type
+                                                </a>
+                                            </th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        <tr ng-repeat="z in getTableData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+
+                                            <td>{{z.CompanyName}}</td>
+                                            <td>DT-{{z.Id}}</td>
+                                            <td>{{z.StatusNameEng}}</td>
+                                            <td>{{z.District}}</td>
+                                            <td>
+                                                <span ng-if="z.CollectAddressDistrictId == 14">Inside Dhaka</span>
+                                                <span ng-if="z.CollectAddressDistrictId != 14">Outside Dhaka</span>
+                                            </td>
+                                            <td>{{z.PaymentType}}</td>
+
+                                        </tr>
+
+                                    </tbody>
+                                </table>
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+

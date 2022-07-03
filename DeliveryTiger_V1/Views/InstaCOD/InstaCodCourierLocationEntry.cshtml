@@ -1,0 +1,203 @@
+﻿
+@{
+    ViewBag.Title = "InstaCodCourierLocationEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title">InstaCOD CourierLocation Entry</h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<div ng-app="InstaCodCourierLocationEntryModule">
+    <div ng-controller="InstaCodCourierLocationEntryController" ng-init="loadInitializeData()">
+        <div class="card">
+            <div class="card-body">
+                <div class="container-fluid">
+                    <div class="form-inline">
+                        <div class="form-group mb-2">
+                            <label for="staticEmail2" class="mr-2">Location Name</label>
+                            <input type="text" class="form-control" autocomplete="off" ng-model="locationName">
+                        </div>
+                        <div class="form-group mx-sm-3 mb-2">
+                            <label for="inputPassword2" class="mr-2">Courier Name</label>
+                            <select style="margin-left:2px;" class="form-control" ng-model="courierName">
+                                <option value="" selected>Select Courier</option>
+                                <option value="sa">SA</option>
+                            </select>
+                        </div>
+                        <button type="button" ng-click="entryNewCourierLocation(locationName,courierName)" class="btn btn-primary mb-2">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="spiner-example" ng-show="showLoader">
+            <div class="sk-spinner sk-spinner-wave">
+                <div class="sk-rect1">
+                </div>
+                <div class="sk-rect2">
+                </div>
+                <div class="sk-rect3">
+                </div>
+                <div class="sk-rect4">
+                </div>
+                <div class="sk-rect5">
+                </div>
+            </div>
+        </div>
+        <div class="card" ng-show="showTable">
+            <div class="card-body">
+                <div class="container-fluid">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Courier Name</th>
+                                <th scope="col">Location Name</th>
+                                <th scope="col">IsActive</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="data in loadAllCourier">
+                                <th>{{$index + 1}}</th>
+                                <td>{{data.courierName | uppercase}}</td>
+                                <td>{{data.locationName}}</td>
+                                <td>{{data.isActive}}</td>
+                                <td>
+                                    <button type="button" class="btn btn-primary" ng-click="loadCourierLocationOnModal(data)" data-toggle="modal" data-target="#exampleModal">Edit</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Courier Location Update</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+                            <div class="form-group">
+                                <label for="recipient-name" class="col-form-label">Location Name:</label>
+                                <input type="text" class="form-control" ng-model="locationModalName">
+                            </div>
+                            <div class="form-group">
+                                <label for="message-text" class="col-form-label">Courier Name:</label>
+                                <input type="text" class="form-control" ng-model="courierModalName">
+                            </div>
+                            <div class="form-group">
+                                <label for="message-text" class="col-form-label">Courier Name:</label>
+                                <select class="form-control" id="modalIsActive">
+                                    <option value="true">Active</option>
+                                    <option value="false">InActive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="modalCloseId" data-dismiss="modal">Close</button>
+                        <button type="button" ng-click="updateCourierLocation(locationModalName,courierModalName)" class="btn btn-primary">Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    var app = angular.module('InstaCodCourierLocationEntryModule', []);
+    app.controller('InstaCodCourierLocationEntryController', ($scope, $http) => {
+
+        let currentUserId = +sessionStorage.getItem("userId");
+        let userAdminType = +sessionStorage.getItem("adminType");
+        let userToken = sessionStorage.getItem("token");
+        var config = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}`
+            }
+        }
+
+        $scope.loadInitializeData = () => {
+            if (currentUserId == 0) {
+                window.location.href = "/Account/Login";
+            }
+            //if (userAdminType == 11) {
+            //    $scope.addButtonAccess = true;
+            //}
+            //else {
+            //    $scope.addButtonAccess = false;
+            //}
+            $scope.loadAllCourierLocation();
+        }
+        $scope.entryNewCourierLocation = (locationName, courierName) => {
+            $scope.showLoader = true;
+            let url = apiBaseURL + 'InstantCod/AddCourierLocation';
+            const model = {
+                "locationName": locationName,
+                "courierName": courierName,
+                "isActive": true
+            }
+            $http.post(url, model, config)
+                .then((res) => {
+                    swal("Good job!", "Data Inserted Successfully!", "success");
+                    $scope.loadAllCourierLocation();
+                    $scope.locationName = "";
+                    $scope.courierName = "";
+                }, (error) => {
+                    console.log(error);
+                })
+            $scope.showLoader = false;
+        }
+
+        $scope.loadAllCourierLocation = () => {
+            $scope.showLoader = true;
+            $scope.showTable = false;
+            let url = apiBaseURL + 'InstantCod/GetCourierLocations/0';
+            $http.get(url, config)
+                .then((res) => {
+                    $scope.loadAllCourier = res.data.model;
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+                //    console.log(res);
+                }, (errors) => {
+                    console.log(errors);
+                })
+        }
+        $scope.loadCourierLocationOnModal = (data) => {
+            $scope.locationModalName = data.locationName;
+            $scope.courierModalName = data.courierName;
+            document.getElementById('modalIsActive').value = data.isActive;
+        }
+        $scope.updateCourierLocation = (locationModalName, courierModalName) => {
+            var status = document.getElementById('modalIsActive').value;
+            const model = {
+                "locationName": locationModalName,
+                "courierName": courierModalName,
+                "isActive": status,
+            }
+            swal("Informations!", "Update on underconstruction..Please contact with IT for this options!", "info");
+            document.getElementById('modalCloseId').click();
+            console.log(model);
+        }
+    });
+</script>

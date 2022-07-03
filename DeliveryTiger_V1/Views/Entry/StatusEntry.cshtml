@@ -1,0 +1,171 @@
+﻿
+@{
+    ViewBag.Title = "StatusEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="~/Scripts/Entry/StatusEntry.js"></script>
+<script src="~/Scripts/plugins/dataTables/dataTables.bootstrap4.min.js"></script>
+<script src="~/Scripts/plugins/dataTables/datatables.min.js"></script>
+<link href="~/Content/plugins/dataTable/datatables.min.css" rel="stylesheet" />
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+            LoadStatusGroups("",null,null,null,null,null);
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+        $("#statusBng").keypress(function (e) {
+            var regex = new RegExp("^[a-zA-Z0-9]+$");
+            var str = String.fromCharCode(!e.charCode ? e.which : e.charCode);
+            if (!regex.test(str)) {
+                return true;
+            }
+            e.preventDefault();
+            alert("দয়া করে বাংলায় লিখুন");
+            return false;
+        });
+    });
+</script>
+<style>
+    .col-form-label {
+        font-weight: bold;
+    }
+</style>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+@*Status Entry*@
+<div class="row" style="margin-top:20px;">
+    <div class="col-lg-12">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Status Entry <small>Insert New Status Group Wise</small></h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <input id="UserHidden" type="hidden" value="" />
+                <div class="col-lg-12">
+                    <div class="form-group row">
+                        <label class="col-lg-2 col-form-label">Status English</label>
+                        <div class="col-lg-10">
+                            <input type="text" id="statusEng" class="form-control" placeholder=" Ex: Order received by DT head office" />
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-2 col-form-label">Status Bangla</label>
+                        <div class="col-lg-10">
+                            <input type="text" id="statusBng" class="form-control" placeholder=" Ex: প্রোডাক্টটি DT হেড অফিস গ্রহন করেছে" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-12" style="display:flex;padding:0px;">
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <label class="col-lg-5 col-form-label">Report Group</label>
+                            <div class="col-lg-7">
+                                <select id="reportStatusGroup" class="form-control">
+                                    <option value="-1" selected>Select Report Group</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <label class="col-lg-5 col-form-label">Fulfillment Group</label>
+                            <div class="col-lg-7">
+                                <select id="fulfillmentStatusGroup" class="form-control">
+                                    <option value="-1">Select Fulfillment Group</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <label class="col-lg-5 col-form-label">Status Type</label>
+                            <div class="col-lg-7">
+                                <select id="statusType" class="form-control">
+                                    <option value="Paid">Paid</option>
+                                    <option value="Unpaid" selected>Unpaid</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-12" style="display:flex;padding:0px;">
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <label class="col-lg-5 col-form-label">Order Tracking Group</label>
+                            <div class="col-lg-7">
+                                <select id="orderTrackingStatusGroup" class="form-control">
+                                    <option value="-1">Select Order Tracking Group</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <label class="col-lg-5 col-form-label">Public Order Tracking Group</label>
+                            <div class="col-lg-7">
+                                <select id="publicOrderTrackingStatusGroup" class="form-control">
+                                    <option value="-1">Select Public Order Tracking Group</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <label class="col-lg-5 col-form-label">Dashboard Status Group</label>
+                            <div class="col-lg-7">
+                                <select id="dashboardStatusGroup" class="form-control">
+                                    <option value="-1">Select Dashboard Status Group</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row" style="justify-content: center">
+                    <button type="button" id="addNewStatusBtn" class="btn btn-success" style="margin: 10px;" onclick="addNewStatus()"><strong>Add Status</strong></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*Status Update*@
+<div class="row">
+    <div class="col-lg-12">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Courier Status List <small>Load All Delivery Tiger Status List</small></h5>
+                <button class="btn btn-info offset-3" type="button" onclick="loadAllStatusList()">Load</button>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content" style="padding:5px;">
+                <div class="table-responsive" style="padding: 0px;" id="statusListDetails">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

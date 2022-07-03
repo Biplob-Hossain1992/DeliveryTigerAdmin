@@ -1,0 +1,145 @@
+﻿
+@{
+    ViewBag.Title = "Courier Bill Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<div ng-app="CourierBillReportModule">
+    <div ng-controller="CourierBillReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                            <div class="form-group">
+                                <h4 style="text-align:center;">Courier Bill Report</h4>
+                            </div>
+                            <div class="form-group">
+                                <div class="form-inline">
+                                    <input style="margin-right: 2px;" type="text" class="form-control form-control-sm" ng-model="mainSearch" placeholder="search" />
+                                    <div class="input-group">
+                                        <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                        <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                        <select style="border: 1px solid #46b8da;margin-left: 2px;" class="btn btn-default" ng-model="podType" name="podType" id="podType" ng-options="podTypes.id as podTypes.name for podTypes in podTypeList"></select>
+                                        <button type="button" class="btn btn-w-m btn-success" ng-click="courierBillReport(fromDate,toDate,podType)">Show</button>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="col-lg-12">
+                            <table class="table table-bordered table-responsive">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='courierName'; reverseSort = !reverseSort">
+                                                Courier Name
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='district'; reverseSort = !reverseSort">
+                                                District(Inside/Outside)
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='payment'; reverseSort = !reverseSort">
+                                                PaymentType
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='total'; reverseSort = !reverseSort">
+                                                Total {{totalPodType}} POD
+                                            </a>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="d in courierBillData | orderBy:orderByField:reverseSort | filter:mainSearch"">
+                                        <td>{{$index+1}}</td>
+                                        <td>{{d.courierName}}</td>
+                                        <td>{{d.district}}</td>
+                                        <td>{{d.payment}}</td>
+                                        <td>{{d.total}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('CourierBillReportModule', []);
+    app.controller('CourierBillReportController', function ($scope, $http) {
+        //URL
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+        var LocalCoreUrl = "http://localhost:58676/api/";
+
+        $scope.podType = 1;
+        $scope.podTypeList = [
+            {
+                'id': 1,
+                'name': 'Package Pod'
+            },
+            {
+                'id': 2,
+                'name': 'Delivered Pod'
+            }
+        ];
+
+        $scope.courierBillReport = function (fromDate, toDate, podType) {
+            if (typeof fromDate === 'undefined' || fromDate === "" || typeof toDate === 'undefined' || toDate === "") {
+                alert('Please must be select From and To Date');
+                return false;
+            }
+
+            if (podType == 1) $scope.totalPodType = 'Package';
+            else if (podType == 2) $scope.totalPodType = 'Delivered';
+
+            var requestBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "flag": podType
+            };
+
+            $scope.showLoader = true;
+            $http.post(CoreOnlineUrl + 'Report/GetCourierBillList', requestBodyModel, { header: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.courierBillData = response.data.model;
+                    $scope.showLoader = false;
+                },
+                function (error) {
+                    $scope.showLoader = false;
+                    console.log(error);
+                });
+        }
+    });
+</script>

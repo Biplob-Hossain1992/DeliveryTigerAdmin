@@ -1,0 +1,362 @@
+﻿
+@{
+    ViewBag.Title = "ReturnCourierPendingStatusReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title">Return Courier Pending Status Report</h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<div ng-app="returnCourierPendingStatusModule">
+    <div ng-controller="returnCourierPendingStatusController" ng-init="loadInitializeData()">
+        <div class="container-fluid">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-inline">
+                        <div class="form-group">
+                            <select class="form-control" ng-model="dateFlag">
+                                <option value="-1" selected>Select Status</option>
+                                <option value="1">Return Pending</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select class="form-control" ng-model="courierId">
+                                <option value="-1" selected>Select Courier</option>
+                                <option ng-repeat="data in loadAllCouriers" value="{{data.courierId}}">{{data.courierName}}</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr form-control" autocomplete="off" placeholder="From Date" />
+                        </div>
+                        <div class="form-group">
+                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="toDate" name="toDate" class="btn flatpickr form-control" autocomplete="off" placeholder="To Date" />
+                        </div>
+                        <div class="form-group ml-2 mt-2">
+                            <select class="form-control" ng-change="hideDeliveryColumn(statusId)" ng-model="statusId">
+                                <option value="-1" selected>Select StatusId</option>
+                                <option value="59">Return order send to hub-59</option>
+                                <option value="60">Return product received by hub-60</option>
+                                <option value="38">Return Accepted by Delivery Man-38</option>
+                                <option value="39">Return hand over to merchant-39</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary ml-2 mt-2" ng-click="getReturnProductStatusCount(dateFlag,statusId,fromDate,toDate,courierId)">Search</button>
+                    </div>
+                    <div class="spiner-example" ng-show="showLoader">
+                        <div class="sk-spinner sk-spinner-wave">
+                            <div class="sk-rect1">
+                            </div>
+                            <div class="sk-rect2">
+                            </div>
+                            <div class="sk-rect3">
+                            </div>
+                            <div class="sk-rect4">
+                            </div>
+                            <div class="sk-rect5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" ng-show="showTable">
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th class="text-center font-weight-bold" scope="col">#</th>
+                                <th class="text-center font-weight-bold" scope="col">HubName</th>
+                                <th class="text-center font-weight-bold" scope="col">TotalOrder</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="text-align:center;" ng-repeat="data in reportData">
+                                <th scope="row">{{$index + 1}}</th>
+                                <td>{{data.hubName}}</td>
+                                <td>
+                                    <a aria-hidden="true" data-toggle="modal" data-target="#reportModal" data-backdrop="static" data-keyboard="false" ng-click="getReturnProductStatusCountDetails(data, fromDate, toDate)">{{data.totalHub}} <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card" ng-show="showReturnTable">
+                <div class="card-body">
+                    <div class="form-group mb-1">
+                        <input type="button" class="btn btn-danger btn-sm" ng-click="createExcelSheet('exportTable', $event)" value="Expot Excel" style="float: left;" />
+                    </div>
+                    <div class="form-group" style="color:orangered;"><b class="ml-2">Total Count: {{reportDetailsData.length}}</b></div>
+
+                    <div id="exportTable">
+                        <table class="table table-striped table-bordered table-sm table-responsive">
+                            <thead>
+                                <tr>
+                                    <th class="text-center font-weight-bold" scope="col">#</th>
+                                    <th class="text-center font-weight-bold" scope="col">CourierOrdersId</th>
+                                    <th class="text-center font-weight-bold" scope="col">ActualPackagePrice</th>
+                                    <th class="text-center font-weight-bold" scope="col">CollectionAmount</th>
+                                    <th class="text-center font-weight-bold" scope="col">CompanyName</th>
+                                    <th class="text-center font-weight-bold" scope="col">CourierName</th>
+                                    <th class="text-center font-weight-bold" scope="col">PodNumber</th>
+                                    <th class="text-center font-weight-bold" scope="col">HubName</th>
+                                    <th class="text-center font-weight-bold" scope="col">StatusName</th>
+                                    <th class="text-center font-weight-bold" scope="col">OrderDate</th>
+                                    <th class="text-center font-weight-bold" scope="col">Comment</th>
+                                    <th class="text-center font-weight-bold" scope="col">UpdatedOn</th>
+                                    <th class="text-center font-weight-bold" scope="col">IsConfirmedBy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="text-align:center;" ng-repeat="model in reportDetailsData">
+                                    <td>{{$index + 1}}</td>
+                                    <td>{{model.courierOrdersId}}</td>
+                                    <td>{{model.actualPackagePrice}}</td>
+                                    <td>{{model.collectionAmount}}</td>
+                                    <td>{{model.companyName}}</td>
+                                    <td>{{model.courierName}}</td>
+                                    <td>{{model.podNumber}}</td>
+                                    <td>{{model.hubName}}</td>
+                                    <td>{{model.statusNameEng}}</td>
+                                    <td>{{model.orderDate | date:"MM/dd/yyyy 'at' h:mma"}}</td>
+                                    <td>{{model.comment}}</td>
+                                    <td>{{model.updatedOn | date:"MM/dd/yyyy 'at' h:mma"}}</td>
+                                    <td>{{model.isConfirmedBy}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal inmodal fade" id="reportModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateDistrictModalHeader">Detailed Status Report</h5>
+                        <label style="align-content:center; font-size:medium;">({{insideModel}})</label>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showModalLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="button" class="btn btn-success btn-sm" ng-click="createExcelSheet('exportModalTable', $event)" value="Expot Excel" style="float: right; margin-right: 18px;" />
+                        <div class="form-group" style="color:orangered;"><b class="ml-2">Total Count: {{reportDetailsData.length}}</b></div>
+                        <div class="col-lg-12 align-content-center" id="reportDetails" style="height: 634px; overflow: auto;">
+                            <div class="table table-responsive" id="exportModalTable">
+                                <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center font-weight-bold" scope="col">#</th>
+                                            <th class="text-center font-weight-bold" scope="col">CourierOrdersId</th>
+                                            <th class="text-center font-weight-bold" scope="col">ActualPackagePrice</th>
+                                            <th class="text-center font-weight-bold" scope="col">CollectionAmount</th>
+                                            <th class="text-center font-weight-bold" scope="col">CompanyName</th>
+                                            <th class="text-center font-weight-bold" scope="col">CourierName</th>
+                                            <th class="text-center font-weight-bold" scope="col">PodNumber</th>
+                                            <th class="text-center font-weight-bold" scope="col">HubName</th>
+                                            <th class="text-center font-weight-bold" scope="col">StatusName</th>
+                                            <th class="text-center font-weight-bold" scope="col" ng-show="hideShowStatusIdWise">CourierDeliveryManName</th>
+                                            <th class="text-center font-weight-bold" scope="col">OrderDate</th>
+                                            <th class="text-center font-weight-bold" scope="col">Comment</th>
+                                            <th class="text-center font-weight-bold" scope="col">UpdatedOn</th>
+                                            <th class="text-center font-weight-bold" scope="col">IsConfirmedBy</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="text-align:center;" ng-repeat="model in reportDetailsData">
+                                            <td>{{$index + 1}}</td>
+                                            <td>{{model.courierOrdersId}}</td>
+                                            <td>{{model.actualPackagePrice}}</td>
+                                            <td>{{model.collectionAmount}}</td>
+                                            <td>{{model.companyName}}</td>
+                                            <td>{{model.courierName}}</td>
+                                            <td>{{model.podNumber}}</td>
+                                            <td>{{model.hubName}}</td>
+                                            <td>{{model.statusNameEng}}</td>
+                                            <td ng-show="hideShowStatusIdWise">{{model.courierDeliveryManName}}</td>
+                                            <td>{{model.orderDate | date:"MM/dd/yyyy 'at' h:mma"}}</td>
+                                            <td>{{model.comment}}</td>
+                                            <td>{{model.updatedOn | date:"MM/dd/yyyy 'at' h:mma"}}</td>
+                                            <td>{{model.isConfirmedBy}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    var app = angular.module('returnCourierPendingStatusModule', []);
+    app.controller('returnCourierPendingStatusController', ($scope, $http) => {
+
+        $scope.dateFlag = '-1';
+        $scope.statusId = '-1';
+        $scope.courierId = '-1';
+        $scope.showTable = false;
+        $scope.showReturnTable = false;
+
+        $scope.loadInitializeData = () => {
+            let currentUserId = +sessionStorage.getItem("userId");
+            let userAdminType = +sessionStorage.getItem("adminType");
+            if (currentUserId == 0) {
+                window.location.href = "/Account/Login";
+            }
+            flatpickr(".flatpickr", {
+                enableTime: false,
+                allowInput: true,
+                maxDate: ""
+            });
+            $scope.SetDate();
+            $scope.GetAllCouriers();
+        }
+        $scope.SetDate = () => {
+
+            let date = new Date();
+            var dd = String(date.getDate()).padStart(2, '0');
+            var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = date.getFullYear();
+            var toDate = yyyy + '-' + mm + '-' + dd;
+
+            let days = 0; // 7 days behind current date
+            var last = new Date(date.getTime() - (days * 24 * 60 * 60 * 1000));
+            var day = String(last.getDate()).padStart(2, '0');
+            var month = String(last.getMonth() + 1).padStart(2, '0');
+            var year = last.getFullYear();
+            var fromDate = year + '-' + month + '-' + day;
+
+            $scope.fromDate = fromDate;
+            $scope.toDate = toDate;
+
+        }
+
+        $scope.hideDeliveryColumn = (statusId) => {
+            var array = ["59", "60"];
+            if (array.find(c => c == statusId)) {
+                $scope.hideShowStatusIdWise = false;
+            }
+            else {
+                $scope.hideShowStatusIdWise = true;
+            }
+        }
+
+        $scope.getReturnProductStatusCount = (dateFlag, statusId, fromDate, toDate, courierId) => {
+            if (dateFlag == "-1" && statusId == "-1") {
+                alert("Please Select Status");
+                return false;
+            }
+            const model = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "DateFlag": dateFlag,
+                "StatusId": statusId,
+                "CourierId": courierId,
+            }
+            $scope.showLoader = true;
+            if (dateFlag == 1 ) {
+                let url = apiBaseURL + "Report/ReturnCourierPendingStatusDetails";
+                $http.post(url, model, { headers: { 'Content-Type': 'application/json' } })
+                    .then((response) => {
+                        $scope.reportDetailsData = response.data.model;
+                        $scope.showLoader = false;
+                        $scope.showReturnTable = true;
+                        $scope.exportModalTable = false;
+                        $scope.showTable = false;
+                        //console.log(response.data.model);
+                    }, (error) => {
+                        console.log(error);
+                    })
+            }
+            else {
+                let url = apiBaseURL + "Report/ReturnCourierPendingStatusCount";
+                $http.post(url, model, { headers: { 'Content-Type': 'application/json' } })
+                    .then((response) => {
+                        $scope.reportData = response.data.model;
+                        //console.log(response.data.model);
+                        $scope.showLoader = false;
+                        $scope.showReturnTable = false;
+                        $scope.showTable = true;
+                    }, (error) => {
+                        console.log(error);
+                    })
+            }
+        }
+        $scope.getReturnProductStatusCountDetails = (data, fromDate, toDate) => {
+            $scope.showLoader = true;
+            const model = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "StatusId": +data.status,
+                "Comment": data.hubName
+            }
+            $scope.insideModel = data.hubName;
+            let url = apiBaseURL + "Report/ReturnCourierPendingStatusCountDetails";
+            $http.post(url, model, { headers: { 'Content-Type': 'application/json' } })
+                .then((response) => {
+                    $scope.reportDetailsData = response.data.model;
+                    $scope.showLoader = false;
+                    $scope.exportModalTable = true;
+                    $scope.showReturnTable = false;
+                    //console.log(response.data.model);
+                }, (error) => {
+                    console.log(error);
+                })
+            console.log(model);
+        }
+        $scope.GetAllCouriers = () => {
+            $http.get(apiBaseURL + 'Fetch/GetAllCouriers', { headers: { 'Content-Type': 'application/json' } })
+                .then((response) => {
+                    $scope.loadAllCouriers = response.data.model.filter(d => d.isPresent == 1);
+                }, function error(response) {
+                    console.log(response);
+                })
+        }
+        $scope.createExcelSheet = (tableName, event) => {
+            var element = encodeURIComponent($('#' + tableName).html());
+            //window.open('data:application/vnd.ms-excel,' + encodeURIComponent(element));
+            var a = document.createElement('a');
+            var data_type = 'data:application/vnd.ms-excel';
+            a.href = data_type + ', ' + element;
+            a.download = 'RQO_PendingStatus.xls';
+            a.click();
+            event.preventDefault();
+        }
+    })
+</script>

@@ -1,0 +1,408 @@
+﻿
+@{
+    ViewBag.Title = "AddVoucher";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.min.js" integrity="sha512-IO99nu6TitXdydITTnjerPUo0HffdgLC9yIfv5gwglcsSR7nN008a7QDynI5Ih0mGLlnNnt8tGIuBCFRZaNjqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-sanitize.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.css" integrity="sha512-3MNyrZTIbIT7sGASBSy4HeOwFNhRephd5RfnYcyr7Nbs0CX3/KaNcpPivPOAkOfrKBLL2VtyNzXgphX1i71nEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+     }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+<!--Script for Date Picker-->
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: true,
+            allowInput: true,
+            //maxDate: "today"
+            minDate: "today"
+        });
+
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+<!--Page Header-->
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<!--Page Header End-->
+<!--Page Start-->
+
+
+<div class="row" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-app="voucherEntryModule">
+        <div class="ibox" ng-controller="voucherEntryController">
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <div class="col-lg-12">
+                    <!--First Row-->
+                    <div class="row form-group">
+                        <!--Merchant mobile number-->
+
+                        <div class="col-lg-2 form-group">
+                            <label class="col-form-label"><strong>Merchant</strong></label>
+                        </div>
+                        <div class="col-lg-2">
+                            <ui-select ng-model="merchantMobile" theme="select2" style="min-width:150px; " ng-click="getMerchantMobile($select.selected.mobile ,$select.selected.courierUserId )">
+                                <ui-select-match>
+                                    <span ng-bind="$select.selected.companyName"></span>
+                                </ui-select-match>
+                                <ui-select-choices repeat="item in (allMerchantInfo | filter: $select.search)" refresh="loadMerchantData($select.search)" refresh-delay="100" minimum-input-length="1">
+                                    <span ng-bind="item.companyName +' - '+item.mobile"></span>
+                                </ui-select-choices>
+                            </ui-select>
+
+                        </div>
+
+
+
+
+                        <!--Merchant mobile number end-->
+                        <!--Voucher Code-->
+
+                        <div class="col-lg-2 form-group">
+                            <label class="col-form-label"><strong>Voucher Code</strong></label>
+                        </div>
+                        <div class="col-lg-2 form-group">
+                            <input type="text" name="voucherCode" ng-model="voucherCode" class="form-control" autocomplete="off" />
+                        </div>
+
+
+                        <!--Voucher Code End-->
+                        <!--Voucher Value-->
+
+                        <div class="col-lg-2 form-group">
+                            <label class="col-form-label"><strong>Voucher Amount</strong></label>
+                        </div>
+                        <div class="col-lg-2 form-group">
+                            <input type="text" pattern="\d*" name="voucherValue" ng-model="voucherValue" class="form-control" maxlength="3" placeholder="Ex: 10" autocomplete="off" required />
+
+                        </div>
+
+
+                        <!--Voucher Value End-->
+                    </div>
+                    <!--First Row End-->
+                    <!--Second Row-->
+                    <div class="row form-group">
+                        <!--Applicable Quantity-->
+
+                        <div class="col-lg-2 form-group">
+                            <label class="col-form-label"><strong>Applicable Quantity</strong></label>
+                        </div>
+                        <div class="col-lg-2 form-group">
+                            <input type="number" name="applicableQuantity" ng-model="applicableQuantity" class="form-control" placeholder="Ex:5" autocomplete="off" />
+                        </div>
+
+
+                        <!--Applicable Quantity end-->
+                        <!--Start Time-->
+
+                        <div class="col-lg-2 form-group">
+                            <label class="col-form-label"><strong>Start Time</strong></label>
+                        </div>
+                        <div class="col-lg-2 form-group">
+                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" class="btn flatpickr form-control" name="startTime" ng-model="startTime" placeholder="From" autocomplete="off" />
+                        </div>
+
+
+                        <!--Start Time End-->
+                        <!--End Time-->
+
+                        <div class="col-lg-2 form-group">
+                            <label class="col-form-label"><strong>End Time</strong></label>
+                        </div>
+                        <div class="col-lg-2 form-group">
+                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" class="btn flatpickr form-control" name="endTime" ng-model="endTime" placeholder="To" autocomplete="off" />
+                        </div>
+
+
+                        <!--End Time End-->
+                    </div>
+                    <!--Second Row End-->
+                    <!--Third Row-->
+                    <div class="row form-group">
+                        <div class="col-lg-2 form-group">
+                            <label class="col-form-label"><strong>IsActive</strong></label>
+                        </div>
+                        <div class="col-lg-2 form-group">
+                            <input type="checkbox" style="width:20px" name="isActiveCheckbox" ng-model="isActive" class="form-control" />
+                        </div>
+                        <div class="col-lg-2 form-group">
+                            <label class="col-form-label"><strong>Service Type</strong></label>
+
+                        </div>
+                        <div class="col-lg-4 form-group">
+
+                            <multiple-autocomplete ng-model="deliveryRangeIds"
+                                                   object-property="name"
+                                                   suggestions-arr="allDeliveryRange">
+                            </multiple-autocomplete>
+
+
+                        </div>
+                    </div>
+                    <!--Third Row End-->
+                    <!--Button-->
+                    <div class="row form-group">
+                        <div class="col-lg-12" style="text-align:center;">
+                            <button type="button" value="AddVoucher" ng-disabled="IsAddVoucher" ng-click="addVoucher(voucherCode,voucherValue,applicableQuantity,startTime,endTime,isActive,deliveryRangeIds)" class="btn btn-primary">Add Voucher</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--Page End-->
+
+
+<script type="text/javascript">
+
+    var app = angular.module('voucherEntryModule', ['ui.select', 'ngSanitize', 'multipleSelect']);
+    app.controller('voucherEntryController', function ($scope, $http) {
+        //let coreLocalUrl = "http://localhost:58676/api/";
+        $scope.IsAddVoucher = false;
+        let merchantMobileNumber;
+        let merchantUserId;
+        let activeStatus;
+        let loggedInUserId = sessionStorage.getItem("userId");
+
+        angular.element(document).ready(function () {
+            let currentUserId = sessionStorage.getItem("userId");
+            let userAdminType = sessionStorage.getItem("adminType");
+            let allowedUsers = ["1", "2", "132", "442"];
+            if (!allowedUsers.includes(currentUserId) && userAdminType != "11") {
+                window.location.href = "/ControlPanel/ControlPanel";
+            }
+        });
+
+        $scope.addVoucher = (voucherCode, voucherValue, applicableQuantity, startTime, endTime, isActive, deliveryIds) => {
+            $scope.IsAddVoucher = true;
+
+            if (isActive == true) {
+                activeStatus = 1;
+            } else {
+                activeStatus = 0;
+            }
+
+            if (merchantMobileNumber == undefined || merchantMobileNumber == '') {
+                alert("Please select merchant...!!!");
+                $scope.IsAddVoucher = false;
+                return false;
+            }
+            if (voucherCode == undefined || voucherCode == '') {
+                alert("Please set voucher code...!!!");
+                $scope.IsAddVoucher = false;
+                return false;
+            }
+            if (parseInt(voucherValue) > 100) {
+                alert("Voucher value should be within 100");
+                $scope.IsAddVoucher = false;
+                return false;
+            }
+            else if (voucherValue == undefined || voucherValue == '') {
+                alert("Please set voucher amount...!!!");
+                $scope.IsAddVoucher = false;
+                return false;
+            }
+            if (applicableQuantity == undefined || applicableQuantity == '') {
+                alert("Please set applicable quantity...!!!");
+                $scope.IsAddVoucher = false;
+                return false;
+            }
+            if (startTime == undefined || startTime == '') {
+                alert("Please select start date...!!!");
+                $scope.IsAddVoucher = false;
+                return false;
+            }
+            if (endTime == undefined || endTime == '') {
+                alert("Please select last date...!!!");
+                $scope.IsAddVoucher = false;
+                return false;
+            }
+            if (deliveryIds.length == 0) {
+                alert("Please select Delivery Range...!!!");
+                $scope.IsAddVoucher = false;
+                return false;
+            }
+
+            var deliveryRangeIdsArray = [];
+            for (var i = 0; i < deliveryIds.length; i++) {
+                deliveryRangeIdsArray.push(deliveryIds[i].id)
+            }
+            //console.log(requestBodyModelforInsert);
+
+            var AssignedVoucherBodyModel = [];
+            deliveryRangeIdsArray.forEach(function (item) {
+                let data = {
+                    "voucherCode": voucherCode,
+                    "courierUserId": merchantUserId,
+                    "deliveryRangeId": parseInt(item)
+                };
+                AssignedVoucherBodyModel.push(data);
+            });
+
+            $http.post(apiBaseURL + "Fetch/GetMerchantAssignedVoucher", AssignedVoucherBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (response.status == 200 || typeof response.data.model === 'object') {
+                        let warningDeliveryRangeList = [];
+                        var res = response.data.model;
+                        res.forEach(function (item) {
+                            warningDeliveryRangeList.push(item["deliveryRangeName"] + ' ');
+                        });
+                        //alert("Voucher Code - " + "'" + res[0]["voucherCode"] + "'" + " is already assigned for " + "'" + warningDeliveryRangeList + "'" + " for the selected merchant");
+                        $scope.IsAddVoucher = false;
+                        alert("This service -" + "'" + warningDeliveryRangeList + "'" + " already exist for the selected merchant");
+                    }
+                    else if (response.status == 204 || response.data == "") {
+                        let InsertVoucherBodyModel = [];
+                        deliveryRangeIdsArray.forEach(function (item) {
+                            let data = {
+                                "merchantMobile": merchantMobileNumber,
+                                "voucherCode": voucherCode,
+                                "applicableQuantity": parseInt(applicableQuantity),
+                                "startTime": startTime,
+                                "endTime": endTime,
+                                "voucherDiscount": parseInt(voucherValue),
+                                "courierUserId": merchantUserId,
+                                "isActive": activeStatus,
+                                "deliveryRangeId": parseInt(item),
+                                "insertBy": parseInt(loggedInUserId)
+                            };
+                            InsertVoucherBodyModel.push(data);
+                        });
+                        voucherEntry(InsertVoucherBodyModel);
+                    }
+
+                }, function error(response) {
+                    //if (response.status == 400 || response.data.model == null) {
+                    //    voucherEntry(requestBodyModelforInsert);
+                    //} else {
+                    //    console.log(response);
+                    //}
+                    console.log(response);
+                    $scope.IsAddVoucher = false;
+                })
+        }
+
+        function voucherEntry(body) {
+            //let urlForInsert = apiBaseURL + 'Entry/AddVoucher';
+            $http.post(apiBaseURL + "Entry/AddVoucher", body, { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token').trim() } })
+                .then(function (response) {
+                    if (response.status == 400) {
+                        alert("Something went wrong!!!");
+                        $scope.IsAddVoucher = false;
+                        return false;
+                    }
+                    else {
+                        alert("Voucher Added Successfully!!!");
+                        window.location.reload();
+                    }
+
+                }, function error(response) {
+                    if (response.status == 500)
+                        alert("Server Error!!");
+                    $scope.IsAddVoucher = false;
+                    console.log(response.message);
+                });
+
+        }
+
+        //Function for getting the mobile number of merchant from ui-select
+        $scope.getMerchantMobile = (merchantMobile, merchantId) => {
+
+            merchantMobileNumber = merchantMobile;
+            merchantUserId = merchantId;
+        }
+
+
+        $scope.loadMerchantData = (merchantSearch) => {
+            if (merchantSearch.length > 1) {
+                let url = apiBaseURL + "Fetch/GetAllCourierUsersList/" + merchantSearch;
+                $http.get(url, { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                    .then(function (response) {
+                        $scope.allMerchantInfo = response.data.model;
+
+                    })
+            }
+
+        }
+
+        //Delivery Range Selector
+
+
+        $http.get(apiBaseURL + 'Fetch/GetDeliveryRange', { headers: { 'Content-Type': 'application/json' } })
+            .then(function (response) {
+                $scope.allDeliveryRange = response.data.model;
+
+                $scope.allDeliveryRange.forEach(element => {
+                    element.name = element.name + ' ' + element.day + ' ' + element.dayType;
+                });
+            }
+            )
+
+
+        //let serviceTypeList = [];
+        //$scope.getServiceTypeId = (sId) => {
+
+        //    for (var i = 0; i < sId.length; i++) {
+
+        //        if (serviceTypeList.includes(sId[i].id) === false) {
+        //            serviceTypeList.push(sId[i].id);
+        //        }
+
+        //    }
+        //    console.log(serviceTypeList);
+
+        //}
+
+        //afterSelectItemThana and afterRemoveItemThana
+        //$scope.afterRemoveItemThana = function (item) {
+
+        //}
+
+        //$scope.afterSelectItemThana = function (item) {
+        //    $scope.serviceType = $scope.allDeliveryRange;
+
+        //}
+
+    });
+
+</script>

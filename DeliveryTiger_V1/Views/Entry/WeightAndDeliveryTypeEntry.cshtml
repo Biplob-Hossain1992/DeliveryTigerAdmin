@@ -1,0 +1,303 @@
+﻿
+@{
+    ViewBag.Title = "WeightAndDeliveryTypeEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<head>
+    <script src="~/Scripts/Entry/Entry.js"></script>
+    <script src="~/Scripts/baseurl.js"></script>
+</head>
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+
+        //will trigger after selecting a file
+        $("#attacedFile").change(function () {
+            $('#fileName').prop('disabled', false);
+            let fileName = $('#attacedFile').val().replace(/C:\\fakepath\\/i, '')
+            $('#fileName').val(fileName);
+        });
+    });
+</script>
+<style>
+    .col-form-label {
+        font-weight:bold;
+    }
+</style>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+
+<div class="row" style="margin-top:20px;">
+    @*<%--Weight Entry--%>*@
+    <div class="col-lg-6">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Weight Entry <small>Input Weight in Panel</small></h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <input id="UserHidden" type="hidden" value="" />
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="WeightLbl">Weight</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="Weight" onkeyup="checkWeightValue()" class="form-control" placeholder=" Ex: 500gm" />
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgForWieghtEntry" for="WeightLbl"></label>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="TypeLbl">Type</label>
+                            <div class="col-lg-6">
+                                <select id="Type" class="form-control">
+                                    <option value="deliverytiger" selected>Delivery Tiger</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="WeightNumberLbl">Weight Number</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="WeightNumber" class="form-control" placeholder=" Ex: 1" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="RegularTypeCourierDeliveryChargeLbl">Regular Delivery Charge</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="RegularTypeCourierDeliveryCharge" class="form-control" placeholder=" Ex: 30" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="ExpressTypeCourierDeliveryChargeLbl">Express Delivery Charge</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="ExpressTypeCourierDeliveryCharge" class="form-control" placeholder=" Ex: 60" />
+                            </div>
+                        </div>
+                        <div class="form-group row" style="justify-content: center">
+                            <div>
+                                <button type="button" id="addWeightBtn" class="btn btn-success" onclick="addWeight()"><strong>Add Weight</strong></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*<%--Delivery Type Entry--%>*@
+    <div class="col-lg-6">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Delivery Type Entry <small>Input Delivery Type Here</small></h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="DeliveryTypeLbl">Delivery Type</label>
+                            <div class="col-lg-6">
+                                @*<select id="DeliveryType" class="form-control" onchange="checkDeliveryTypeValue()">
+                    <option value="0">Select Delivery Type</option>
+                    <option value="1">Regular Delivery</option>
+                    <option value="2">Express Delivery</option>
+                    <option value="5">SameDay Delivery</option>
+                </select>*@
+                                <input type="text" id="DeliveryType" onkeyup="checkDeliveryTypeValue()" class="form-control" placeholder=" Ex: Regular Delivery" />
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgTypeEntry1" for="DeliveryTypeLbl"></label>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="DeliveryChargeLbl">Delivery Charge</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="DeliveryCharge" class="form-control" placeholder=" Ex: 60" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="DayLbl">Day Number</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="Day" onkeyup="checkDayValue()" class="form-control" placeholder=" Ex: ২-৬" />
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgTypeEntry2" for="DayLbl"></label>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="DayLbl">Day Type</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="DayType" class="form-control" placeholder=" Ex: ঘন্টা OR দিন" />
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgTypeEntry3"></label>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label">Type</label>
+                            <div class="col-lg-6">
+                                <select id="ErType" class="form-control" onchange="checkType()">
+                                    <option value="">Nothing</option>
+                                    <option value="express">Express</option>
+                                    <option value="regular">Regular</option>
+                                </select>
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgTypeEntry66"></label>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label">On ImageLink</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="OnImageLink" class="form-control" placeholder=" Ex: https://static.ajkerdeal.com/images/dt/newlogin/express-01.svg" />
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgTypeEntry4"></label>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label">Off ImageLink</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="OffImageLink" class="form-control" placeholder=" Ex:https://static.ajkerdeal.com/images/dt/newlogin/express-01.svg" />
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgTypeEntry5"></label>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label">Show Hide</label>
+                            <div class="col-lg-6">
+                                <select id="ShowHide" class="form-control" onchange="checkShowHide()">
+                                    <option value="0">Nothing</option>
+                                    <option value="1">Date</option>
+                                    <option value="2">OfficeDrop</option>
+                                </select>
+                            </div>
+                            <label class="col-lg-2 col-form-label" id="lblMsgTypeEntry6"></label>
+                        </div>
+
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label">Delivery Alert Message</label>
+                            <div class="col-lg-6">
+                                <textarea id="DeliveryAlertMessage" rows="4" cols="50" placeholder=" Ex: পার্সেল টি অবশ্যই আমাদের ডেলিভারি ম্যানকে দুপুর 2:30, dt-deliverydate এর মধ্যে দিতে হবে অন্যথায় অর্ডারটি ক্যান্সেল হয়ে যাবে।"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label">Login Hours</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="LoginHours" class="form-control" placeholder=" Ex: >= 11" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row" style="justify-content: center">
+                            <div>
+                                <button type="button" id="addDeliveryTypeBtn" class="btn btn-success" onclick="addDeliveryType()"><strong>Add Delivery Type</strong></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Weight List <small>Load All Weight Range</small></h5>
+                <button class="btn btn-info offset-1" type="button" id="weightListLoadBtn" onclick="loadWeightList()">Load</button>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content" style="padding:5px;">
+                <div class="col-lg-12" id="WeightListDetails" style="padding:0px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Delivery Type List <small>Load All Delivery Type Range</small></h5>
+                <button class="btn btn-info offset-1" type="button" id="deliveryTypeListLoadBtn" onclick="loadDeliveryTypeList()">Load</button>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content" style="padding:5px;">
+                <div class="col-lg-12 align-content-center" id="DeliveryTypeListDetails" style="height:280px; overflow:auto;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="fileAttachmentModal" tabindex="-1" role="dialog" aria-labelledby="fileAttachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fileAttachmentModalLabel">Image Upload for <span id="imageOf"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-12 col-md-12 col-lg-12">
+
+                        <label class="col-sm-1 text-right">FileName</label>
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" id="fileName" disabled />
+                        </div>
+                    </div>
+                </div>
+                <div style="height: 1cm">
+                </div>
+                <input type="hidden" id="hiddenRangeId" value="" />
+                <input type="hidden" id="hiddenImageLink" value="" />
+                <div class="row">
+                    <form class="md-form">
+                        <div class="file-field">
+                            <div class="btn btn-warning" style="margin-left:30px;">
+                                <input type="file" id="attacedFile">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelAttacmentButton" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="okAttacmentButton" class="btn btn-primary" onclick="ImageUpload()">OK</button>
+            </div>
+        </div>
+    </div>
+</div>

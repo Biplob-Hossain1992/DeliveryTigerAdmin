@@ -1,0 +1,1234 @@
+﻿
+@{
+    ViewBag.Title = "OrderAgeingReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .col-form-label {
+        font-weight: bold;
+    }
+    .box-shadow {
+        cursor: pointer;
+    }
+    .box-shadow:hover {
+        background-color: #ededed;
+    }
+    .table > tbody > tr > td, .table > thead > tr > th {
+        text-align: center;
+    }
+</style>
+<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/Report/Report.js"></script>
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<script>
+    $(document).ready(function () {
+         if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+    });
+</script>
+<script type="text/javascript">
+
+    var app = angular.module('orderModule', []);
+    app.controller('orderAgeingController', function ($scope, $http) {
+
+        //var localUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+        $scope.loadOrderAgeingReport = (type) => {
+            let status = "";
+            if (type == 1) {
+                $scope.showLoader1 = true;
+                status = "1,5,6";
+            }
+            if (type == 2) {
+                $scope.showLoader2 = true;
+                status = "3,7";
+            }
+            if (type == 3) {
+                $scope.showLoader3 = true;
+                status = "8";
+            }
+            if (type == 4) {
+                $scope.showLoader4 = true;
+                status = "9,10,11,12,13,14,23";
+            }
+            if (type == 5) {
+                $scope.showLoader5 = true;
+                status = "16,17";
+            }
+            if (type == 6) {
+                $scope.showLoader6 = true;
+                status = "19";
+            }
+            $http.get(apiBaseURL + 'Report/OrderAgeingReport/' + status, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    console.log(response.data.model);
+                    if (type == 1) {
+                        $scope.orderAgeing1 = response.data.model;
+                        $scope.showLoader1 = false;
+                        $scope.showTable1 = true;
+                    }
+                    if (type == 2) {
+                        $scope.orderAgeing2 = response.data.model;
+                        $scope.showLoader2 = false;
+                        $scope.showTable2 = true;
+                    }
+                    if (type == 3) {
+                        $scope.orderAgeing3 = response.data.model;
+                        $scope.showLoader3 = false;
+                        $scope.showTable3 = true;
+                    }
+                    if (type == 4) {
+                        $scope.orderAgeing4 = response.data.model;
+                        $scope.showLoader4 = false;
+                        $scope.showTable4 = true;
+                    }
+                    if (type == 5) {
+                        $scope.orderAgeing5 = response.data.model;
+                        $scope.showLoader5 = false;
+                        $scope.showTable5 = true;
+                    }
+                    if (type == 6) {
+                        $scope.orderAgeing6 = response.data.model;
+                        $scope.showLoader6 = false;
+                        $scope.showTable6 = true;
+                    }
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader1 = false;
+                    $scope.showLoader2 = false;
+                    $scope.showLoader3 = false;
+                    $scope.showLoader4 = false;
+                    $scope.showLoader5 = false;
+                    $scope.showLoader6 = false;
+
+                });
+        };
+        $scope.loadOrderAgeingReportDetails = (day, data, header, orderType) => {
+            console.log("AA");
+            //$scope.orderAgeingReportDay = day;
+            var dayData = data[day - 1]; //.filter(x => x.isAdvOrder == 0);
+            if (orderType == "Adv") {
+                dayData = data[day - 1].filter(x => x.isAdvOrder == 1);
+            }
+            if (orderType == "Cod") {
+                dayData = data[day - 1].filter(x => x.isAdvOrder == 0);
+            }
+            $scope.orderAgeingReportDetails = dayData;
+            console.log(dayData);
+            $scope.orderAgeingReportDetailsHeader = header + " - " + orderType + " Order";
+        };
+    });
+</script>
+
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<input id="UserHidden" type="hidden" value="" />
+
+<div class="row" ng-app="orderModule">
+    <div class="col-lg-12" ng-controller="orderAgeingController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h5>Confirmed Not Collected</h5>
+                            <span class="label label-primary" style="margin:5px 0px 0px 10px;font-size:12px;">{{orderAgeing1.totalOrderCount}}</span>
+                            <button class="btn btn-info pull-right" type="button" ng-click="loadOrderAgeingReport(1)">Load</button>
+                        </div>
+                    </div>
+                    <div style="height:Auto; overflow:auto;">
+                        <div class="ibox-content">
+                            <div class="col-lg-12">
+                                <div class="spiner-example" ng-show="showLoader1">
+                                    <div class="sk-spinner sk-spinner-wave">
+                                        <div class="sk-rect1">
+                                        </div>
+                                        <div class="sk-rect2">
+                                        </div>
+                                        <div class="sk-rect3">
+                                        </div>
+                                        <div class="sk-rect4">
+                                        </div>
+                                        <div class="sk-rect5">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <table id="tblReceived1" class="table table-bordered" ng-show="showTable1">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                1 Day
+                                            </th>
+                                            <th colspan="2">
+                                                2 Day
+                                            </th>
+                                            <th colspan="2">
+                                                3 Day
+                                            </th>
+                                            <th colspan="2">
+                                                4 Day
+                                            </th>
+                                            <th colspan="2">
+                                                5 Day
+                                            </th>
+                                            <th colspan="2">
+                                                6 Day
+                                            </th>
+                                            <th colspan="2">
+                                                7 Day +
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(1,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseOrderCount[0]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(2,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseOrderCount[1]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(3,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseOrderCount[2]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(4,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseOrderCount[3]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(5,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseOrderCount[4]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(6,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseOrderCount[5]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(7,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseAdvOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseCodOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseAdvOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseCodOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseAdvOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseCodOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseAdvOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseCodOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseAdvOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseCodOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseAdvOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseCodOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseAdvOrderCount[6]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing1.dayWiseOrderDetails,'Confirmed Not Collected','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing1.dayWiseCodOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h5>Collected Not Packaged</h5>
+                            <span class="label label-primary" style="margin:5px 0px 0px 10px;font-size:12px;">{{orderAgeing2.totalOrderCount}}</span>
+                            <button class="btn btn-info pull-right" type="button" ng-click="loadOrderAgeingReport(2)">Load</button>
+                        </div>
+                    </div>
+                    <div style="height:Auto; overflow:auto;">
+                        <div class="ibox-content">
+                            <div class="col-lg-12">
+                                <div class="spiner-example" ng-show="showLoader2">
+                                    <div class="sk-spinner sk-spinner-wave">
+                                        <div class="sk-rect1">
+                                        </div>
+                                        <div class="sk-rect2">
+                                        </div>
+                                        <div class="sk-rect3">
+                                        </div>
+                                        <div class="sk-rect4">
+                                        </div>
+                                        <div class="sk-rect5">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <table id="tblReceived2" class="table table-bordered" ng-show="showTable2">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                1 Day
+                                            </th>
+                                            <th colspan="2">
+                                                2 Day
+                                            </th>
+                                            <th colspan="2">
+                                                3 Day
+                                            </th>
+                                            <th colspan="2">
+                                                4 Day
+                                            </th>
+                                            <th colspan="2">
+                                                5 Day
+                                            </th>
+                                            <th colspan="2">
+                                                6 Day
+                                            </th>
+                                            <th colspan="2">
+                                                7 Day +
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(1,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseOrderCount[0]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(2,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseOrderCount[1]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(3,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseOrderCount[2]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(4,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseOrderCount[3]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(5,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseOrderCount[4]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(6,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseOrderCount[5]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(7,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseAdvOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseCodOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseAdvOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseCodOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseAdvOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseCodOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseAdvOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseCodOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseAdvOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseCodOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseAdvOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseCodOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseAdvOrderCount[6]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing2.dayWiseOrderDetails,'Collected Not Packaged','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing2.dayWiseCodOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h5>Packaged Not Given To Courier</h5>
+                            <span class="label label-primary" style="margin:5px 0px 0px 10px;font-size:12px;">{{orderAgeing3.totalOrderCount}}</span>
+                            <button class="btn btn-info pull-right" type="button" ng-click="loadOrderAgeingReport(3)">Load</button>
+                        </div>
+                    </div>
+                    <div style="height:Auto; overflow:auto;">
+                        <div class="ibox-content">
+                            <div class="col-lg-12">
+                                <div class="spiner-example" ng-show="showLoader3">
+                                    <div class="sk-spinner sk-spinner-wave">
+                                        <div class="sk-rect1">
+                                        </div>
+                                        <div class="sk-rect2">
+                                        </div>
+                                        <div class="sk-rect3">
+                                        </div>
+                                        <div class="sk-rect4">
+                                        </div>
+                                        <div class="sk-rect5">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <table id="tblReceived3" class="table table-bordered" ng-show="showTable3">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                1 Day
+                                            </th>
+                                            <th colspan="2">
+                                                2 Day
+                                            </th>
+                                            <th colspan="2">
+                                                3 Day
+                                            </th>
+                                            <th colspan="2">
+                                                4 Day
+                                            </th>
+                                            <th colspan="2">
+                                                5 Day
+                                            </th>
+                                            <th colspan="2">
+                                                6 Day
+                                            </th>
+                                            <th colspan="2">
+                                                7 Day +
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(1,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseOrderCount[0]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(2,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseOrderCount[1]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(3,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseOrderCount[2]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(4,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseOrderCount[3]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(5,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseOrderCount[4]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(6,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseOrderCount[5]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(7,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseAdvOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseCodOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseAdvOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseCodOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseAdvOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseCodOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseAdvOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseCodOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseAdvOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseCodOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseAdvOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseCodOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseAdvOrderCount[6]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing3.dayWiseOrderDetails,'Packaged Not Given To Courier','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing3.dayWiseCodOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h5>Given To Courier Not delivered</h5>
+                            <span class="label label-primary" style="margin:5px 0px 0px 10px;font-size:12px;">{{orderAgeing4.totalOrderCount}}</span>
+                            <button class="btn btn-info pull-right" type="button" ng-click="loadOrderAgeingReport(4)">Load</button>
+                        </div>
+                    </div>
+                    <div style="height:Auto; overflow:auto;">
+                        <div class="ibox-content">
+                            <div class="col-lg-12">
+                                <div class="spiner-example" ng-show="showLoader4">
+                                    <div class="sk-spinner sk-spinner-wave">
+                                        <div class="sk-rect1">
+                                        </div>
+                                        <div class="sk-rect2">
+                                        </div>
+                                        <div class="sk-rect3">
+                                        </div>
+                                        <div class="sk-rect4">
+                                        </div>
+                                        <div class="sk-rect5">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <table id="tblReceived4" class="table table-bordered" ng-show="showTable4">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                1 Day
+                                            </th>
+                                            <th colspan="2">
+                                                2 Day
+                                            </th>
+                                            <th colspan="2">
+                                                3 Day
+                                            </th>
+                                            <th colspan="2">
+                                                4 Day
+                                            </th>
+                                            <th colspan="2">
+                                                5 Day
+                                            </th>
+                                            <th colspan="2">
+                                                6 Day
+                                            </th>
+                                            <th colspan="2">
+                                                7 Day +
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(1,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseOrderCount[0]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(2,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseOrderCount[1]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(3,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseOrderCount[2]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(4,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseOrderCount[3]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(5,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseOrderCount[4]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(6,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseOrderCount[5]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(7,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseAdvOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseCodOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseAdvOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseCodOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseAdvOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseCodOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseAdvOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseCodOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseAdvOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseCodOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseAdvOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseCodOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseAdvOrderCount[6]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing4.dayWiseOrderDetails,'Given To Courier Not delivered','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing4.dayWiseCodOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h5>Rejected Not Receved</h5>
+                            <span class="label label-primary" style="margin:5px 0px 0px 10px;font-size:12px;">{{orderAgeing5.totalOrderCount}}</span>
+                            <button class="btn btn-info pull-right" type="button" ng-click="loadOrderAgeingReport(5)">Load</button>
+                        </div>
+                    </div>
+                    <div style="height:Auto; overflow:auto;">
+                        <div class="ibox-content">
+                            <div class="col-lg-12">
+                                <div class="spiner-example" ng-show="showLoader5">
+                                    <div class="sk-spinner sk-spinner-wave">
+                                        <div class="sk-rect1">
+                                        </div>
+                                        <div class="sk-rect2">
+                                        </div>
+                                        <div class="sk-rect3">
+                                        </div>
+                                        <div class="sk-rect4">
+                                        </div>
+                                        <div class="sk-rect5">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <table id="tblReceived5" class="table table-bordered" ng-show="showTable5">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                1 Day
+                                            </th>
+                                            <th colspan="2">
+                                                2 Day
+                                            </th>
+                                            <th colspan="2">
+                                                3 Day
+                                            </th>
+                                            <th colspan="2">
+                                                4 Day
+                                            </th>
+                                            <th colspan="2">
+                                                5 Day
+                                            </th>
+                                            <th colspan="2">
+                                                6 Day
+                                            </th>
+                                            <th colspan="2">
+                                                7 Day +
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(1,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseOrderCount[0]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(2,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseOrderCount[1]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(3,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseOrderCount[2]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(4,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseOrderCount[3]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(5,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseOrderCount[4]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(6,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseOrderCount[5]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(7,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseAdvOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseCodOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseAdvOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseCodOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseAdvOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseCodOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseAdvOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseCodOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseAdvOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseCodOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseAdvOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseCodOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseAdvOrderCount[6]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing5.dayWiseOrderDetails,'Rejected Not Receved','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing5.dayWiseCodOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h5>Return Receved Not Sent To Merchant</h5>
+                            <span class="label label-primary" style="margin:5px 0px 0px 10px;font-size:12px;">{{orderAgeing6.totalOrderCount}}</span>
+                            <button class="btn btn-info pull-right" type="button" ng-click="loadOrderAgeingReport(6)">Load</button>
+                        </div>
+                    </div>
+                    <div style="height:Auto; overflow:auto;">
+                        <div class="ibox-content">
+                            <div class="col-lg-12">
+                                <div class="spiner-example" ng-show="showLoader6">
+                                    <div class="sk-spinner sk-spinner-wave">
+                                        <div class="sk-rect1">
+                                        </div>
+                                        <div class="sk-rect2">
+                                        </div>
+                                        <div class="sk-rect3">
+                                        </div>
+                                        <div class="sk-rect4">
+                                        </div>
+                                        <div class="sk-rect5">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <table id="tblReceived6" class="table table-bordered" ng-show="showTable6">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                1 Day
+                                            </th>
+                                            <th colspan="2">
+                                                2 Day
+                                            </th>
+                                            <th colspan="2">
+                                                3 Day
+                                            </th>
+                                            <th colspan="2">
+                                                4 Day
+                                            </th>
+                                            <th colspan="2">
+                                                5 Day
+                                            </th>
+                                            <th colspan="2">
+                                                6 Day
+                                            </th>
+                                            <th colspan="2">
+                                                7 Day +
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(1,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseOrderCount[0]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(2,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseOrderCount[1]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(3,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseOrderCount[2]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(4,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseOrderCount[3]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(5,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseOrderCount[4]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(6,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseOrderCount[5]}}
+                                            </td>
+                                            <td colspan="2" ng-click="loadOrderAgeingReportDetails(7,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','All')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                            <td>
+                                                Adv
+                                            </td>
+                                            <td>
+                                                cod
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseAdvOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(1,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseCodOrderCount[0]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseAdvOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(2,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseCodOrderCount[1]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseAdvOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(3,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseCodOrderCount[2]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseAdvOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(4,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseCodOrderCount[3]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseAdvOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(5,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseCodOrderCount[4]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseAdvOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(6,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseCodOrderCount[5]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Adv')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseAdvOrderCount[6]}}
+                                            </td>
+                                            <td ng-click="loadOrderAgeingReportDetails(7,orderAgeing6.dayWiseOrderDetails,'Return Receved Not Sent To Merchant','Cod')" style="cursor:pointer;" data-toggle="modal" data-target="#orderDetailsModal" class="ng-binding">
+                                                {{orderAgeing6.dayWiseCodOrderCount[6]}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="orderDetailsModal" role="dialog">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">{{orderAgeingReportDetailsHeader}} Details</h4>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>OrderId</th>
+                                    <th>Merchant</th>
+                                    <th>Comment</th>
+                                    <th>Product</th>
+                                    <th>Hour (Day)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in orderAgeingReportDetails | filter:mainSearch | orderBy:'-companyName'">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>{{o.courierOrdersId}}</td>
+                                    <td>{{o.companyName}}</td>
+                                    <td>{{o.comment}}-{{o.status}}</td>
+                                    <td>{{o.collectionName}}</td>
+                                    <td>{{o.totalHour}} ({{(o.totalHour/24).toFixed(0)}})</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+

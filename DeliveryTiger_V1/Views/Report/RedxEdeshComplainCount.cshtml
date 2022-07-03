@@ -1,0 +1,187 @@
+﻿
+@{
+    ViewBag.Title = "RedxEdeshComplainCount";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('redxEdeshComplainModule', []);
+    app.controller('redxEdeshComplainController', function ($scope, $http) {
+
+        $scope.init = function () {
+
+            $scope.complainType = "কাস্টমার এখনো পার্সেল ডেলিভারি পায় নাই";
+        };
+        $scope.districtWiseRedxEdeshCount = function (fromDate, toDate, complainType) {
+
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var requestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "ComplainType": complainType
+            };
+
+            $scope.showLoader = true;
+            $http.post(admBaseUrl + 'Complain/RedxEdeshComplainCount', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.redxEdeshComplainCountData = response.data;
+                    
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+
+                    $scope.showLoader = false;
+                });
+        };
+
+    });
+</script>
+
+<div class="row" ng-app="redxEdeshComplainModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="redxEdeshComplainController" data-ng-init="init()">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+
+                                    <select class="form-control" ng-model="complainType">
+                                        @*<option value="কমপ্লেইন টাইপ সিলেক্ট করুন" selected>কমপ্লেইন টাইপ সিলেক্ট করুন</option>*@
+                                        <option value="কাস্টমার এখনো পার্সেল ডেলিভারি পায় নাই">কাস্টমার এখনো পার্সেল ডেলিভারি পায় নাই</option>
+                                        <option value="রিটার্ন পার্সেল এখনো বুঝে পাই নাই">রিটার্ন পার্সেল এখনো বুঝে পাই নাই</option>
+                                        <option value="COD পেমেন্ট এখনো পাই নাই">COD পেমেন্ট এখনো পাই নাই</option>
+                                        <option value="পার্সেল এখনো কালেকশন হয় নাই">পার্সেল এখনো কালেকশন হয় নাই</option>
+                                        @*<option value="অন্য কমপ্লেইন">অন্য কমপ্লেইন</option>*@
+                                    </select>
+                                    <button style="margin-left:5px;" type="button" class="btn btn-w-m btn-success" ng-click="districtWiseRedxEdeshCount(fromDate, toDate, complainType)">Search</button>
+                                </div>
+                                
+                                <div style="margin-top:5px;">
+                                    
+                                    
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+
+                                            <th>
+                                                <a href="#" ng-click="orderByField='EdeshDistrict'; reverseSort = !reverseSort">
+                                                    District
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='EdeshComplainCount'; reverseSort = !reverseSort">
+                                                    Edesh Complain
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='EdeshOrder'; reverseSort = !reverseSort">
+                                                    Edesh Order (%)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='RedxComplainCount'; reverseSort = !reverseSort">
+                                                    Redx Complain
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='RedxOrder'; reverseSort = !reverseSort">
+                                                    Redx Order (%)
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        <tr ng-repeat="p in redxEdeshComplainCountData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+
+                                            <td>
+                                                <span ng-if="p.EdeshDistrict == null">{{p.RedxDistrict}}</span>
+                                                <span ng-if="p.RedxDistrict == null">{{p.EdeshDistrict}}</span>
+                                                <span ng-if="p.EdeshDistrict != null && p.RedxDistrict != null">{{p.EdeshDistrict}}</span>
+                                            </td>
+                                            <td>
+                                                <span ng-if="p.EdeshComplainCount == 0">NA</span>
+                                                <span ng-if="p.EdeshComplainCount != 0">{{p.EdeshComplainCount}}</span>
+                                            </td>
+                                            <td>
+                                                {{p.EdeshOrder}} ({{p.EdeshComplainCount *100 /p.EdeshOrder |number:2}} %)
+                                            </td>
+                                            <td>
+                                                <span ng-if="p.RedxComplainCount == 0">NA</span>
+                                                <span ng-if="p.RedxComplainCount != 0">{{p.RedxComplainCount}}</span>
+                                            </td>
+                                            <td>
+                                                {{p.RedxOrder}} ({{p.RedxComplainCount *100 /p.RedxOrder |number:2}} %)
+                                            </td>
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>

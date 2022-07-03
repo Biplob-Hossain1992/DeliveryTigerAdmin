@@ -1,0 +1,345 @@
+﻿
+@{
+    ViewBag.Title = "CourierEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('courierModule', []);
+    app.controller('courierController', function ($scope, $http) {
+       
+        $scope.isActive = 1;
+        $scope.couriers = [];
+        //get all delivery typelist
+        $scope.getAllCourier = () => {
+
+            $http.get(apiBaseURL + 'Fetch/GetAllCouriers', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.couriers = response.data.model;
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data.model);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.getModalData = (courierId) => {
+            $scope.isActive = 1;
+            $scope.getData = $scope.couriers.filter(courier => courier.courierId == courierId);
+        }
+
+        $scope.save = (courierName, contactNo, contactAddress, userName, password, isActive) => {
+            if (courierName == '' || courierName == null || contactNo == '' || contactNo == null || contactAddress == '' || contactAddress == null || userName == '' || userName == null   || password == '' || password == null) {
+                alert("Please Insert all information..");
+                return false;
+            }
+
+            var requestBodyModel = {
+               
+                "CourierName": courierName,
+                "ContactNo": contactNo,
+                "ContactAddress": contactAddress,
+                "UserName": userName,
+                "Password": password,
+                "IsActive": isActive,
+            };
+            //console.log(requestBodyModel);
+
+            $http.post(apiBaseURL + 'Entry/AddCourier', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Courier Added Succeefully...!!!")
+
+                    $scope.courierName = '';
+                    $scope.contactNo = '';
+                    $scope.contactAddress = '';
+                    $scope.userName = '';
+                    $scope.password = '';
+
+
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        $scope.update = (courierName, contactNo, contactAddress, userName,password, isActive) => {
+
+            var requestBodyModel = {
+
+                "CourierName": courierName,
+                "ContactNo": contactNo,
+                "ContactAddress": contactAddress,
+                "UserName": userName,
+                "Password": password,
+                "IsActive": isActive,
+                
+
+            };
+
+            //console.log(requestBodyModel);
+
+            $http.put(apiBaseURL + 'Update/UpdateCourier', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Courier Updated Succeefully...!!!")
+
+
+
+                }, function error(response) {
+                    //console.log(response.data);
+               });
+        }
+
+
+
+
+    });
+</script>
+
+<div class="row" ng-app="courierModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="courierController" data-ng-init="getAllCourier()">
+        @*Update courier Modal*@
+        <div class="modal inmodal fade" id="updateCourierModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" ng-repeat="h in getData">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateCourierModalHeader">Update Courier</h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">Courier Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.courierName" class="form-control" />
+                            </div>
+                            <label class="col-lg-2 col-form-label">Contact No</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.contactNo" maxlength="11" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">Contact Address</label>
+                            <div class="col-lg-10">
+                                <input type="text" ng-model="h.contactAddress" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">User Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.userName" class="form-control" />
+                            </div>
+                            <label class="col-lg-2 col-form-label">Password</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.password" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">IsActive</label>
+                            <div class="col-lg-4">
+                                <select ng-model="isActive" class="form-control">
+                                    <option value="1" selected>True</option>
+                                    <option value="0">False</option>
+                                </select>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="update(h.courierName,h.contactNo,h.contactAddress,h.userName,h.password,isActive)" data-dismiss="modal">Update</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Modal End*@
+        <div class="row">
+
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <button type="submit" class="btn" style="background-color: green; color: white;margin-bottom: 7px; margin-top: 7px; cursor: pointer;" data-toggle="modal" data-target="#addCourierModal"><strong><i class='fa fa-plus'></i> Add New Courier</strong></button>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+
+                                <div class="col-lg-12" style="margin: 20px 0px 10px 0px" id="CourierDetails">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Courier Id</th>
+                                                <th>Courier Name</th>
+                                                <th>Courier Contact</th>
+                                                <th>Courier Address</th>
+                                                <th>Active</th>
+                                                <th>User Name</th>
+                                                <th>Password</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            <tr ng-repeat="h in couriers">
+                                                <td>{{h.courierId}}</td>
+                                                <td>{{h.courierName}}</td>
+                                                <td> {{h.contactNo}}</td>
+                                                <td> {{h.contactAddress}}</td>
+                                                <td>
+                                                    <span ng-if="h.isActive == true">Yes</span>
+                                                    <span ng-if="h.isActive != true">No</span>
+                                                </td>
+                                                <td>{{h.userName}}</td>
+                                                <td>{{h.password}}</td>
+                                                <td>
+                                                    <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="getModalData(h.courierId)" data-toggle="modal" data-target="#updateCourierModal"><strong><i class='fa fa-pencil'></i></strong></button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+                @*ADD COURIER MODAL*@
+                <div class="modal" id="addCourierModal">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title">Add Courier</h1>
+                                <button type="button" class="close" data-dismiss="modal" data-target="#addCourierModal">&times;</button>
+                            </div>
+
+                            <div class="modal-body">
+                                <form name="addCourierForm">
+                                    <div class="form-group">
+                                        <div class="col-lg-12">
+                                            <div class="form-group row">
+                                                <label class="col-lg-4 col-form-label" for="NameLbl"><sup><i class="fa fa-asterisk" style="font-size: 8px; color:red"></i></sup>Courier Name</label>
+                                                <div class="col-lg-4">
+                                                    <input type="text" ng-model="courierName" class="form-control" placeholder="Paperfly" required />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-12">
+                                            <div class="form-group row">
+                                                <label class="col-lg-4 col-form-label" for="addressLbl"><sup><i class="fa fa-asterisk" style="font-size:8px; color:red"></i></sup>Courier Contact</label>
+                                                <div class="col-lg-4">
+                                                    <input type="text"  ng-model="contactNo" class="form-control" maxlength="11" placeholder="01555555555" required />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-12">
+                                            <div class="form-group row">
+                                                <label class="col-lg-4 col-form-label" for="addressLbl">Contact Address</label>
+                                                <div class="col-lg-8">
+                                                    <input type="text" ng-model="contactAddress" class="form-control" placeholder="Mohakhali,dhaka" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-12">
+                                            <div class="form-group row">
+                                                <label class="col-lg-4 col-form-label" for="ValueLbl">User Name</label>
+                                                <div class="col-lg-4">
+                                                    <input type="text" ng-model="userName" class="form-control" placeholder="PaperFly" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-12">
+                                            <div class="form-group row">
+                                                <label class="col-lg-4 col-form-label" for="addressLbl">Password</label>
+                                                <div class="col-lg-4">
+                                                    <input type="text" ng-model="password" class="form-control" placeholder="9999999" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-12">
+                                            <div class="form-group row">
+                                                <label class="col-lg-4 col-form-label" for="IsActiveLbl">Is Active</label>
+                                                <div class="col-lg-4">
+                                                    <select ng-model="isActive" class="form-control" data-live-search="true">
+                                                        <option value="1" selected>True</option>
+                                                        <option value="0">False</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-12 text-center">
+                                            <button type="submit" ng-click="save(courierName,contactNo,contactAddress,userName,password,isActive)" class="btn btn-info" ng-disabled="addCourierForm.$invalid">Add Courier</button>
+                                        </div>
+
+                                    </div>
+                                </form>
+
+                            </div>
+
+                            <div class="modal-footer">
+
+
+                                <div class="col-lg-6">
+                                    <h5 style="color:red"><i class="fa fa-asterisk" style="font-size: 8px; color:blue"></i>marked fields are rquired</h5>
+                                </div>
+                                <div class="col-lg-6" style="text-align:right">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#addCourierModal">Close</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+
+
+

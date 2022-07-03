@@ -1,0 +1,462 @@
+﻿
+@{
+    ViewBag.Title = "User Location Assign";
+}
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<style>
+    #spinner-front {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        top: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        z-index: 998;
+    }
+</style>
+
+<div ng-app="DistrictWiseRetentionManagerModule" style="margin-top:10px;">
+    <div ng-controller="DistrictWiseRetentionManagerCtrl">
+
+        <div id="spinner-front" ng-show="showFullPageLoader">
+            <img src="~/Content/loading-spinner.gif" />
+        </div>
+
+        <div class="row" ng-init="getAllDistrict()">
+            <div class="col-lg-12">
+
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <h4 class="text-center">User Location Assign</h4>
+                    </div>
+                    <div class="ibox-content">
+
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label style="margin-right: 5px; font-weight: bold;">District: </label>
+                                    <select style="border: 1px solid #46b8da;" class="form-control" ng-model="district" ng-change="getAllThana(district,0,0)">
+                                        <option value="0">Select District</option>
+                                        <option ng-repeat="district in districts" value="{{district.districtId}}">{{district.district}}({{district.districtId}})</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label style="margin-right: 5px; font-weight: bold;">Thana: </label>
+                                    <select style="border: 1px solid #46b8da;" class="form-control" ng-model="thana" ng-change="getAllArea(thana,0,0)">
+                                        <option value="0">Select Thana</option>
+                                        <option ng-repeat="thana in thanas" value="{{thana.districtId}}">{{thana.district}}({{thana.districtId}})</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label style="margin-right: 5px; font-weight: bold;">Area: </label>
+                                    <select style="border: 1px solid #46b8da;" class="form-control" ng-model="area">
+                                        <option value="0">Select Area</option>
+                                        <option ng-repeat="area in areas" value="{{area.districtId}}">{{area.district}}({{area.districtId}})</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label style="margin-right: 5px; font-weight: bold;">Retention/ Acquisition Manager: </label>
+                                    <select style="border: 1px solid #46b8da;" class="form-control" ng-model="retentionAcquisitionManager" ng-change="changeUser(retentionAcquisitionManager)">
+                                        <option value="0">Select Retention/Acquisition Manager</option>
+                                        <option ng-repeat="user in retentionAcquisitionList" value="{{user.userId}}">{{user.fullName}} ({{user.userType}})</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12 my-2">
+                                <div class="form-group">
+                                    <button class="btn btn-w-m btn-success" type="button" ng-click="assignRetentionManager(district,thana,area,retentionAcquisitionManager)">Assign</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row" ng-init="GetUserLocationAssignData()">
+                            <table class="table table-bordered table-responsive" style="display: table;">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            #
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='districtName'; reverseSort = !reverseSort">
+                                                District Name
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='thanaName'; reverseSort = !reverseSort">
+                                                Thana Name
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='areaName'; reverseSort = !reverseSort">
+                                                Area Name
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='fullName'; reverseSort = !reverseSort">
+                                                Assigned User
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='userType'; reverseSort = !reverseSort">
+                                                User Type
+                                            </a>
+                                        </th>
+                                        <th>
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="d in userLocationAssign | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                        <td>{{$index +1}}</td>
+                                        <td>{{d.districtName}} ({{d.districtNameBng}})</td>
+                                        <td>{{d.thanaName}} ({{d.thanaNameBng}})</td>
+                                        <td>{{d.areaName}} ({{d.areaNameBng}})</td>
+                                        <td>{{d.fullName}}</td>
+                                        <td>{{d.userType}}</td>
+                                        <td>
+                                            <button class="btn btn-success" type="button" ng-click="editUserLocationAssign(d.id)" data-toggle="modal" data-target="#userLocationAssignUpdateModal">Edit</button>
+                                            <button class="btn btn-danger" type="button" ng-click="deleteUserLocationAssign(d.id)">Delete</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        @*Modal Section Start*@
+        <div class="container">
+            <div class="row">
+
+                @*Update User Location Assign*@
+                <div id="userLocationAssignUpdateModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Assign District Wise Retention Manager Update</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="row">
+                                    <div class="col-lg-6" ng-show="false">
+                                        <div class="form-group">
+                                            <input type="text" ng-model="userLocationAssignId" class="form-control" value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label style="margin-right: 5px; font-weight: bold;">District: </label>
+                                            <select style="border: 1px solid #46b8da;" class="form-control" ng-model="districtEditModal" ng-change="getAllThana(districtEditModal,1,0)">
+                                                <option value="0">Select District</option>
+                                                <option ng-repeat="district in districts" value="{{district.districtId}}">{{district.district}}({{district.districtId}})</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label style="margin-right: 5px; font-weight: bold;">Thana: </label>
+                                            <select style="border: 1px solid #46b8da;" class="form-control" ng-model="thanaEditModal" ng-change="getAllArea(thanaEditModal,1,0)">
+                                                <option value="0">Select Thana</option>
+                                                <option ng-repeat="thana in thanasEditModal" value="{{thana.districtId}}">{{thana.district}}({{thana.districtId}})</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label style="margin-right: 5px; font-weight: bold;">Area: </label>
+                                            <select style="border: 1px solid #46b8da;" class="form-control" ng-model="areaEditModal">
+                                                <option value="0">Select Area</option>
+                                                <option ng-repeat="area in areasEditModal" value="{{area.districtId}}">{{area.district}}({{area.districtId}})</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label style="margin-right: 5px; font-weight: bold;">Retention/ Acquisition Manager: </label>
+                                            <select style="border: 1px solid #46b8da;" class="form-control" ng-model="retentionAcquisitionEditModal" ng-change="changeUser(retentionAcquisitionEditModal)">
+                                                <option value="0">Select Retention/ Acquisition Manager</option>
+                                                <option ng-repeat="user in retentionAcquisitionList" value="{{user.userId}}">{{user.fullName}} ({{user.userType}})</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    @*<div class="col-lg-12">
+                                        <div class="form-group">
+                                            <button class="btn btn-w-m btn-success" type="button" ng-click="updateUserLocationAssign(districtEditModal,thanaEditModal,areaEditModal,retentionManagerEditModal)">Assign</button>
+                                        </div>
+                                    </div>*@
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-primary" type="button" ng-click="updateUserLocationAssign(districtEditModal,thanaEditModal,areaEditModal,retentionAcquisitionEditModal)" data-dismiss="modal">Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Update User Location Assign Modal End*@
+
+            </div>
+        </div>
+        @*Modal Section End*@
+
+    </div>
+</div>
+
+<script>
+    var app = angular.module('DistrictWiseRetentionManagerModule', []);
+    app.controller('DistrictWiseRetentionManagerCtrl', function ($scope, $http) {
+        $scope.district = '0';
+        $scope.thana = '0';
+        $scope.area = '0';
+        $scope.retentionAcquisitionManager = '0';
+        $scope.retentionAcquisitionList = [];
+        let userType = '', userId = 0;
+
+        $scope.getAllDistrict = function () {
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + 0, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.districts = response.data.model.filter(d => d.parentId === 0 && d.isActive === true);
+                }, function error(response) {
+                    console.log(response.data);
+                });
+
+            $http.get(apiBaseURL + 'Fetch/GetAdUsers', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.retentionUsers = response.data.model.filter(r => r.isRetention == true);
+                    response.data.model.map(function (elem) {
+                        var singleObj = {};
+                        singleObj['userId'] = elem.userId;
+                        singleObj['fullName'] = elem.fullName;
+                        if (elem.isRetention == true) singleObj['userType'] = 'retention';
+                        else singleObj['userType'] = 'acquisition';
+                        $scope.retentionAcquisitionList.push(singleObj);
+                    })
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.getAllThana = function (district,flag,setValue) {
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + district, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (flag == 0) { //insert
+                        $scope.thanas = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+                        $scope.thana = '0';
+                    }
+                    else if (flag == 1) { //edit
+                        $scope.thanasEditModal = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+                        $scope.thanaEditModal = setValue == 0 ? '0' : setValue;
+                    }
+                    
+                }, function error(error) {
+                    console.log(error);
+                })
+        }
+
+        $scope.getAllArea = function (thana,flag,setValue) {
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + thana, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (flag == 0) {
+                        $scope.areas = response.data.model.filter(d => d.areaType === 4 && d.isActive === true);
+                        $scope.area = '0';
+                    }
+                    else if (flag == 1) {
+                        $scope.areasEditModal = response.data.model.filter(d => d.areaType === 4 && d.isActive === true);
+                        $scope.areaEditModal = setValue == 0 ? '0' : setValue;
+                    }
+                }, function error(error) {
+                    console.log(error);
+                })
+        }
+
+        $scope.changeUser = function (user) {
+            var user = $scope.retentionAcquisitionList.filter(x => x.userId == user)[0];
+            userId = user.userId;
+            userType = user.userType;
+        }
+
+        $scope.assignRetentionManager = function (district, thana, area, retentionAcquisitionManager) {
+            if (district == "0") {
+                alert("Please select district...!!!");
+            }
+            else if (thana == "0") {
+                alert("Please select thana...!!!");
+            }
+            else if ($scope.areas.length > 1 && area == "0") {
+                alert("Please select area...!!!");
+            }
+            else if (retentionAcquisitionManager == "0") {
+                alert("Please select retention/ acquisition manager...!!!");
+            }
+            else {
+                var requestBodyModel = {
+                    'Id': 0,
+                    'DistrictId': parseInt(district),
+                    'ThanaId': parseInt(thana),
+                    'AreaId': parseInt(area),
+                    'UserId': parseInt(userId),
+                    'UserType': userType
+                }
+
+                var userToken = sessionStorage.getItem('token');
+                $scope.showFullPageLoader = true;
+                $http.post(apiBaseURL + 'Entry/AddUserLocationAssign', requestBodyModel,
+                    {
+                        headers: { 'Content-Type': 'application/json', 'Authorization': "Bearer " + userToken }
+                    })
+                    .then(function (response) {
+                        if (response.status == 200 || response.data != "") {
+                            var result = response.data.model;
+                            if (result == 1) {
+                                $scope.GetUserLocationAssignData();
+                                $scope.resetAllFields();
+                                $scope.showFullPageLoader = false;
+                                alert('Assigned Successfully!!');
+                            }
+                            else {
+                                $scope.showFullPageLoader = false;
+                                alert('Something Wrong....!!');
+                            }
+                        }
+                    }, function (error) {
+                        console.log(error);
+                        alert('Something Wrong....!!');
+                        $scope.showFullPageLoader = false;
+                    });
+            }
+        }
+
+        $scope.GetUserLocationAssignData = function () {
+            $http.get(apiBaseURL + 'Fetch/GetUserLocationAssign', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.userLocationAssign = response.data.model;
+                }, function error(error) {
+                    console.log(error);
+                })
+        }
+
+        $scope.editUserLocationAssign = function (id) {
+            $scope.editUserLocationAssignData = $scope.userLocationAssign.filter(x => x.id == parseInt(id))[0];
+            $scope.userLocationAssignId = $scope.editUserLocationAssignData.id;
+            $scope.districtEditModal = $scope.editUserLocationAssignData.districtId.toString();
+            $scope.getAllThana($scope.editUserLocationAssignData.districtId, 1, $scope.editUserLocationAssignData.thanaId.toString());
+            $scope.getAllArea($scope.editUserLocationAssignData.thanaId, 1, $scope.editUserLocationAssignData.areaId.toString());
+            $scope.retentionAcquisitionEditModal = $scope.editUserLocationAssignData.userId.toString();
+        }
+
+        $scope.updateUserLocationAssign = function (district, thana, area, retentionAcquisitionManager) {
+            if (district == "0") {
+                alert("Please select district...!!!");
+            }
+            else if (thana == "0") {
+                alert("Please select thana...!!!");
+            }
+            else if ($scope.areasEditModal.length > 1 && area == "0") {
+                alert("Please select area...!!!");
+            }
+            else if (retentionAcquisitionManager == "0") {
+                alert("Please select retention/ acquisition manager...!!!");
+            }
+            else {
+                var requestBodyModel = {
+                    'Id': $scope.userLocationAssignId,
+                    'DistrictId': parseInt(district),
+                    'ThanaId': parseInt(thana),
+                    'AreaId': parseInt(area),
+                    'UserId': parseInt(userId),
+                    'UserType': userType
+                }
+
+                
+                var userToken = sessionStorage.getItem('token');
+                $scope.showFullPageLoader = true;
+                $http.put(apiBaseURL + 'Update/UpdateUserLocationAssign/' + $scope.userLocationAssignId, requestBodyModel,
+                    {
+                        headers: { 'Content-Type': 'application/json', 'Authorization': "Bearer " + userToken }
+                    })
+                    .then(function (response) {
+                        if (response.status == 200 || response.data != "") {
+                            var result = response.data.model;
+                            if (result == 1) {
+                                $scope.GetUserLocationAssignData();
+                                $scope.showFullPageLoader = false;
+                                alert('Updated Successfully!!');
+                            }
+                            else {
+                                $scope.showFullPageLoader = false;
+                                alert('Something Wrong....!!');
+                            }
+                        }
+                    }, function (error) {
+                        console.log(error);
+                        $scope.showFullPageLoader = false;
+                        alert('Something Wrong....!!');
+                    });
+            }
+        }
+
+        $scope.deleteUserLocationAssign = function (id) {
+
+            var userToken = sessionStorage.getItem('token');
+            $scope.showFullPageLoader = true;
+            $http.delete(apiBaseURL + 'Delete/DeleteUserLocationAssign/' + id,
+                {
+                    headers: { 'Content-Type': 'application/json', 'Authorization': "Bearer " + userToken }
+                })
+                .then(function (response) {
+                    if (response.status == 200 || response.data != "") {
+                        var result = response.data.model;
+                        if (result == 1) {
+                            $scope.GetUserLocationAssignData();
+                            $scope.showFullPageLoader = false;
+                            alert('Deleted Successfully!!');
+                        }
+                        else {
+                            $scope.showFullPageLoader = false;
+                            alert('Something Wrong....!!');
+                        }
+                    }
+                }, function (error) {
+                    console.log(error);
+                    $scope.showFullPageLoader = false;
+                    alert('Something Wrong....!!');
+                });
+        }
+
+        $scope.resetAllFields = function () {
+            $scope.district = "0";
+            $scope.getAllThana(0, 0, 0);
+            $scope.getAllArea(0, 0, 0);
+            $scope.retentionAcquisitionManager = "0";
+        }
+    });
+</script>

@@ -1,0 +1,628 @@
+﻿
+@{
+    ViewBag.Title = "OperationNew";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<div ng-app="operationNewModule">
+    <div ng-controller="operationNewController">
+        @*Modal Start*@
+        @*All Comments Modal*@
+        <div class="modal fade" id="allCommentsModal" role="dialog" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Commented By</th>
+                                    <th>Commented On</th>
+                                    <th>Status</th>
+                                    <th>Comment</th>
+                                    <th>Hub</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="s in showAllCommentsData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>{{s.namePostedBy}} ({{s.isConfirmedBy}})</td>
+                                    <td>{{s.postedOn}}</td>
+                                    <td>{{s.status}}</td>
+                                    <td>{{s.comment}}</td>
+                                    <td>{{s.hubName}}</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Update Order Modal*@
+        <div class="modal inmodal fade" id="updateOrderModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateOrderModalHeader">Update Order</h5>
+                    </div>
+
+                    <div class="modal-body" ng-repeat="o in loadOrdersDetailsData">
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Customer Name</label>
+                            <div class="col-lg-8">
+                                <input type="text" ng-model="o.customerName" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Customer Mobile</label>
+                            <div class="col-lg-8">
+                                <input type="text" ng-model="o.courierAddressContactInfo.mobile" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Alternate Mobile</label>
+                            <div class="col-lg-8">
+                                <input type="text" ng-model="o.courierAddressContactInfo.otherMobile" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Customer Address</label>
+                            <div class="col-lg-8">
+                                <textarea type="text" ng-model="o.courierAddressContactInfo.address" class="form-control" style="height:auto" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Product Name</label>
+                            <div class="col-lg-8">
+                                <input type="text" ng-model="o.courierOrderInfo.collectionName" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Collection Address</label>
+                            <div class="col-lg-8">
+                                <textarea type="text" ng-model="o.userInfo.collectAddress" class="form-control" style="height:auto" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Packaging Charge</label>
+                            <div class="col-lg-8">
+                                <select ng-model="packagingCharge" class="form-control">
+                                    <option ng-repeat="p in packagingChargeData" value="{{p.packagingChargeId}}">{{p.packagingName}}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">ProductType</label>
+                            <div class="col-lg-8">
+                                <select ng-model="productType" class="form-control">
+                                    <option value="big">Big</option>
+                                    <option value="small">Small</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Weight</label>
+                            <div class="col-lg-8">
+                                <select ng-model="o.courierOrderInfo.weight" ng-change="weightChange(o.courierOrderInfo.weightRangeId);" class="form-control" ng-options="c.weightRangeId as c.weight for c in getGeliveryChargeData"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Service Type</label>
+                            <div class="col-lg-8">
+                                <select ng-model="o.courierOrderInfo.paymentType" ng-options="c.deliveryRangeId as c.deliveryType for c in deliveryTypeData" class="form-control"></select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">District</label>
+                            <div class="col-lg-8">
+                                @*<select ng-model="o.courierAddressContactInfo.districtNameEng" class="form-control">
+                                    <option value="-1" selected>Select District</option>
+                                    <option ng-repeat="d in districts" value="{{d.districtId}}">{{d.district}}</option>
+                                </select>*@
+                                <select class="form-control" ng-model="o.courierAddressContactInfo.districtNameEng" ng-options="d.districtId as d.district for d in districts"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Thana</label>
+                            <div class="col-lg-8">
+                                <select ng-model="thana" class="form-control">
+                                    <option value="-1" selected>Select Thana</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Area</label>
+                            <div class="col-lg-8">
+                                <select ng-model="area" class="form-control">
+                                    <option value="-1" selected>Select Thana</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Collect District</label>
+                            <div class="col-lg-8">
+                                @*<select ng-model="collectDistrict" class="form-control">
+                                    <option ng-repeat="d in collectDistrict" value="{{d.districtId}}">{{d.districtName}}</option>
+                                </select>*@
+                                <select class="form-control" ng-model="collectDistrict" ng-options="d.districtId as d.districtName for d in collectDistrict"></select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Collect Thana</label>
+                            <div class="col-lg-8">
+                                <select ng-model="collectThana" class="form-control">
+                                    <option ng-repeat="t in collectDistrict" value="{{t.thanaId}}">{{t.thanaName}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Office Drop</label>
+                            <div class="col-lg-8">
+                                <select ng-model="officeDrop" class="form-control">
+                                    <option value="1">অফিস এ ড্রপ করতে চাই</option>
+                                    <option value="0">অফিস এ ড্রপ করতে চাই না</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Merchant Delivery Date</label>
+                            <div class="col-lg-8">
+                                <input type="text" ng-model="o.courierAddressContactInfo.merchantDeliveryDate" class="form-control datepicker" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Merchant Collection Date</label>
+                            <div class="col-lg-8">
+                                <input type="text" ng-model="o.courierAddressContactInfo.merchantCollectionDate" class="form-control datepicker" />
+                            </div>
+                        </div>
+                        <div class="form-group row" id="makeNormalOrder">
+                            <label class="col-lg-4 col-form-label">Make Normal Order</label>
+                            <div class="col-lg-6">
+                                <div class="input-group m-b">
+                                    <div class="input-group-prepend">
+                                        <label>
+                                            <input type="checkbox" ng-model="normalOrder" style="height:30px; width:30px;" />
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*Modal End*@
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="col-lg-12 row">
+                                    <div class="col-md-2">
+                                        <label class="col-form-label">Order Ids</label>
+                                    </div>
+                                    <div class="col-md-10">
+                                        <textarea placeholder="Ex: DT-1,DT-106959" ng-model="orderIds" class="form-control" style="height:auto;margin-bottom: 10px; width:400px;" rows="2"></textarea>
+                                        <button style="margin-left:5px; height:55px;margin-bottom:11px;" type="button" class="btn btn-w-m btn-success" ng-click="loadOrdersDetails(orderIds)"><b style="font-size:18px;">Search</b></button>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row border text-center">
+                            <div class="border col-sm-1">
+                                <span><b>No</b></span>
+                            </div>
+                            <div class="border col-lg-2">
+                                <span><b>Order Details</b></span>
+                            </div>
+                            <div class="border col-lg-2">
+                                <span><b>Merchant Details</b></span>
+                            </div>
+                            <div class="border col-lg-2">
+                                <span><b>Customer Details</b></span>
+                            </div>
+                            <div class="border col-lg-3">
+                                <span><b>Product Details</b></span>
+                            </div>
+                            <div class="border col-lg-2">
+                                <span><b>Action</b></span>
+                            </div>
+                        </div>
+                        <div class="row" ng-repeat="o in loadOrdersDetailsData">
+                            <div class="border col-sm-1">
+                                {{$index +1}}
+                            </div>
+                            <div class="border col-lg-2">
+
+                                <div>
+                                    <span>
+                                        <b>Order Id:</b><br /> {{o.courierOrdersId}}
+                                    </span><br />
+                                    <span>
+                                        <b>Actual Price:</b><br />{{o.courierPrice.actualPackagePrice}}
+                                    </span><br />
+                                    <span>
+                                        <b>Total Charge:</b><br /> {{o.courierPrice.totalServiceCharge}}
+                                    </span><br />
+                                    <span>
+                                        <b>Delivery Charge:</b><br /> {{o.courierPrice.deliveryCharge}}
+                                    </span><br />
+                                    <span>
+                                        <b>Cash To Collect:</b><br /> {{o.courierPrice.collectionAmount}}
+                                    </span><br />
+                                    <span>
+                                        <b>Breakable Charge:</b><br /> {{o.courierPrice.breakableCharge}}
+                                    </span><br />
+                                    <span>
+                                        <b>COD Charge:</b><br /> {{o.courierPrice.codCharge}}
+                                    </span><br />
+                                    <span>
+                                        <b>Courier Name:</b><br /> <span style="color:orangered;">{{o.courierName}}</span>
+                                    </span><br />
+                                    <span>
+                                        <b>Bkash Offer:</b><br /> <span style="color:orangered;">{{o.offerInformation.offerBkashDiscount}} {{o.offerInformation.isOfferBkashActive}}</span>
+                                    </span><br />
+                                    <span>
+                                        <b>POD Number:</b><br /> {{o.podNumber}}
+                                    </span><br />
+                                    <span>
+                                        <b>Order Date:</b><br /> {{o.courierOrderDateDetails.orderDate}}
+                                    </span><br />
+                                    <span ng-if="o.userInfo.orderDateDiff <= 15 || o.courierOrderInfo.deliveryRangeId == 17 || o.courierOrderInfo.deliveryRangeId == 18">
+                                        <b style="color:red;">Priority Order</b>
+                                    </span><br />
+                                    <span>
+                                        <b>Order From:</b><br /> {{o.courierOrderInfo.orderFrom}}
+                                    </span><br />
+
+                                </div>
+                                <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="loadOrdersDetails(o.courierOrdersId)" data-toggle="modal" data-target="#updateOrderModal"><strong>Update Order</strong></button>
+                            </div>
+                            <div class="border col-lg-2">
+
+                                <div>
+                                    <span>
+                                        <b>Company Name:</b><br /> {{o.userInfo.companyName}}
+                                    </span><br />
+                                    <span>
+                                        <b>Merchant Name:</b><br />{{o.userInfo.userName}}
+                                    </span><br />
+                                    <span>
+                                        <b>Merchant Mobile:</b><br /> {{o.userInfo.mobile}}
+                                    </span><br />
+                                    <span>
+                                        <b>Merchant Address:</b><br /> {{o.userInfo.address}}
+                                    </span><br />
+                                    <span>
+                                        <b>Collection Address:</b><br /> {{o.userInfo.collectAddress}}
+                                    </span><br />
+                                    <span>
+                                        <b>District:</b><br /> {{o.courierAddressContactInfo.collectDistrictName}}
+                                    </span><br />
+                                    <span>
+                                        <b>Thana:</b><br /> {{o.courierAddressContactInfo.collectThanaName}}
+                                    </span><br />
+                                    <span>
+                                        <b>Retention Manager:</b><br /> {{o.userInfo.retentionUser}}
+                                    </span><br />
+                                    <span>
+                                        <b>Merchant DeliveryDate:</b><br /> {{o.courierAddressContactInfo.merchantDeliveryDate}}
+                                    </span><br />
+                                    <span>
+                                        <b>Merchant CollectionDate:</b><br /> {{o.courierAddressContactInfo.merchantCollectionDate}}
+                                    </span><br />
+                                    <span ng-if="o.courierPrice.officeDrop == true">
+                                        <b>Office Drop:</b><br /> <span style="color:orangered;">অফিস এ ড্রপ করতে চাই</span>
+                                    </span><br />
+
+                                </div>
+                                <button type="submit" class="btn btn-warning" style="margin-bottom:7px;margin-top:7px;"><strong>Fix Error</strong></button>
+                            </div>
+                            <div class="border col-lg-2">
+
+                                <div>
+                                    <span>
+                                        <b>Customer Name:</b><br /> {{o.customerName}}
+                                    </span><br />
+                                    <span>
+                                        <b>Mobile:</b><br />{{o.courierAddressContactInfo.mobile}}
+                                    </span><br />
+                                    <span>
+                                        <b>Address:</b><br /> {{o.courierAddressContactInfo.address}}
+                                    </span><br />
+                                    <span>
+                                        <b>District:</b><br /> {{o.courierAddressContactInfo.districtName}}
+                                    </span><br />
+                                    <span>
+                                        <b>Thana:</b><br /> {{o.courierAddressContactInfo.thanaName}}
+                                    </span><br />
+
+                                </div>
+                            </div>
+                            <div class="border col-lg-3">
+
+                                <div>
+                                    <span>
+                                        <b>Product(s):</b><br /> {{o.courierOrderInfo.collectionName}}
+                                    </span><br />
+                                    <span>
+                                        <b>Order Type:</b><br />{{o.courierOrderInfo.orderType}}
+                                    </span><br />
+                                    <span>
+                                        <b>Weight:</b><br /> {{o.courierOrderInfo.weight}}
+                                    </span><br />
+                                    <span>
+                                        <b>Payment Type:</b><br /> {{o.courierOrderInfo.paymentType}}
+                                    </span><br />
+                                    <span>
+                                        <b>Current Status:</b><br /> {{o.status}}
+                                    </span><br />
+                                    <span>
+                                        <b>Comment:</b><br /> {{o.comment}}
+                                    </span><br />
+                                    <span>
+                                        <b>HubName:</b><br /> {{o.hubName}}
+                                    </span><br />
+
+                                </div>
+                                <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="showAllComments(o.courierOrdersId)" data-toggle="modal" data-target="#allCommentsModal">
+                                    <strong>
+                                        All Comments
+                                    </strong>
+                                </button>
+                            </div>
+                            <div class="border col-lg-2 text-center">
+
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Confirmed</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Pre-Rejected</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Hold</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Packaging</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Shipment</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Delivered</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Post-Rejected</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Return</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>New</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Payment</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Delivery-Bondhu</strong></button><br />
+                                <button type="submit" class="btn btn-info" style="margin-bottom:3px;margin-top:3px;"><strong>Hub</strong></button><br />
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<script type="text/javascript">
+    var app = angular.module('operationNewModule', []);
+    app.controller('operationNewController', function ($scope, $http) {
+
+        //Load Order Details
+        $scope.loadOrdersDetails = function (orderIds) {
+
+            $scope.officeDrop = '1';
+            var requestBodyModel = {
+                "AreaId": 0,
+                "Count": 30,
+                "CourierId": "0",
+                "DistrictGroupName": "Select City / Sadar",
+                "DistrictId": 0,
+                "DistrictIds": [-1],
+                "FromDate": "01-01-01",
+                "Index": 0,
+                "OrderIds": orderIds,
+                "Priority": "",
+                "Status": -1,
+                "ThanaId": 0,
+                "ToDate": "01-01-01",
+                "collectionName": "",
+                "courierUserId": -1,
+                "mobile": "",
+                "paymentType": "-1",
+                "podNumber": ""
+            };
+
+            //$scope.showLoader = true;
+            let deliveryCharge = {};
+            var weightList;
+
+            $http.post(apiBaseURL + 'Fetch/LoadOrders/', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.loadOrdersDetailsData = response.data.model.courierOrderViewModel;
+                    deliveryCharge = response.data.model.courierOrderViewModel;
+                    //$scope.showLoader = false;
+                    $scope.getGeliveryChargeDetailsAreaWise(deliveryCharge);
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+
+            $scope.packagingCharge();
+            $scope.loadAllDistrict();
+            $scope.pickupLocation(orderIds.slice(3));
+            
+
+        };
+
+        //Show all Comments
+        $scope.showAllComments = function (orderId) {
+
+            $scope.showLoader = true;
+
+            $http.get(apiBaseURL + 'Fetch/OrderUpdateHistory/' + orderId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.showAllCommentsData = response.data.model;
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+
+        };
+
+        //Packaging Charge Details
+        $scope.packagingCharge = function () {
+
+            $scope.packagingCharge = '1';
+            $scope.productType = 'small';
+
+            $scope.showLoader = true;
+
+            $http.get(apiBaseURL + 'Fetch/GetPackagingChargeRange/true', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.packagingChargeData = response.data.model;
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+
+        };
+
+        //Load all District
+        $scope.loadAllDistrict = function () {
+
+            $scope.district = '-1';
+
+            $scope.showLoader = true;
+
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistricts', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.districts = response.data.model.filter(d => d.parentId === 0 && d.isActive === true);
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+
+        };
+
+        //Pickup Location
+        $scope.pickupLocation = function (courierUserId) {
+
+            
+            $scope.showLoader = true;
+
+            $http.get(apiBaseURL + 'Fetch/GetPickupLocations/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    
+                    $scope.collectDistrict = response.data.model.reduce((x, y) => x.findIndex(e => e.districtId == y.districtId) < 0 ? [...x, y] : x, [])
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+
+        };
+
+        //getGeliveryChargeDetailsAreaWise
+        $scope.getGeliveryChargeDetailsAreaWise = function (deliveryCharge) {
+
+            var obj = {
+                "DistrictId": deliveryCharge[0].courierAddressContactInfo.districtId,
+                "ThanaId": deliveryCharge[0].courierAddressContactInfo.thanaId,
+                "AreaId": deliveryCharge[0].courierAddressContactInfo.areaId,
+                "ServiceType": deliveryCharge[0].courierOrderInfo.serviceType
+            };
+            
+            $http.post(apiBaseURL + 'Fetch/DeliveryChargeDetailsAreaWise/', obj, { headers: { "Authorization": "Bearer " + sessionStorage.getItem("token").trim(), 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.getGeliveryChargeData = response.data.model;
+                    weightList = response.data.model;
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.responseJSON.model);
+                    $scope.showLoader = false;
+                });
+
+        };
+
+        //weightChange
+        $scope.weightChange = function (weight) {
+
+            $scope.deliveryRange = weightList.find(o => o.weightRangeId == weight);
+            $scope.deliveryTypeData = $scope.deliveryRange.weightRangeWiseData;
+        };
+        
+    });
+</script>
+

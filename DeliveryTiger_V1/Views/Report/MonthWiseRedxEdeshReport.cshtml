@@ -1,0 +1,995 @@
+﻿
+@{
+    ViewBag.Title = "Month Wise Redx Edesh Report";
+}
+
+<style>
+    .yellowBackground {
+        background-color: yellow;
+        color: black;
+    }
+
+    .redBackground {
+        background-color: red;
+        color: white;
+    }
+
+    .modal {
+        overflow-y: auto;
+    }
+
+    .table-district, .table-thana {
+        position: relative;
+        overflow: auto;
+        height: 500px;
+    }
+
+    .table-district thead th, .table-thana thead th {
+        position: sticky;
+        top: 0;
+        background-color: #EAECEE !important;
+    }
+</style>
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<div ng-app="MonthWiseRedxEdeshReportModule">
+    <div ng-controller="MonthWiseRedxEdeshReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h3 style="text-align: center;">Dt Redx-Edesh <span style="color:chocolate">{{flag}}</span> Speed Comparison Report</h3>
+                        </div>
+                        <div class="form-group text-center">
+                            <h6 style="font-weight: bold;">OutTime Delivery(%) > 20% & Complain > 10 (Red Color)</h6>
+                            <h6 style="font-weight: bold;">OutTime Delivery(%) > 20% OR Complain > 10 (Yellow Color)</h6>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input type="text" class="form-control-sm form-control" placeholder="search" ng-model="mainSearch" />
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                    <button type="button" style="margin: 0px 2px 0px 2px;" class="btn btn-w-m btn-success" ng-click="packagedToDelivered(fromDate, toDate,'District')">District</button>
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="packagedToDelivered(fromDate, toDate,'Thana')">Thana</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        @*<div id="DistrictTableData" ng-show="districtShow">*@
+                        @*<a class="btn btn-info" ng-click="getAllData()" style="margin-bottom: 10px;">All</a>
+                        <svg width="20" height="20" style="cursor: pointer;" ng-click="changeDataRed()">
+                            <rect width="20" height="20" style="fill:rgb(255,0,0);stroke-width:0;stroke:rgb(0,0,0)" />
+                        </svg>
+                        <svg width="20" height="20" style="cursor: pointer;" ng-click="changeDataYellow()">
+                            <rect width="20" height="20" style="fill:rgb(255,255,0);stroke-width:0;stroke:rgb(0,0,0)" />
+                        </svg>*@
+                        @*district table*@
+                        <table class="table table-bordered table-responsive table-district" ng-show="districtShow">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDistrict'; reverseSort = !reverseSort">
+                                            District
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshPackagedPodNumber'; reverseSort = !reverseSort">
+                                            Edesh Packaged POD
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshDays'; reverseSort = !reverseSort">
+                                            Edesh Days
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshOutTimeDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Edesh OutTime Delivery
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Edesh (%)
+                                        </a>
+                                    </th>
+                                    @*<th>
+                                        <a href="#" ng-click="orderByField='EdeshOutTimeDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Edesh OutTime Delivery(%)
+                                        </a>
+                                    </th>*@
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshComplain'; reverseSort = !reverseSort">
+                                            Edesh Complain
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshComplainPercentage'; reverseSort = !reverseSort">
+                                            Edesh Complain(%)
+                                        </a>
+                                    </th>
+
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDays-EdeshDays'; reverseSort = !reverseSort">
+                                            Redx - Edesh(Days)
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDays'; reverseSort = !reverseSort">
+                                            Redx Days
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxPackagedPodNumber'; reverseSort = !reverseSort">
+                                            Redx Packaged POD
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Redx (%)
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxOutTimeDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Redx OutTime Delivery
+                                        </a>
+                                    </th>
+                                    @*<th>
+                                        <a href="#" ng-click="orderByField='RedxOutTimeDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Redx OutTime Delivery(%)
+                                        </a>
+                                    </th>*@
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxComplain'; reverseSort = !reverseSort">
+                                            Redx Complain
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxComplainPercentage'; reverseSort = !reverseSort">
+                                            Redx Complain(%)
+                                        </a>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="p in PackagedToDeliveredData | orderBy:orderByField:reverseSort | filter:mainSearch"
+                                    ng-class="{'redBackground': (p.EdeshOutTimeDeliveredPercentage > 20.00 && p.EdeshComplain > 10) || (p.RedxOutTimeDeliveredPercentage > 20.00 && p.RedxComplain > 10), 'yellowBackground': (!(p.EdeshOutTimeDeliveredPercentage <= 20.00 && p.EdeshComplain <= 10)) || (!(p.RedxOutTimeDeliveredPercentage <= 20.00 && p.RedxComplain <= 10))}">
+                                    <td style="cursor: pointer;" ng-click="NeedToChange(p.RedxDistrictId, p.EdeshDistrictId, '0', '0')">
+                                        {{$index +1}}
+                                        <span>
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxDistrict == null">{{p.EdeshDistrict}}</span>
+                                        <span ng-if="p.EdeshDistrict == null">{{p.RedxDistrict}}</span>
+                                        <span ng-if="p.EdeshDistrict != null && p.RedxDistrict != null">{{p.RedxDistrict}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.EdeshPackagedPodNumber != null" style="cursor: pointer;" ng-click="getDistrictPackagePodDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, 32)" data-toggle='modal' data-target='#speedPackagedPodModal'>
+                                            {{p.EdeshPackagedPodNumber}}
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.EdeshDistrict == null">NA</span>
+                                        <span ng-if="p.EdeshDistrict != null && p.EdeshDays == null">0</span>
+                                        <span ng-if="p.EdeshPackagedPodNumber > 0">{{p.EdeshDays | number:2}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.EdeshOutTimeDeliveryOrder  == null">
+                                            NA
+                                        </span>
+                                        <span ng-if="p.EdeshOutTimeDeliveryOrder != null" style="cursor: pointer;" ng-click="getDistrictSpeedCompareDetails(fromDate,toDate,32, p.EdeshDistrictId,'District')" data-toggle='modal' data-target='#speedPackagePodModal'>
+                                            {{p.EdeshOutTimeDeliveryOrder}}
+                                            ({{p.EdeshOutTimeDeliveredPercentage| number:2}} %)
+                                            <i ng-if="p.EdeshDistrictId > 0 && p.EdeshOutTimeDeliveryOrder > 0" class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>{{p.EdeshDeliveredPercentage | number:2}}</td>
+
+                                    @*<td>
+                                        <span>{{p.EdeshOutTimeDeliveredPercentage| number:2}}</span>
+
+                                    </td>*@
+                                    <td>
+                                        <span ng-if="p.EdeshComplain > 0" style="cursor: pointer;" ng-click="getComplainDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, 0, 0, 32)" data-toggle='modal' data-target='#complainDetailsModal'>
+                                            {{p.EdeshComplain}}
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{p.EdeshComplainPercentage | number:2}}
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxDays-p.EdeshDays < -0.50 " style="color:red;">{{p.RedxDays-p.EdeshDays | number:2}}</span>
+                                        <span ng-if="p.RedxDays-p.EdeshDays >= -0.50 ">{{p.RedxDays-p.EdeshDays | number:2}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxDistrict == null">NA</span>
+                                        <span ng-if="p.RedxDistrict != null && p.RedxDays == null">0</span>
+                                        <span ng-if="p.RedxPackagedPodNumber > 0">{{p.RedxDays | number:2}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxPackagedPodNumber != null" style="cursor: pointer;" ng-click="getDistrictPackagePodDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, 34)" data-toggle='modal' data-target='#speedPackagedPodModal'>
+                                            {{p.RedxPackagedPodNumber}}
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>{{p.RedxDeliveredPercentage | number:2}}</td>
+                                    <td>
+                                        <span ng-if="p.RedxOutTimeDeliveryOrder  == null">
+                                            NA
+                                        </span>
+                                        <span ng-if="p.RedxOutTimeDeliveryOrder != null" style="cursor: pointer;" ng-click="getDistrictSpeedCompareDetails(fromDate,toDate,34, p.RedxDistrictId,'District')" data-toggle='modal' data-target='#speedPackagePodModal'>
+                                            {{p.RedxOutTimeDeliveryOrder}}
+                                            ({{p.RedxOutTimeDeliveredPercentage| number:2}} %)
+                                            <i ng-if="p.RedxDistrictId > 0 && p.RedxOutTimeDeliveryOrder > 0" class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    @*<td>
+                                        <span>{{p.RedxOutTimeDeliveredPercentage| number:2}}</span>
+
+                                    </td>*@
+                                    <td>
+                                        <span ng-if="p.RedxComplain > 0" style="cursor: pointer;" ng-click="getComplainDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, 0, 0, 34)" data-toggle='modal' data-target='#complainDetailsModal'>
+                                            {{p.RedxComplain}}
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{p.RedxComplainPercentage | number:2}}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        @*end*@
+                        @*</div>*@
+
+                        @*thana table*@
+                        <table class="table table-bordered table-responsive table-thana" ng-show="thanaShow">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDistrict'; reverseSort = !reverseSort">
+                                            District
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxThana'; reverseSort = !reverseSort">
+                                            Thana
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshPackagedPodNumber'; reverseSort = !reverseSort">
+                                            Edesh Packaged POD
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshDays'; reverseSort = !reverseSort">
+                                            Edesh Days
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshOutTimeDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Edesh OutTime Delivery
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Edesh (%)
+                                        </a>
+                                    </th>
+                                    @*<th>
+            <a href="#" ng-click="orderByField='EdeshOutTimeDeliveredPercentage'; reverseSort = !reverseSort">
+                Edesh OutTime Delivery(%)
+            </a>
+        </th>*@
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshComplain'; reverseSort = !reverseSort">
+                                            Edesh Complain
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='EdeshComplainPercentage'; reverseSort = !reverseSort">
+                                            Edesh Complain(%)
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDays-EdeshDays'; reverseSort = !reverseSort">
+                                            Redx - Edesh(Days)
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDays'; reverseSort = !reverseSort">
+                                            Redx Packaged POD
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDays'; reverseSort = !reverseSort">
+                                            Redx Days
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxOutTimeDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Redx OutTime Delivery
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxDeliveredPercentage'; reverseSort = !reverseSort">
+                                            Redx (%)
+                                        </a>
+                                    </th>
+                                    @*<th>
+            <a href="#" ng-click="orderByField='RedxOutTimeDeliveredPercentage'; reverseSort = !reverseSort">
+                Redx OutTime Delivery(%)
+            </a>
+        </th>*@
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxComplain'; reverseSort = !reverseSort">
+                                            Redx Complain
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='RedxComplainPercentage'; reverseSort = !reverseSort">
+                                            Redx Complain(%)
+                                        </a>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="p in PackagedToDeliveredData | orderBy:orderByField:reverseSort | filter:mainSearch"
+                                    ng-class="{'redBackground': (p.EdeshOutTimeDeliveredPercentage > 20.00 && p.EdeshComplain > 10) || (p.RedxOutTimeDeliveredPercentage > 20.00 && p.RedxComplain > 10), 'yellowBackground': (p.EdeshOutTimeDeliveredPercentage > 20.00 || p.EdeshComplain > 10) || (p.RedxOutTimeDeliveredPercentage > 20.00 || p.RedxComplain > 10)}">
+                                    <td style="cursor: pointer;" ng-click="NeedToChange(p.EdeshDistrictId, p.RedxDistrictId, p.EdeshThanaId, p.RedxThanaId)">
+                                        {{$index +1}}
+                                        <span>
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxDistrict == null">{{p.EdeshDistrict}}</span>
+                                        <span ng-if="p.EdeshDistrict == null">{{p.RedxDistrict}}</span>
+                                        <span ng-if="p.EdeshDistrict != null && p.RedxDistrict != null">{{p.RedxDistrict}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxThana == null">{{p.EdeshThana}}</span>
+                                        <span ng-if="p.EdeshThana == null">{{p.RedxThana}}</span>
+                                        <span ng-if="p.RedxThana != null && p.EdeshThana != null">{{p.RedxThana}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.EdeshPackagedPodNumber != null" style="cursor: pointer;" ng-click="getThanaPackagePodDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, p.EdeshThanaId, p.RedxThanaId, 32)" data-toggle='modal' data-target='#speedPackagedPodModal'>
+                                            {{p.EdeshPackagedPodNumber}}
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.EdeshThana == null">NA</span>
+                                        <span ng-if="p.EdeshThana != null && p.EdeshDays == null">0</span>
+                                        <span ng-if="p.EdeshPackagedPodNumber > 0">{{p.EdeshDays | number:2}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.EdeshOutTimeDeliveryOrder  == null">
+                                            NA
+                                        </span>
+                                        <span ng-if="p.EdeshOutTimeDeliveryOrder != null" style="cursor: pointer;" ng-click="getDistrictThanaSpeedCompareDetails(fromDate,toDate,32,p.EdeshDistrictId,p.EdeshThanaId,'Thana')" data-toggle='modal' data-target='#speedPackagePodModal'>
+                                            {{p.EdeshOutTimeDeliveryOrder}}
+                                            ({{p.EdeshOutTimeDeliveredPercentage| number:2}} %)
+                                            <i ng-if="p.EdeshDistrictId > 0 && p.EdeshOutTimeDeliveryOrder > 0" class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>{{p.EdeshDeliveredPercentage | number:2}}</td>
+                                    @*<td>
+            <span>{{p.EdeshOutTimeDeliveredPercentage| number:2}}</span>
+        </td>*@
+                                    <td>
+                                        <span ng-if="p.EdeshComplain > 0" style="cursor: pointer;" ng-click="getComplainDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, p.EdeshThanaId, p.RedxThanaId, 32)" data-toggle='modal' data-target='#complainDetailsModal'>
+                                            {{p.EdeshComplain}}
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{p.EdeshComplainPercentage | number:2}}
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxDays-p.EdeshDays < -0.50 " style="color:red;">
+                                            {{p.RedxDays-p.EdeshDays | number:2}}
+                                        </span>
+                                        <span ng-if="p.RedxDays-p.EdeshDays >= -0.50 ">{{p.RedxDays-p.EdeshDays | number:2}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxPackagedPodNumber != null" style="cursor: pointer;" ng-click="getThanaPackagePodDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, p.EdeshThanaId, p.RedxThanaId, 34)" data-toggle='modal' data-target='#speedPackagedPodModal'>
+                                            {{p.RedxPackagedPodNumber}}
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxThana == null">NA</span>
+                                        <span ng-if="p.RedxThana != null && p.RedxDays == null">0</span>
+                                        <span ng-if="p.RedxPackagedPodNumber > 0">{{p.RedxDays | number:2}}</span>
+                                    </td>
+                                    <td>
+                                        <span ng-if="p.RedxOutTimeDeliveryOrder == null">
+                                            NA
+                                        </span>
+                                        <span ng-if="p.RedxOutTimeDeliveryOrder != null" style="cursor: pointer;" ng-click="getDistrictThanaSpeedCompareDetails(fromDate,toDate,34,p.RedxDistrictId,p.RedxThanaId,'Thana')" data-toggle='modal' data-target='#speedPackagePodModal'>
+                                            {{p.RedxOutTimeDeliveryOrder}}
+                                            ({{p.RedxOutTimeDeliveredPercentage| number:2}} %)
+                                            <i ng-if="p.RedxDistrictId > 0 && p.RedxOutTimeDeliveryOrder > 0" class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>{{p.RedxDeliveredPercentage | number:2}}</td>
+                                    @*<td>
+            <span>{{p.RedxOutTimeDeliveredPercentage| number:2}}</span>
+        </td>*@
+                                    <td>
+                                        <span ng-if="p.RedxComplain > 0" style="cursor: pointer;" ng-click="getComplainDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, p.EdeshThanaId, p.RedxThanaId, 34)" data-toggle='modal' data-target='#complainDetailsModal'>
+                                            {{p.RedxComplain}}
+                                            <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{p.RedxComplainPercentage | number:2}}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        @*end*@
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div class="container">
+            <div class="row">
+                @*Outtime Delivery Modal*@
+                <div class="modal fade" id="speedPackagePodModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" style="text-align: center;">
+                                    <span ng-if="CourierId == 32 ">{{flag}} (Edesh)</span>
+                                    <span ng-if="CourierId == 34 ">{{flag}} (Redx)</span>
+                                </h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>OrderId</th>
+                                                <th>PodNumber</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='PackagedDate'; reverseSort = !reverseSort">
+                                                        PackagedDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveredDate'; reverseSort = !reverseSort">
+                                                        DeliveredDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                        Days
+                                                    </a>
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in detailsResult | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3;" ng-click="getOrderHistoryInformation(d.DeliveredCourierOrderId)">{{d.DeliveredCourierOrderId}}<i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i></td>
+
+                                                <td>{{d.DeliveredPodNumber}}</td>
+                                                <td>{{d.PackagedDate | date:'medium'}}</td>
+                                                <td>{{d.DeliveredDate | date:'medium'}}</td>
+                                                <td>{{d.Days | number:2}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Outtime Delivery Modal End*@
+
+                @*Packaged Pod Modal*@
+                <div class="modal fade" id="speedPackagedPodModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" style="text-align: center;">
+                                    <span ng-if="CourierId == 32 ">{{flag}} Wise (Edesh)</span>
+                                    <span ng-if="CourierId == 34 ">{{flag}} Wise (Redx)</span>
+                                    Package Pod Details
+                                </h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>OrderId</th>
+                                                <th>PodNumber</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='PackagedDate'; reverseSort = !reverseSort">
+                                                        PackagedDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveredDate'; reverseSort = !reverseSort">
+                                                        DeliveredDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                        Days
+                                                    </a>
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in detailsResult | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3;" ng-click="getOrderHistoryInformation(d.PackagedCourierOrderId)">
+                                                    {{d.PackagedCourierOrderId}}
+                                                    <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>
+                                                </td>
+                                                <td>{{d.PackagedPodNumber}}</td>
+                                                <td>{{d.PackagedDate | date:'medium'}}</td>
+                                                <td>
+                                                    <span ng-if="d.DeliveredDate == null">
+                                                        NA
+                                                    </span>
+                                                    <span ng-if="d.DeliveredDate != null">
+                                                        {{d.DeliveredDate | date:'medium'}}
+                                                    </span>
+                                                </td>
+                                                <td>{{d.Days | number:2}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Packaged Pod Modal End*@
+
+                @*Complain Modal*@
+                <div class="modal fade" id="complainDetailsModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" style="text-align: center;">
+                                    <span ng-if="CourierId == 32 ">(Edesh)</span>
+                                    <span ng-if="CourierId == 34 ">(Redx)</span>
+                                    <span>Complain Details</span>
+                                </h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>OrderId</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='ComplaintDate'; reverseSort = !reverseSort">
+                                                        Complain Date
+                                                    </a>
+                                                </th>
+                                                <th>Comments</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in complainDetailsResult | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3;" ng-click="getOrderHistoryInformation('DT-' + d.OrderId)">
+                                                    DT-{{d.OrderId}}
+                                                    <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>
+                                                </td>
+                                                <td>{{d.ComplaintDate | date: 'yyyy-MM-dd'}}</td>
+                                                <td>{{d.Comments}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Complain Modal End*@
+
+                @*Order Information Modal*@
+                <div id="orderInformationModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Order Informations</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <table class="table table-hover" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>OrderId</th>
+                                            <th>Confirmed By</th>
+                                            <th>Order Date</th>
+                                            <th>Confirmation Date</th>
+                                            <th>Status</th>
+                                            <th>Comment</th>
+                                            <th>Hub Name</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="o in OrderInformations">
+                                            <td>{{$index +1}}</td>
+                                            <td>{{o.courierOrderId}}</td>
+                                            <td>{{o.isConfirmedBy}}({{o.namePostedBy}})</td>
+                                            <td>{{o.orderDate | date:'medium'}}</td>
+                                            <td>{{o.postedOn | date:'medium'}}</td>
+                                            <td>{{o.statusNameEng}}-{{o.status}}</td>
+                                            <td>{{o.comment}}</td>
+                                            <td>{{o.hubName}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Order Information Modal End*@
+            </div>
+        </div>
+
+
+    </div>
+</div>
+<script type="text/javascript">
+    var app = angular.module('MonthWiseRedxEdeshReportModule', []);
+    app.controller('MonthWiseRedxEdeshReportController', function ($scope, $http, $window) {
+        //URL
+        var OnlineUrl = "https://adm.ajkerdeal.com/api/";
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+
+        $scope.flag = '';
+        $scope.thanaShow = false;
+        $scope.districtShow = false;
+
+        $scope.packagedToDelivered = function (fromDate, toDate, flag) {
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            $scope.flag = flag;
+
+            var dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            if ($scope.flag == 'Thana') {
+                dtOrderSearchBodyModel.DistrictId = 0;
+                dtOrderSearchBodyModel.ThanaId = 1;
+                $scope.thanaShow = true;
+                $scope.districtShow = false;
+            }
+            else if ($scope.flag == 'District') {
+                dtOrderSearchBodyModel.DistrictId = 1;
+                dtOrderSearchBodyModel.ThanaId = 0;
+                $scope.districtShow = true;
+                $scope.thanaShow = false;
+            }
+
+            $scope.showLoader = true;
+            $http.post(OnlineUrl + 'deliverytiger/GetThanaSpeedDtCompare', dtOrderSearchBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.AllData = response.data;
+                    $scope.PackagedToDeliveredData = $scope.AllData;
+
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+
+                    $scope.showLoader = false;
+                });
+        };
+
+        //GetDistrictSpeedCompareDetails
+        $scope.getDistrictSpeedCompareDetails = function (fromDate, toDate, courierId, districtId, flag) {
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+            $scope.flag = flag;
+            $scope.CourierId = courierId;
+            var dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": courierId,
+                "DistrictId": districtId
+            };
+
+            $scope.showLoader = true;
+            $http.post(OnlineUrl + 'deliverytiger/GetDistrictSpeedCompareDetails', dtOrderSearchBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.detailsResult = response.data;
+
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+
+                    $scope.showLoader = false;
+                });
+        };
+
+        //GetDistrictThanaSpeedCompareDetails
+        $scope.getDistrictThanaSpeedCompareDetails = function (fromDate, toDate, courierId, districtId, thanaId, flag) {
+
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+            $scope.flag = flag;
+            $scope.CourierId = courierId;
+            var dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": courierId,
+                "DistrictId": districtId,
+                "ThanaId": thanaId
+            };
+
+            $scope.showLoader = true;
+            $http.post(OnlineUrl + 'deliverytiger/GetDistrictThanaSpeedCompareDetails', dtOrderSearchBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.detailsResult = response.data;
+
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+
+                    $scope.showLoader = false;
+                });
+        };
+
+        //getDistrictPackagePodDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId)
+        $scope.getDistrictPackagePodDetails = function (fromDate, toDate, edeshDistrictId, redxDistrictId, courierId) {
+            var districtId;
+            if (redxDistrictId == 0)
+                districtId = edeshDistrictId;
+            else if (edeshDistrictId == 0)
+                districtId = redxDistrictId;
+            else
+                districtId = redxDistrictId;
+
+            $scope.flag = 'District';
+            $scope.CourierId = courierId;
+            var dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": courierId
+            };
+
+            $scope.showLoader = true;
+            $http.post(OnlineUrl + 'deliverytiger/GetPackagedToDelivered', dtOrderSearchBodyModel, { header: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.detailsResult = response.data.filter(d => d.DistrictId === districtId);
+                }, function (error) {
+                    console.log(error);
+                });
+        }
+
+        //getThanaPackagePodDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, p.EdeshThanaId, p.RedxThanaId, 32)
+        $scope.getThanaPackagePodDetails = function (fromDate, toDate, edeshDistrictId, redxDistrictId, edeshThanaId, redxThanaId, courierId) {
+            var districtId, thanaId;
+            if (redxDistrictId == 0)
+                districtId = edeshDistrictId;
+            else if (edeshDistrictId == 0)
+                districtId = redxDistrictId;
+            else
+                districtId = redxDistrictId;
+
+            if (redxThanaId == 0)
+                thanaId = edeshThanaId;
+            else if (edeshThanaId == 0)
+                thanaId = redxThanaId;
+            else
+                thanaId = redxThanaId;
+
+            $scope.flag = 'Thana';
+            $scope.CourierId = courierId;
+            var dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": courierId
+            };
+
+            $scope.showLoader = true;
+            $http.post(OnlineUrl + 'deliverytiger/GetPackagedToDelivered', dtOrderSearchBodyModel, { header: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.detailsResult = response.data.filter(d => d.DistrictId === districtId && d.ThanaId === thanaId);
+                }, function (error) {
+                    console.log(error);
+                });
+        }
+
+        //getDistrictComplainDetails(fromDate, toDate, p.EdeshDistrictId, p.RedxDistrictId, 32)
+        $scope.getComplainDetails = function (fromDate, toDate, edeshDistrictId, redxDistrictId, edeshThanaId, redxThanaId, courierId) {
+            var districtId, thanaId;
+            if (redxDistrictId == 0)
+                districtId = edeshDistrictId;
+            else if (edeshDistrictId == 0)
+                districtId = redxDistrictId;
+            else
+                districtId = redxDistrictId;
+
+            $scope.flag = 'District';
+            var dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": courierId,
+                "DistrictId": districtId,
+                "ThanaId": 0
+            };
+
+            if (redxThanaId !== 0 || edeshThanaId !== 0) {
+                if (redxThanaId == 0)
+                    thanaId = edeshThanaId;
+                else if (edeshThanaId == 0)
+                    thanaId = redxThanaId;
+                else
+                    thanaId = redxThanaId;
+                
+                $scope.flag = 'Thana';
+                dtOrderSearchBodyModel.ThanaId = thanaId;
+            }
+            
+            $scope.showLoader = true;
+            $http.post(OnlineUrl + 'deliverytiger/GetDtDeliveredComplainDetails', dtOrderSearchBodyModel, { header: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.complainDetailsResult = response.data;
+                }, function (error) {
+                    console.log(error);
+                });
+        }
+
+        $scope.getOrderHistoryInformation = function (orderId) {
+            $http.get(CoreOnlineUrl + 'Fetch/OrderUpdateHistory/' + orderId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.OrderInformations = response.data.model;
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.NeedToChange = function (redxDistrictId, edeshDistrictId, redxThanaId, edeshThanaId) {
+            var CityDistrictName = [14, 77, 78, 79, 80];
+            //var redirectUrl = 'http://localhost:65497/Manage/AssignCouirerAndService?DistrictId=';
+            var redirectUrl = 'https://admin.deliverytiger.com.bd/Manage/AssignCouirerAndService?DistrictId=';
+            if (redxDistrictId == 0)
+                redirectUrl += edeshDistrictId;
+            else if (edeshDistrictId == 0)
+                redirectUrl += redxDistrictId;
+            else
+                redirectUrl += redxDistrictId;
+
+            if (redxThanaId != '0' || edeshThanaId != '0') {
+                var isExistCityDistrictId = redxDistrictId !== 0 ? CityDistrictName.indexOf(redxDistrictId) : CityDistrictName.indexOf(edeshDistrictId);
+                if (isExistCityDistrictId === -1) {
+                    if (redxThanaId == 0)
+                        redirectUrl += '&ThanaId=' + edeshThanaId;
+                    else if (edeshThanaId == 0)
+                        redirectUrl += '&ThanaId=' + redxThanaId;
+                    else
+                        redirectUrl += '&ThanaId=' + redxThanaId;
+                }
+            }
+
+            //window.location.href = redirectUrl;
+            $window.open(redirectUrl);
+        };
+
+        //$scope.changeDataRed = function () {
+        //    $scope.PackagedToDeliveredData = $scope.AllData.filter(p => p.EdeshOutTimeDeliveredPercentage > 20.00 && p.EdeshComplain > 10 || p.RedxOutTimeDeliveredPercentage > 20.00 && p.RedxComplain > 10);
+        //}
+
+        //$scope.changeDataYellow = function () {
+        //    $scope.PackagedToDeliveredData = $scope.AllData.filter(p => (!(p.EdeshOutTimeDeliveredPercentage <= 20.00 && p.EdeshComplain <= 10)) || (!(p.RedxOutTimeDeliveredPercentage <= 20.00 && p.RedxComplain <= 10)));
+        //    //$scope.PackagedToDeliveredData = $scope.AllData.filter(p=> (!(p.EdeshOutTimeDeliveredPercentage > 20.00 && p.EdeshComplain > 10 || p.RedxOutTimeDeliveredPercentage > 20.00 && p.RedxComplain > 10)));
+        //}
+
+        //$scope.getAllData = function () {
+        //    $scope.PackagedToDeliveredData = $scope.AllData;
+        //}
+    });
+
+</script>

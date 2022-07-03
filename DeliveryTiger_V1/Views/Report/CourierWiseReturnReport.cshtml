@@ -1,0 +1,178 @@
+﻿
+@{
+    ViewBag.Title = "CourierWiseReturnReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('courierWiseReturnOrdersModule', []);
+    app.controller('courierWiseReturnOrdersController', function ($scope, $http) {
+
+        $scope.courierId = '-1';
+
+        $scope.getCourierWiseReturnOrders = function (fromDate, toDate, courierId) {
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date...!!!");
+                return false;
+            }
+            else if (courierId == '-1') {
+                alert("Please  must be select courier..!!!");
+                return false;
+            }
+
+            var requestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": +courierId
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/CourierWiseReturnReport', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.returnsData = response.data.model;
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+
+                    $scope.showLoader = false;
+                });
+
+
+        };
+
+    });
+</script>
+
+<div class="row" ng-app="courierWiseReturnOrdersModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="courierWiseReturnOrdersController">
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+
+                                    <select style="margin-left:5px;" ng-model="courierId" class="form-control">
+                                        <option value="-1" selected>Select Courier</option>
+                                        <option value="28">Bangladesh Postal Service</option>
+                                        <option value="30">Paperfly</option>
+                                        <option value="32">E-Desh</option>
+                                        <option value="34">Redx</option>
+                                        <option value="49">Steadfast</option>
+                                        <option value="50">Chittagong Tiger</option>
+                                        <option value="51">Sylhet Tiger</option>
+                                        <option value="52">Khulna Tiger</option>
+                                        <option value="53">Narayangonj Tiger</option>
+                                        <option value="54">Gazipur Tiger</option>
+                                        <option value="55">Dhaka Tiger</option>
+                                        <option value="56">Coxsbazar Tiger</option>
+                                        <option value="57">Jatrabari Tiger</option>
+
+                                    </select>
+
+                                    <button style="margin-left:5px;" type="button" class="btn btn-w-m btn-success" ng-click="getCourierWiseReturnOrders(fromDate, toDate, courierId)">Search</button>
+                                </div>
+
+                                <div style="margin-top:5px;">
+
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ibox-content">
+                        <div class="row" style="margin-bottom:10px;">
+                            <div class="col-lg-3">
+                                <span>Total Count: <b style="color:orangered;">{{returnsData.length}}</b></span><br />
+                            </div>
+                            
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+
+                                            <th>
+                                                <a href="#" ng-click="orderByField='id'; reverseSort = !reverseSort">
+                                                    Order Id
+                                                </a>
+                                            </th>
+                                            <th>UpdatedOn date</th>
+                                            <th>Status Name</th>
+                                            <th>Courier</th>
+                                            <th>Pod Number</th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        <tr ng-repeat="o in returnsData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+
+                                            <td>DT-{{o.id}}</td>
+                                            <td>{{o.updatedOn | date: 'medium'}}</td>
+                                            <td>{{o.courierOrderStatus.statusNameEng}}</td>
+                                            <td>{{o.couriers.courierName}}</td>
+                                            <td>{{o.podNumber}}</td>
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>

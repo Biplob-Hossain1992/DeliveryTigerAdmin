@@ -1,0 +1,415 @@
+﻿
+@{
+    ViewBag.Title = "PoHOperation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+
+<style>
+    .col-form-label {
+        font-weight: bold;
+    }
+
+    /*  tbody {
+        display: block;
+        height: 634px; overflow: auto;
+    }
+    thead, tbody tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }*/
+</style>
+
+
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div ng-app="myModule">
+    <div ng-controller="myController" ng-init="Init()">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <h5> PoH Order Process | <small>{{smallTitle}}</small></h5>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="ibox-content" style="padding:5px;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label><b>From Date</b></label>
+                                <input class="form-control" type="text" ng-model="fromDate" id="fromDate" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="From Date ..." />
+                            </div>
+                            <div class="col-md-6">
+                                <label><b>To Date</b></label>
+                                <input class="form-control" type="text" ng-model="toDate" id="toDate" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="To Date ..." />
+                            </div>
+                        </div>
+                        <div style="height:1cm">
+                        </div>
+                        <div class="form-group row" style="justify-content: center">
+                            <div>
+                                <button type="submit" id="loadBtn" class="btn btn-primary" ng-click="GetPOHOrders(fromDate, toDate)"><strong>LoadOrders</strong></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <h5> PoH Orders <span class="label label-primary" ng-show="showTotalOrders">{{totalOrders}}</span></h5>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" ng-show="showTable">
+                            <div class="col-lg-12 align-content-center" id="reportDetails" style="height: 634px; overflow: auto;">
+                                <div class="table table-responsive" id="exportTable">
+                                    <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Order Details</th>
+                                                <th>Merchant Details</th>
+                                                <th>Customer Details</th>
+                                                <th>Product Details</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="reportTable">
+                                            <tr ng-repeat="data in courierOrders">
+                                                <td @*style="text-align:center;"*@>{{$index + 1}}</td>
+                                                <td>
+                                                    <span><b>Order Id:</b></span><br />
+                                                    <label>{{data.courierOrdersId}}</label><br />
+                                                    <span><b>Actual Price:</b></span><br />
+                                                    <label>{{data.courierPrice.actualPackagePrice}}</label><br />
+                                                    <span><b>Delivery Charge:</b></span><br />
+                                                    <label>{{data.courierPrice.deliveryCharge}}</label><br />
+                                                    <span class="label label-success"  ng-if="data.paymentServiceTypeVerify == 'verify'" @*style="font-size: 13px;"*@><b>Customer Verified</b></span><br /><br />
+                                                    <span class="label label-success"  ng-if="data.paymentServiceTypeMerchantVerify == 'verify'" @*style="font-size: 13px;"*@><b>Parcel Verified</b></span><br />
+                                                </td>
+                                                <td>
+                                                    <span><b>Company Name:</b></span><br />
+                                                    <label>{{data.userInfo.companyName}}</label><br />
+
+                                                    <span><b>Merchant Name:</b></span><br />
+                                                    <label>{{data.userInfo.userName}}</label><br />
+
+                                                    <span><b>Merchant Mobile:</b></span><br />
+                                                    <label>{{data.userInfo.mobile}}</label><br />
+                                                </td>
+                                                <td>
+                                                    <span><b>Customer Name:</b></span><br />
+                                                    <label>{{data.customerName}}</label><br />
+
+                                                    <span><b>Mobile:</b></span><br />
+                                                    <label>{{data.courierAddressContactInfo.mobile}}</label><br />
+
+                                                    <span><b>Other Mobile:</b></span><br />
+                                                    <label>{{data.courierAddressContactInfo.otherMobile}}</label><br />
+
+                                                    <span><b>Address:</b></span><br />
+                                                    <label>{{data.courierAddressContactInfo.address}}</label><br />
+                                                </td>
+                                                <td>
+                                                    <span><b>Product(s):</b></span><br />
+                                                    <label>{{data.courierOrderInfo.collectionName}}</label><br />
+
+                                                    <span><b>Order Type:</b></span><br />
+                                                    <label>{{data.courierOrderInfo.orderType}}</label><br />
+
+                                                    <span><b>Payment Type:</b></span><br />
+                                                    <label>{{data.courierOrderInfo.paymentType}}</label><br />
+
+                                                    <span><b>Current Status:</b></span><br />
+                                                    <label>{{data.status}}</label><br />
+
+                                                    <span><b>Updated On:</b></span><br />
+                                                    <label>{{data.courierOrderDateDetails.updatedOnDate}}</label><br />
+
+                                                    <span><b>Comment:</b></span><br />
+                                                    <label>{{data.comment == null?"": data.comment}}</label><br />
+                                                </td>
+                                                <td>
+                                                    <input type="button" style="margin-bottom:5px;" value="Customer Verify" ng-if="data.paymentServiceTypeVerify != 'verify'" class="btn btn-success btn-sm" ng-click="PoHVerify(data, 'verify')" /> <br />
+                                                    <input type="button" style="margin-bottom:5px;" value="Customer Unverify" ng-if="data.paymentServiceTypeVerify == 'verify'" class="btn btn-dark btn-sm" ng-click="PoHVerify(data, 'unverify')" /> <br />
+
+                                                    <input type="button" style="margin-bottom:5px;" value="Parcel Verify" ng-if="data.paymentServiceTypeMerchantVerify != 'verify'" class="btn btn-success btn-sm" ng-click="PoHVerify(data, 'merchantverify')" /> <br />
+                                                    <input type="button" style="margin-bottom:5px;" value="Parcel Unverify" ng-if="data.paymentServiceTypeMerchantVerify == 'verify'" class="btn btn-dark btn-sm" ng-click="PoHVerify(data, 'merchantunverify')" />
+
+                                                    <input type="button" style="margin-bottom:5px;" value="Maually Unblock" ng-if="data.paymentServiceTypeVerify == 'verify' && data.paymentServiceTypeMerchantVerify == 'verify'" class="btn btn-success btn-sm" ng-click="ManuallyVerify(data)" /> <br />
+
+
+                                                    <input type="button" style="margin-bottom:5px;" value="PoH Remove" class="btn btn-danger btn-sm" ng-click="PoHRemove(data, 'remove')" /> <br />
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http) {
+
+        $scope.smallTitle = 'Filter';
+        let adminTypeGlobal = sessionStorage.getItem("adminType");
+        let userIdGlobal = +sessionStorage.getItem("userId");
+
+        $scope.Init = () => {
+            $scope.SetDate();
+            //$scope.UserVerify();
+        }
+
+        $scope.UserVerify = () => {
+            let admintType = sessionStorage.getItem("adminType");
+            let userId = +sessionStorage.getItem("userId");
+            if ((admintType != 11 && admintType != 1) && userId != 11) {
+                alert('Access Denied');
+                url = "http://" + window.location.host + "/";
+                window.location.replace(url +'ControlPanel/ControlPanel');
+            }
+        };
+
+
+
+
+        $scope.SetDate = () => {
+
+            let date = new Date();
+            var dd = String(date.getDate()).padStart(2, '0');
+            var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = date.getFullYear();
+            var toDate = yyyy + '-' + mm + '-' + dd;
+
+            let days = 0; // 7 days behind current date
+            var last = new Date(date.getTime() - (days * 24 * 60 * 60 * 1000));
+            var day = String(last.getDate()).padStart(2, '0');
+            var month = String(last.getMonth() + 1).padStart(2, '0');
+            var year = last.getFullYear();
+            var fromDate = year + '-' + month + '-' + day;
+
+            $scope.fromDate = fromDate;
+            $scope.toDate = toDate;
+
+        }
+
+
+        $scope.ManuallyVerify = (orderInfo) => {
+
+            if (!confirm('Do you want to proceed')) {
+                return false;
+            }
+
+            let url = admBaseUrl + 'account/reports/ForceUnblockOrderCode';
+
+            let requestBody = {
+                MerchantId: orderInfo.userInfo.courierUserId
+            }
+
+            $http.post(url, requestBody, { headers: { 'Content-Type': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    console.log(response);
+                    if (response.data.DidError) {
+                        alert('Failed to Complete Actions');
+                        return false;
+                    }
+                    if (response.data.Data == 1) {
+                        alert('Action was successful');
+                        $scope.ManualUnblockLog(orderInfo)
+
+                        $scope.GetPOHOrders($scope.fromDate, $scope.toDate);
+                    }
+
+                }, function error(response){
+                        alert('Something went Wrong');
+                    });
+
+        }
+
+
+        $scope.ManualUnblockLog = (orderInfo) => {
+
+            let requestBody = {
+                "OrderCode": orderInfo.id,
+                "MerchantId": orderInfo.userInfo.courierUserId,
+                "PostedBy": +sessionStorage.getItem("userId"),
+                "IsVerified": ((orderInfo.paymentServiceTypeMerchantVerify == 'verify' && orderInfo.paymentServiceTypeVerify == 'verify')?1:0),
+                "CurrentStatusId": orderInfo.statusId,
+                "HubId": 0
+            }
+
+            let url = admBaseUrl + 'account/reports/ManualUnBlockLog';
+            $http.post(url, requestBody, { headers: { 'Content-Type': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    console.log(response);
+                    console.log("Success to keep log");
+                }, function error(response) {
+                    console.log('Something went Wrong. Failed to keep log');
+                });
+
+        }
+
+        $scope.GetPOHOrders = (fromDate, toDate) => {
+            //alert(fromDate + ' ' + toDate);
+
+
+            let requestBody = {
+                'fromDate': fromDate,
+                'toDate': toDate
+            };
+            let url = apiBaseURL + 'Fetch/LoadPOHOrders';
+            $scope.showLoader = true;
+            $http.post(url, requestBody, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    //console.log(response);
+                    if (response.data.didError) {
+                        alert('Something went wrong');
+                        return false
+                    }
+                    $scope.totalOrders = response.data.model.totalCount;
+                    $scope.courierOrders = response.data.model.courierOrderViewModel;
+                    $scope.showTable = true;
+                    $scope.showTotalOrders = true;
+
+                }), function error(response) {
+                    alert('Something went wrong');
+                    $scope.showLoader = false;
+                }
+        }
+
+
+
+        $scope.PoHVerify = (data, type) =>{
+
+            var requestBody = {
+                id: data.id
+            }
+
+            var msg = "";
+            if (type == 'verify' || type == 'unverify') {
+                msg = (type == 'verify' ? 'কাস্টমার ভেরিফাই' : 'কাস্টমার আনভেরিফাই');
+
+                //authorization only to CRM and IT users
+                if (adminTypeGlobal != 6 && adminTypeGlobal != 11) {
+                    alert("You are not authorized to use this action..!!!");
+                    return false;
+                }
+
+            }
+            else if (type == 'merchantverify' || type == 'merchantunverify') {
+
+                msg = (type == 'merchantverify' ? 'পার্সেল ভেরিফাই' : 'পার্সেল আনভেরিফাই');
+
+                //authorized to only Fulfillment and IT users
+                if (adminTypeGlobal != 7 && adminTypeGlobal != 11) {
+                    alert("You are not authorized to use this action..!!!");
+                    return false;
+                }
+
+            }
+
+            if (!confirm('আপনি কি অর্ডারটির PoH '+ msg+' করতে চান?')) {
+                return false;
+            }
+
+            let url = apiBaseURL + 'Update/UpdatePoHOrders/' + type;
+            $http.put(url, requestBody, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    if (response.data.didError) {
+                        alert('Something went wrong');
+                        return false
+                    }
+                    else if (response.data.model == 0) {
+                        alert('Update failed');
+                        return false
+                    }
+
+                    alert('Update Successful');
+                    $scope.GetPOHOrders($scope.fromDate, $scope.toDate)
+                }), function error(response) {
+                    alert('Something went wrong');
+                }
+        }
+
+
+        $scope.PoHRemove = (data, type) => {
+
+            var requestBody = {
+                id: data.id
+            }
+
+            if (!confirm('আপনি কি অর্ডারটির  PoH রিমুভ করতে চান ?')) {
+                return false;
+            }
+
+            let url = apiBaseURL + 'Update/UpdatePoHOrders/' + type;
+            $http.put(url, requestBody, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    if (response.data.didError) {
+                        alert('Something went wrong');
+                        return false
+                    }
+                    else if (response.data.model == 0) {
+                        alert('Update failed');
+                        return false
+                    }
+
+                    alert('Update Successful');
+                    $scope.GetPOHOrders($scope.fromDate, $scope.toDate)
+
+                }), function error(response) {
+                    alert('Something went wrong');
+                }
+        }
+    });
+</script>

@@ -1,0 +1,599 @@
+﻿
+@{
+    ViewBag.Title = "AddMerchantBusinessInformation";
+}
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.min.js" integrity="sha512-IO99nu6TitXdydITTnjerPUo0HffdgLC9yIfv5gwglcsSR7nN008a7QDynI5Ih0mGLlnNnt8tGIuBCFRZaNjqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-sanitize.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.css" integrity="sha512-3MNyrZTIbIT7sGASBSy4HeOwFNhRephd5RfnYcyr7Nbs0CX3/KaNcpPivPOAkOfrKBLL2VtyNzXgphX1i71nEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+
+<style>
+    #spinner-front {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        top: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        z-index: 998;
+    }
+</style>
+
+<div class="row" ng-app="BusinessInformationEntryModule">
+    <div class="col-lg-12" ng-controller="BusinessInformationEntryController">
+
+        <div id="spinner-front" ng-show="showFullPageLoader">
+            <img src="~/Content/loading-spinner.gif" />
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <h4 class="text-center">লোন আবেদনকারীর ব্যবসার তথ্য</h4>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <h4>ব্যবসায় বিক্রয়ের তথ্য</h4>
+                                <span style="font-size: 11px;">
+                                    <strong>(বিক্রির পরিমাণ অনুযায়ী ১২ মাসকে ভাল,খারাপ এবং মাঝারী তিন ভাগে ভাগ করা হয়েছে।)</strong>
+                                </span>
+                            </div>
+
+                            <div class="col-lg-12" style="margin-top: 15px;">
+                                <div class="form-group">
+                                    <label>মার্চেন্টের প্রতিষ্ঠানের নামঃ</label>
+                                    <ui-select ng-model="companyName" theme="select2" style="width:250px;" on-select="onSelectGetData($item, $model)" ng-click="getMerchantMobile($select.selected.companyName ,$select.selected.courierUserId)">
+                                        <ui-select-match>
+                                            <span ng-bind="$select.selected.companyName"></span>
+                                        </ui-select-match>
+                                        <ui-select-choices repeat="item in (allMerchantInfo | filter: $select.search)" refresh="loadMerchantData($select.search)" refresh-delay="100" minimum-input-length="1">
+                                            <span ng-bind="item.companyName +' - '+item.mobile"></span>
+                                        </ui-select-choices>
+                                    </ui-select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সর্বোচ্চ পণ্য বিক্রির মাসের সংখ্যা:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="noOfMaxProductSellingMonth" name="noOfMaxProductSellingMonth" id="noOfMaxProductSellingMonth" maxlength="100" placeholder="Ex: 4" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সর্বোচ্চ পণ্য বিক্রির পরিমাণ (টাকায়):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="avgAmountOfMaxSellingMonth" name="avgAmountOfMaxSellingMonth" id="avgAmountOfMaxSellingMonth" maxlength="100" placeholder="Ex: 50000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সুষম বা মধ্যম পণ্য বিক্রির মাসের সংখ্যাঃ</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="noOfRegularProductSellingMonth" name="noOfRegularProductSellingMonth" id="noOfRegularProductSellingMonth" maxlength="100" placeholder="Ex: 4" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সুষম বা মধ্যম পণ্য বিক্রির পরিমাণ (টাকায়):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="avgAmountOfRegularSellingMonth" name="avgAmountOfRegularSellingMonth" id="avgAmountOfRegularSellingMonth" maxlength="100" placeholder="Ex: 40000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সর্বনিম্ন পণ্য বিক্রির মাসের সংখ্যাঃ</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="noOfLowestProductSellingMonth" name="noOfLowestProductSellingMonth" id="noOfLowestProductSellingMonth" maxlength="100" placeholder="Ex: 4" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সর্বনিম্ন পণ্য বিক্রির পরিমাণ (টাকায়):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="avgAmountOfLowestSellingMonth" name="avgAmountOfLowestSellingMonth" id="avgAmountOfLowestSellingMonth" maxlength="100" placeholder="Ex: 25000" autocomplete="off" />
+                                </div>
+                            </div>
+
+
+                            <div class="col-lg-12" style="margin-top: 70px;">
+                                <h4>ব্যবসায় পণ্য ক্রয়ের তথ্য</h4>
+                                <span style="font-size: 11px;">
+                                    <strong>(ক্রয়ের পরিমাণ অনুযায়ী ১২ মাসকে ভাল,খারাপ এবং মাঝারী তিন ভাগে ভাগ করা হয়েছে।)</strong>
+                                </span>
+                            </div>
+
+                            <div class="col-lg-6" style="margin-top: 15px;">
+                                <div class="form-group">
+                                    <label for="">সর্বোচ্চ পণ্য ক্রয়ের মাসের সংখ্যা:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="noOfMaxProductPurchasedMonth" name="noOfMaxProductPurchasedMonth" id="noOfMaxProductPurchasedMonth" maxlength="100" placeholder="Ex: 4" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6" style="margin-top: 15px;">
+                                <div class="form-group">
+                                    <label for="">সর্বোচ্চ পণ্য ক্রয়ের পরিমাণ (টাকায়):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="avgAmountOfMaxPurchasedMonth" name="avgAmountOfMaxPurchasedMonth" id="avgAmountOfMaxPurchasedMonth" maxlength="100" placeholder="Ex: 50000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সুষম বা মধ্যম পণ্য ক্রয়ের মাসের সংখ্যাঃ</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="noOfRegularProductPurchasedMonth" name="noOfRegularProductPurchasedMonth" id="noOfRegularProductPurchasedMonth" maxlength="100" placeholder="Ex: 4" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সুষম বা মধ্যম পণ্য ক্রয়ের পরিমাণ (টাকায়):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="avgAmountOfRegularPurchasedMonth" name="avgAmountOfRegularPurchasedMonth" id="avgAmountOfRegularPurchasedMonth" maxlength="100" placeholder="Ex: 40000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সর্বনিম্ন পণ্য ক্রয়ের মাসের সংখ্যাঃ</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="noOfLowestProductPurchasedMonth" name="noOfLowestProductPurchasedMonth" id="noOfLowestProductPurchasedMonth" maxlength="100" placeholder="Ex: 4" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সর্বনিম্ন পণ্য ক্রয়ের পরিমাণ (টাকায়):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="avgAmountOfLowestPurchasedMonth" name="avgAmountOfLowestPurchasedMonth" id="avgAmountOfLowestPurchasedMonth" maxlength="100" placeholder="Ex: 25000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12" style="margin-top: 70px;">
+                                <h4>অন্যান্য ব্যয় এর তথ্য</h4>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">ব্যবসায় ভাড়ার পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="businessRent" name="businessRent" id="businessRent" maxlength="100" placeholder="Ex: 25000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">কর্মীদের বেতনের পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="salaryOfEmployee" name="salaryOfEmployee" id="salaryOfEmployee" maxlength="100" placeholder="Ex: 30000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">পরিবহন খরচের পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="transportationCost" name="transportationCost" id="transportationCost" maxlength="100" placeholder="Ex: 15000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">ইউটিলিটি খরচের পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="utilityCost" name="utilityCost" id="utilityCost" maxlength="100" placeholder="Ex: 5000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">সংস্করণ খরচের পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="repairCost" name="repairCost" id="repairCost" maxlength="100" placeholder="Ex: 5000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">প্যাকেজিং এর খরচের পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="packagingCost" name="packagingCost" id="packagingCost" maxlength="100" placeholder="Ex: 3000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">করের পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="businessTax" name="businessTax" id="businessTax" maxlength="100" placeholder="Ex: 1500" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">অন্যান্য খরচের পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="othersExpense" name="othersExpense" id="othersExpense" maxlength="100" placeholder="Ex: 2500" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12" style="margin-top: 70px;">
+                                <h4>বাকিতে পণ্য ক্রয়/বিক্রয় এর তথ্য</h4>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">বকেয়ার পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="debotrsOwingAmount" name="debotrsOwingAmount" id="debotrsOwingAmount" maxlength="100" placeholder="Ex: 100000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">পাওনার পরিমাণ:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="creditorsOwingAmount" name="creditorsOwingAmount" id="creditorsOwingAmount" maxlength="100" placeholder="Ex: 50000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12" style="margin-top: 70px;">
+                                <h4>ব্যাংক এবং নগদ তথ্য</h4>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">একাউন্ট নাম্বার:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="accountNo" name="accountNo" id="accountNo" maxlength="100" placeholder="Ex: 456987123" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">একাউন্টের নাম:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="accountName" name="accountName" id="accountName" maxlength="100" placeholder="Ex: Parvez Alam" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">একাউন্ট টাইপ:</label>
+                                    <select class="form-control" ng-model="accountType" name="accountType" id="accountType">
+                                        <option value="0">নির্বাচন করুন</option>
+                                        <option value="Current account">Current account</option>
+                                        <option value="Savings account">Savings account</option>
+                                        <option value="Salary account">Salary account</option>
+                                        <option value="Fixed deposit account">Fixed deposit account</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">ব্যাংক শর্ট কোড(short code):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="bankShortCode" name="bankShortCode" id="bankShortCode" maxlength="100" placeholder="Ex: 2143" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">ব্যাংক রাউটিং নাম্বার:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="bankRoutingNumber" name="bankRoutingNumber" id="bankRoutingNumber" maxlength="100" placeholder="Ex: 456321" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">বিকাশ নাম্বার:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="bkashNumber" name="bkashNumber" id="bkashNumber" maxlength="11" placeholder="Ex: 01700000000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">কী পরিমাণ নগদ অর্থ আছে(টাকায়):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="cashInHand" name="cashInHand" id="cashInHand" maxlength="50" placeholder="Ex: 50000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">ব্যাংকে কী পরিমাণ অর্থ সঞ্চিত আছে(টাকায়):</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="cashAtBank" name="cashAtBank" id="cashAtBank" maxlength="50" placeholder="Ex: 100000" autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="">চেক বই এর ছবি:</label>
+                                    <input type="file" name="image" onchange="angular.element(this).scope().uploadedFileChequeBookImage(this);" class="form-control" required>
+                                    <img ng-src="{{PreviewChequeBookImage}}" ng-show="PreviewChequeBookImage != null" alt="" style="height:100px;width:230px" />
+                                    <input type="text" ng-model="chequeBookImgUrl" style="display: none;" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12">
+                                <div class="form-group">
+                                    <button class="btn btn-w-m btn-success" type="button" ng-show="btnAdd" ng-click="addLoanApplicantBusinessInformation()">তথ্য যোগ করুন</button>
+                                    <button class="btn btn-w-m btn-success" type="button" ng-show="btnUpdate" ng-click="updateLoanApplicantBusinessInformation()">তথ্য আপডেট করুন</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    var app = angular.module('BusinessInformationEntryModule', ['ui.select', 'ngSanitize']);
+    app.controller('BusinessInformationEntryController', function ($q, $scope, $http) {
+        $scope.merchantId = 0;
+        $scope.accountType = "0";
+        $scope.btnAdd = true;
+        $scope.btnUpdate = false;
+        $scope.chequeBookImgUrl = "false";
+        $scope.applicantsCheckBookImage = "";
+
+        //Function for getting the mobile number of merchant from ui-select
+        $scope.getMerchantMobile = (merchantMobile, merchantId) => {
+            $scope.merchantMobileNumber = merchantMobile;
+            $scope.merchantUserId = merchantId;
+            //$scope.showFullPageLoader = true;
+        }
+
+        $scope.loadMerchantData = (merchantSearch) => {
+            if (merchantSearch.length > 1) {
+                let url = apiBaseURL + "Fetch/GetAllCourierUsersList/" + merchantSearch;
+                $http.get(url, { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                    .then(function (response) {
+                        $scope.allMerchantInfo = response.data.model;
+                    })
+            }
+
+        }
+
+        $scope.onSelectGetData = function (item, model) {
+            let courierUserId = item["courierUserId"];
+            $scope.merchantId = courierUserId;
+            console.log(courierUserId);
+            console.log(item);
+            $scope.getApplicantsExistingData(courierUserId);
+        }
+
+        $scope.uploadedFileChequeBookImage = (file) => {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $scope.PreviewChequeBookImage = e.target.result;
+                $scope.$apply(function ($scope) {
+                    $scope.filesChequeBookImage = file.files;
+                    extention = $scope.filesChequeBookImage[0]["name"].split('.').pop();
+                });
+            };
+            reader.readAsDataURL(file.files[0]);
+            $scope.chequeBookImgUrl = "change";
+        }
+
+        $scope.uploadImageToServer = async function (fileName, imageUrl, files) {
+            $http({
+                url: admBaseOnlyUrl + 'Image/ImageUploadForFile'.toLowerCase(),
+                method: "POST",
+                processData: false,
+                headers: { 'Content-Type': undefined },
+                data: $scope.formdata,
+                transformRequest: function (data) {
+                    var formData = new FormData();
+                    var file = files;
+                    formData.append('FileName', fileName);
+                    formData.append('ImageUrl', imageUrl);
+                    formData.append('file', file);
+
+                    angular.forEach(data, function (value, key) {
+                        formData.append(key, value);
+                    });
+
+                    return formData;
+                }
+            }).success(function (response) {
+                //$scope.showFullPageLoader = false;
+                //alert("সফল হয়েছে।");
+                //window.location.reload();
+                //return 'Success';
+            }).error(function (error) {
+                alert('Image upload failed...!!');
+            });
+        }
+
+        $scope.getApplicantsExistingData = (courierUserId) => {
+            $scope.showFullPageLoader = true;
+            $http.get(apiBaseURL + "Loan/GetBorrowerBusinessData/" + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (response.data.model.length != 0) {
+                        var data = response.data.model;
+                        $scope.noOfMaxProductSellingMonth = data["noOfMaxProductSellingMonth"];
+                        $scope.avgAmountOfMaxSellingMonth = data["avgAmountOfMaxSellingMonth"];
+                        $scope.noOfRegularProductSellingMonth = data["noOfRegularProductSellingMonth"];
+                        $scope.avgAmountOfRegularSellingMonth = data["avgAmountOfRegularSellingMonth"];
+                        $scope.noOfLowestProductSellingMonth = data["noOfLowestProductSellingMonth"];
+                        $scope.avgAmountOfLowestSellingMonth = data["avgAmountOfLowestSellingMonth"];
+                        $scope.noOfMaxProductPurchasedMonth = data["noOfMaxProductPurchasedMonth"];
+                        $scope.avgAmountOfMaxPurchasedMonth = data["avgAmountOfMaxPurchasedMonth"];
+                        $scope.noOfRegularProductPurchasedMonth = data["noOfRegularProductPurchasedMonth"];
+                        $scope.avgAmountOfRegularPurchasedMonth = data["avgAmountOfRegularPurchasedMonth"];
+                        $scope.noOfLowestProductPurchasedMonth = data["noOfLowestProductPurchasedMonth"];
+                        $scope.avgAmountOfLowestPurchasedMonth = data["avgAmountOfLowestPurchasedMonth"];
+                        $scope.businessRent = data["businessRent"];
+                        $scope.salaryOfEmployee = data["salaryOfEmployee"];
+                        $scope.transportationCost = data["transportationCost"];
+                        $scope.utilityCost = data["utilityCost"];
+                        $scope.repairCost = data["repairCost"];
+                        $scope.packagingCost = data["packagingCost"];
+                        $scope.businessTax = data["businessTax"];
+                        $scope.othersExpense = data["othersExpense"];
+                        $scope.debotrsOwingAmount = data["debotrsOwingAmount"];
+                        $scope.creditorsOwingAmount = data["creditorsOwingAmount"];
+                        $scope.accountNo = data["accountNumber"];
+                        $scope.accountName = data["accountName"];
+                        $scope.accountType = data["accountType"] == "" ? "0" : String(data["accountType"]);
+                        $scope.bankShortCode = data["bankShortCode"];
+                        $scope.bankRoutingNumber = data["routingNumber"];
+                        $scope.bkashNumber = data["bkashNumber"];
+                        $scope.cashInHand = data["cashInHand"];
+                        $scope.cashAtBank = data["cashAtBank"];
+                        if (data["checqueBookPhotoUrl"] != "") {
+                            $scope.PreviewChequeBookImage = data["checqueBookPhotoUrl"];
+                            $scope.applicantsCheckBookImage = data["checqueBookPhotoUrl"];
+                        }
+                        $scope.btnAdd = false;
+                        $scope.btnUpdate = true;
+                        $scope.showFullPageLoader = false;
+                    }
+                }, function (error) {
+                    if (error.status == 404) {
+                        alert("নির্বাচিত মার্চেন্ট এর জন্য কোন তথ্য প্রদান করা হয়নি!!!");
+                        $scope.btnAdd = true;
+                        $scope.btnUpdate = false;
+                        $scope.showFullPageLoader = false;
+                    }
+                    else {
+                        console.log(error);
+                    }
+                })
+        }
+
+        $scope.addLoanApplicantBusinessInformation = async () => {
+            if ($scope.merchantId == 0) {
+                alert("Please Select Merchant Name!!!");
+                return false;
+            }
+
+            $scope.showFullPageLoader = true;
+            let checkBookImageUrl = "";
+            if ($scope.chequeBookImgUrl == "change") {
+                let fileName = "cheque_book_image_" + $scope.merchantId + '.jpg';
+                const imageUrl = "delivery_tiger/cheque_book_image";
+                checkBookImageUrl = "https://static.ajkerdeal.com/delivery_tiger/cheque_book_image/cheque_book_image_" + $scope.merchantId + '.jpg';
+                await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesChequeBookImage[0]);
+            }
+
+            setTimeout(function () {
+                console.log("Bangla Tiger");
+                var requestBodyModel = {
+                    'CourierUserId': $scope.merchantId,
+                    'NoOfMaxProductSellingMonth': parseInt($scope.noOfMaxProductSellingMonth == "" || $scope.noOfMaxProductSellingMonth == null || $scope.noOfMaxProductSellingMonth == undefined || $scope.noOfMaxProductSellingMonth == "undefined" ? 0 : $scope.noOfMaxProductSellingMonth),
+                    'AvgAmountOfMaxSellingMonth': parseInt($scope.avgAmountOfMaxSellingMonth == "" || $scope.avgAmountOfMaxSellingMonth == null || $scope.avgAmountOfMaxSellingMonth == undefined || $scope.avgAmountOfMaxSellingMonth == "undefined" ? 0 : $scope.avgAmountOfMaxSellingMonth),
+                    'NoOfRegularProductSellingMonth': parseInt($scope.noOfRegularProductSellingMonth == "" || $scope.noOfRegularProductSellingMonth == null || $scope.noOfRegularProductSellingMonth == undefined || $scope.noOfRegularProductSellingMonth == "undefined" ? 0 : $scope.noOfRegularProductSellingMonth),
+                    'AvgAmountOfRegularSellingMonth': parseInt($scope.avgAmountOfRegularSellingMonth == "" || $scope.avgAmountOfRegularSellingMonth == null || $scope.avgAmountOfRegularSellingMonth == undefined || $scope.avgAmountOfRegularSellingMonth == "undefined" ? 0 : $scope.avgAmountOfRegularSellingMonth),
+                    'NoOfLowestProductSellingMonth': parseInt($scope.noOfLowestProductSellingMonth == "" || $scope.noOfLowestProductSellingMonth == null || $scope.noOfLowestProductSellingMonth == undefined || $scope.noOfLowestProductSellingMonth == "undefined" ? 0 : $scope.noOfLowestProductSellingMonth),
+                    'AvgAmountOfLowestSellingMonth': parseInt($scope.avgAmountOfLowestSellingMonth == "" || $scope.avgAmountOfLowestSellingMonth == null || $scope.avgAmountOfLowestSellingMonth == undefined || $scope.avgAmountOfLowestSellingMonth == "undefined" ? 0 : $scope.avgAmountOfLowestSellingMonth),
+                    'NoOfMaxProductPurchasedMonth': parseInt($scope.noOfMaxProductPurchasedMonth == "" || $scope.noOfMaxProductPurchasedMonth == null || $scope.noOfMaxProductPurchasedMonth == undefined || $scope.noOfMaxProductPurchasedMonth == "undefined" ? 0 : $scope.noOfMaxProductPurchasedMonth),
+                    'AvgAmountOfMaxPurchasedMonth': parseInt($scope.avgAmountOfMaxPurchasedMonth == "" || $scope.avgAmountOfMaxPurchasedMonth == null || $scope.avgAmountOfMaxPurchasedMonth == undefined || $scope.avgAmountOfMaxPurchasedMonth == "undefined" ? 0 : $scope.avgAmountOfMaxPurchasedMonth),
+                    'NoOfRegularProductPurchasedMonth': parseInt($scope.noOfRegularProductPurchasedMonth == "" || $scope.noOfRegularProductPurchasedMonth == null || $scope.noOfRegularProductPurchasedMonth == undefined || $scope.noOfRegularProductPurchasedMonth == "undefined" ? 0 : $scope.noOfRegularProductPurchasedMonth),
+                    'AvgAmountOfRegularPurchasedMonth': parseInt($scope.avgAmountOfRegularPurchasedMonth == "" || $scope.avgAmountOfRegularPurchasedMonth == null || $scope.avgAmountOfRegularPurchasedMonth == undefined || $scope.avgAmountOfRegularPurchasedMonth == "undefined" ? 0 : $scope.avgAmountOfRegularPurchasedMonth),
+                    'NoOfLowestProductPurchasedMonth': parseInt($scope.noOfLowestProductPurchasedMonth == "" || $scope.noOfLowestProductPurchasedMonth == null || $scope.noOfLowestProductPurchasedMonth == undefined || $scope.noOfLowestProductPurchasedMonth == "undefined" ? 0 : $scope.noOfLowestProductPurchasedMonth),
+                    'AvgAmountOfLowestPurchasedMonth': parseInt($scope.avgAmountOfLowestPurchasedMonth == "" || $scope.avgAmountOfLowestPurchasedMonth == null || $scope.avgAmountOfLowestPurchasedMonth == undefined || $scope.avgAmountOfLowestPurchasedMonth == "undefined" ? 0 : $scope.avgAmountOfLowestPurchasedMonth),
+                    'BusinessRent': parseInt($scope.businessRent == "" || $scope.businessRent == null || $scope.businessRent == undefined || $scope.businessRent == "undefined" ? 0 : $scope.businessRent),
+                    'SalaryOfEmployee': parseInt($scope.salaryOfEmployee == "" || $scope.salaryOfEmployee == null || $scope.salaryOfEmployee == undefined || $scope.salaryOfEmployee == "undefined" ? 0 : $scope.salaryOfEmployee),
+                    'TransportationCost': parseInt($scope.transportationCost == "" || $scope.transportationCost == null || $scope.transportationCost == undefined || $scope.transportationCost == "undefined" ? 0 : $scope.transportationCost),
+                    'UtilityCost': parseInt($scope.utilityCost == "" || $scope.utilityCost == null || $scope.utilityCost == undefined || $scope.utilityCost == "undefined" ? 0 : $scope.utilityCost),
+                    'RepairCost': parseInt($scope.repairCost == "" || $scope.repairCost == null || $scope.repairCost == undefined || $scope.repairCost == "undefined" ? 0 : $scope.repairCost),
+                    'PackagingCost': parseInt($scope.packagingCost == "" || $scope.packagingCost == null || $scope.packagingCost == undefined || $scope.packagingCost == "undefined" ? 0 : $scope.packagingCost),
+                    'BusinessTax': parseInt($scope.businessTax == "" || $scope.businessTax == null || $scope.businessTax == undefined || $scope.businessTax == "undefined" ? 0 : $scope.businessTax),
+                    'OthersExpense': parseInt($scope.othersExpense == "" || $scope.othersExpense == null || $scope.othersExpense == undefined || $scope.othersExpense == "undefined" ? 0 : $scope.othersExpense),
+                    'DebotrsOwingAmount': parseInt($scope.debotrsOwingAmount == "" || $scope.debotrsOwingAmount == null || $scope.debotrsOwingAmount == undefined || $scope.debotrsOwingAmount == "undefined" ? 0 : $scope.debotrsOwingAmount),
+                    'CreditorsOwingAmount': parseInt($scope.creditorsOwingAmount == "" || $scope.creditorsOwingAmount == null || $scope.creditorsOwingAmount == undefined || $scope.creditorsOwingAmount == "undefined" ? 0 : $scope.creditorsOwingAmount),
+                    'BankShortCode': String($scope.bankShortCode == null || $scope.bankShortCode == "undefined" || $scope.bankShortCode == undefined ? "" : $scope.bankShortCode),
+                    'AccountType': String($scope.accountType == "0" || $scope.accountType == 0 ? "" : $scope.accountType),
+                    'CashInHand': parseInt($scope.cashInHand == "" || $scope.cashInHand == null || $scope.cashInHand == undefined || $scope.cashInHand == "undefined" ? 0 : $scope.cashInHand),
+                    'CashAtBank': parseInt($scope.cashAtBank == "" || $scope.cashAtBank == null || $scope.cashAtBank == undefined || $scope.cashAtBank == "undefined" ? 0 : $scope.cashAtBank),
+                    'AccountNumber': String($scope.accountNo == null || $scope.accountNo == "" || $scope.accountNo == "undefined" || $scope.accountNo == undefined ? "" : $scope.accountNo),
+                    'AccountName': String($scope.accountName == null || $scope.accountName == "" || $scope.accountName == "undefined" || $scope.accountName == undefined ? "" : $scope.accountName),
+                    'RoutingNumber': String($scope.bankRoutingNumber == null || $scope.bankRoutingNumber == "" || $scope.bankRoutingNumber == "undefined" || $scope.bankRoutingNumber == undefined ? "" : $scope.bankRoutingNumber),
+                    'BkashNumber': String($scope.bkashNumber == null || $scope.bkashNumber == "" || $scope.bkashNumber == "undefined" || $scope.bkashNumber == undefined ? "" : $scope.bkashNumber),
+                    "ChecqueBookPhotoUrl": checkBookImageUrl
+                };
+
+                $http.post(apiBaseURL + "Loan/AddBorrowerBusinessData/" + $scope.merchantId, requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        if (response.status == 200 || response.data != "") {
+                            $scope.showFullPageLoader = false;
+                            alert("সফল হয়েছে।");
+                            window.location.reload();
+                        }
+                    }, function (error) {
+                        $scope.showFullPageLoader = false;
+                        console.log(error);
+                    })
+
+            }, 2500);
+
+        }
+
+        $scope.updateLoanApplicantBusinessInformation = async () => {
+            if ($scope.merchantId == 0) {
+                alert("Please Select Merchant Name!!!");
+                return false;
+            }
+
+            let checkBookImageUrl = "";
+            $scope.showFullPageLoader = true;
+            if ($scope.chequeBookImgUrl == "change") {
+                let fileName = "cheque_book_image_" + $scope.merchantId + '.jpg';
+                let imageUrl = "delivery_tiger/cheque_book_image";
+                checkBookImageUrl = "https://static.ajkerdeal.com/" + imageUrl + "/" + fileName;
+                await $scope.uploadImageToServer(fileName, imageUrl, $scope.filesChequeBookImage[0]);
+            }
+            
+            setTimeout(function () {
+                console.log("Bangla Tiger");
+                var requestBodyModel = {
+                    'CourierUserId': $scope.merchantId,
+                    'NoOfMaxProductSellingMonth': parseInt($scope.noOfMaxProductSellingMonth == "" || $scope.noOfMaxProductSellingMonth == null || $scope.noOfMaxProductSellingMonth == undefined || $scope.noOfMaxProductSellingMonth == "undefined" ? 0 : $scope.noOfMaxProductSellingMonth),
+                    'AvgAmountOfMaxSellingMonth': parseInt($scope.avgAmountOfMaxSellingMonth == "" || $scope.avgAmountOfMaxSellingMonth == null || $scope.avgAmountOfMaxSellingMonth == undefined || $scope.avgAmountOfMaxSellingMonth == "undefined" ? 0 : $scope.avgAmountOfMaxSellingMonth),
+                    'NoOfRegularProductSellingMonth': parseInt($scope.noOfRegularProductSellingMonth == "" || $scope.noOfRegularProductSellingMonth == null || $scope.noOfRegularProductSellingMonth == undefined || $scope.noOfRegularProductSellingMonth == "undefined" ? 0 : $scope.noOfRegularProductSellingMonth),
+                    'AvgAmountOfRegularSellingMonth': parseInt($scope.avgAmountOfRegularSellingMonth == "" || $scope.avgAmountOfRegularSellingMonth == null || $scope.avgAmountOfRegularSellingMonth == undefined || $scope.avgAmountOfRegularSellingMonth == "undefined" ? 0 : $scope.avgAmountOfRegularSellingMonth),
+                    'NoOfLowestProductSellingMonth': parseInt($scope.noOfLowestProductSellingMonth == "" || $scope.noOfLowestProductSellingMonth == null || $scope.noOfLowestProductSellingMonth == undefined || $scope.noOfLowestProductSellingMonth == "undefined" ? 0 : $scope.noOfLowestProductSellingMonth),
+                    'AvgAmountOfLowestSellingMonth': parseInt($scope.avgAmountOfLowestSellingMonth == "" || $scope.avgAmountOfLowestSellingMonth == null || $scope.avgAmountOfLowestSellingMonth == undefined || $scope.avgAmountOfLowestSellingMonth == "undefined" ? 0 : $scope.avgAmountOfLowestSellingMonth),
+                    'NoOfMaxProductPurchasedMonth': parseInt($scope.noOfMaxProductPurchasedMonth == "" || $scope.noOfMaxProductPurchasedMonth == null || $scope.noOfMaxProductPurchasedMonth == undefined || $scope.noOfMaxProductPurchasedMonth == "undefined" ? 0 : $scope.noOfMaxProductPurchasedMonth),
+                    'AvgAmountOfMaxPurchasedMonth': parseInt($scope.avgAmountOfMaxPurchasedMonth == "" || $scope.avgAmountOfMaxPurchasedMonth == null || $scope.avgAmountOfMaxPurchasedMonth == undefined || $scope.avgAmountOfMaxPurchasedMonth == "undefined" ? 0 : $scope.avgAmountOfMaxPurchasedMonth),
+                    'NoOfRegularProductPurchasedMonth': parseInt($scope.noOfRegularProductPurchasedMonth == "" || $scope.noOfRegularProductPurchasedMonth == null || $scope.noOfRegularProductPurchasedMonth == undefined || $scope.noOfRegularProductPurchasedMonth == "undefined" ? 0 : $scope.noOfRegularProductPurchasedMonth),
+                    'AvgAmountOfRegularPurchasedMonth': parseInt($scope.avgAmountOfRegularPurchasedMonth == "" || $scope.avgAmountOfRegularPurchasedMonth == null || $scope.avgAmountOfRegularPurchasedMonth == undefined || $scope.avgAmountOfRegularPurchasedMonth == "undefined" ? 0 : $scope.avgAmountOfRegularPurchasedMonth),
+                    'NoOfLowestProductPurchasedMonth': parseInt($scope.noOfLowestProductPurchasedMonth == "" || $scope.noOfLowestProductPurchasedMonth == null || $scope.noOfLowestProductPurchasedMonth == undefined || $scope.noOfLowestProductPurchasedMonth == "undefined" ? 0 : $scope.noOfLowestProductPurchasedMonth),
+                    'AvgAmountOfLowestPurchasedMonth': parseInt($scope.avgAmountOfLowestPurchasedMonth == "" || $scope.avgAmountOfLowestPurchasedMonth == null || $scope.avgAmountOfLowestPurchasedMonth == undefined || $scope.avgAmountOfLowestPurchasedMonth == "undefined" ? 0 : $scope.avgAmountOfLowestPurchasedMonth),
+                    'BusinessRent': parseInt($scope.businessRent == "" || $scope.businessRent == null || $scope.businessRent == undefined || $scope.businessRent == "undefined" ? 0 : $scope.businessRent),
+                    'SalaryOfEmployee': parseInt($scope.salaryOfEmployee == "" || $scope.salaryOfEmployee == null || $scope.salaryOfEmployee == undefined || $scope.salaryOfEmployee == "undefined" ? 0 : $scope.salaryOfEmployee),
+                    'TransportationCost': parseInt($scope.transportationCost == "" || $scope.transportationCost == null || $scope.transportationCost == undefined || $scope.transportationCost == "undefined" ? 0 : $scope.transportationCost),
+                    'UtilityCost': parseInt($scope.utilityCost == "" || $scope.utilityCost == null || $scope.utilityCost == undefined || $scope.utilityCost == "undefined" ? 0 : $scope.utilityCost),
+                    'RepairCost': parseInt($scope.repairCost == "" || $scope.repairCost == null || $scope.repairCost == undefined || $scope.repairCost == "undefined" ? 0 : $scope.repairCost),
+                    'PackagingCost': parseInt($scope.packagingCost == "" || $scope.packagingCost == null || $scope.packagingCost == undefined || $scope.packagingCost == "undefined" ? 0 : $scope.packagingCost),
+                    'BusinessTax': parseInt($scope.businessTax == "" || $scope.businessTax == null || $scope.businessTax == undefined || $scope.businessTax == "undefined" ? 0 : $scope.businessTax),
+                    'OthersExpense': parseInt($scope.othersExpense == "" || $scope.othersExpense == null || $scope.othersExpense == undefined || $scope.othersExpense == "undefined" ? 0 : $scope.othersExpense),
+                    'DebotrsOwingAmount': parseInt($scope.debotrsOwingAmount == "" || $scope.debotrsOwingAmount == null || $scope.debotrsOwingAmount == undefined || $scope.debotrsOwingAmount == "undefined" ? 0 : $scope.debotrsOwingAmount),
+                    'CreditorsOwingAmount': parseInt($scope.creditorsOwingAmount == "" || $scope.creditorsOwingAmount == null || $scope.creditorsOwingAmount == undefined || $scope.creditorsOwingAmount == "undefined" ? 0 : $scope.creditorsOwingAmount),
+                    'BankShortCode': String($scope.bankShortCode == null || $scope.bankShortCode == "undefined" || $scope.bankShortCode == undefined ? "" : $scope.bankShortCode),
+                    'AccountType': String($scope.accountType == "0" || $scope.accountType == 0 ? "" : $scope.accountType),
+                    'CashInHand': parseInt($scope.cashInHand == "" || $scope.cashInHand == null || $scope.cashInHand == undefined || $scope.cashInHand == "undefined" ? 0 : $scope.cashInHand),
+                    'CashAtBank': parseInt($scope.cashAtBank == "" || $scope.cashAtBank == null || $scope.cashAtBank == undefined || $scope.cashAtBank == "undefined" ? 0 : $scope.cashAtBank),
+                    'AccountNumber': String($scope.accountNo == null || $scope.accountNo == "" || $scope.accountNo == "undefined" || $scope.accountNo == undefined ? "" : $scope.accountNo),
+                    'AccountName': String($scope.accountName == null || $scope.accountName == "" || $scope.accountName == "undefined" || $scope.accountName == undefined ? "" : $scope.accountName),
+                    'RoutingNumber': String($scope.bankRoutingNumber == null || $scope.bankRoutingNumber == "" || $scope.bankRoutingNumber == "undefined" || $scope.bankRoutingNumber == undefined ? "" : $scope.bankRoutingNumber),
+                    'BkashNumber': String($scope.bkashNumber == null || $scope.bkashNumber == "" || $scope.bkashNumber == "undefined" || $scope.bkashNumber == undefined ? "" : $scope.bkashNumber),
+                    "ChecqueBookPhotoUrl": $scope.chequeBookImgUrl == "change" ? checkBookImageUrl : $scope.applicantsCheckBookImage
+                };
+
+                $http.put(apiBaseURL + "Loan/UpdateBorrowerBusinessData/" + $scope.merchantId, requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        if (response.status == 200 || response.data != "") {
+                            $scope.showFullPageLoader = false;
+                            alert("সফল হয়েছে।");
+                            window.location.reload();
+                        }
+                    }, function (error) {
+                        $scope.showFullPageLoader = false;
+                        console.log(error);
+                    })
+
+            }, 2500);
+
+        }
+    })
+</script>

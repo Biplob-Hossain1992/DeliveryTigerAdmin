@@ -1,0 +1,1029 @@
+﻿
+@{
+    ViewBag.Title = "SABookingReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<script src="~/Scripts/Report/Report.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+<style>
+    .col-form-label {
+        font-weight: bold;
+    }
+
+    /*  tbody {
+        display: block;
+        height: 634px; overflow: auto;
+    }
+    thead, tbody tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }*/
+</style>
+
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+
+<div ng-app="myModule">
+    <div ng-controller="myController" data-ng-init="init()">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <h5> SA Booking Report <small>{{smallTitle}}</small></h5>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content" style="padding:5px;">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input class="form-control" type="text" ng-model="fromDate" id="fromDate" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="From Date ..." />
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-control" ng-model="hubName">
+                                    <option value="-1" selected>Select Hub</option>
+                                    <option value="SA হাব">SA হাব</option>
+                                    <option value="ইউএসবি হাব">ইউএসবি হাব</option>
+                                    <option value="পোস্টাল হাব">পোস্টাল হাব</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <input class="form-control" type="text" ng-model="toDate" id="toDate" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="To Date ..." />
+                            </div>
+                        </div>
+                        <div style="height:1cm">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <select class="form-control" ng-model="courierId">
+                                    <option value="-2" selected>Select Courier</option>
+                                    <option ng-repeat="data in courier" value="{{data.id}}">{{data.name}}</option>
+                                </select>
+                            </div>
+                            
+
+                            <div class="col-md-3">
+                                <select class="form-control" ng-model="districtId">
+                                    <option value="0" selected>Select District</option>
+                                    <option ng-repeat="data in Districts" value="{{data.districtId}}">{{data.district}}</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <select class="form-control" ng-model="statusId">
+                                    <option ng-repeat="data in courierOrderStatus" value="{{data.statusId}}">{{data.statusNameEng}}</option>
+                                </select>
+                            </div>
+
+
+                            <div class="col-md-3">
+                                <select ng-model="paymentType" id="paymentType" class="form-control">
+                                    <option value="-1">Select Service Type</option>
+                                    <option ng-repeat="data in DeliveryRange" value="{{data.id}}">{{data.name}} {{data.day}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="height:1cm">
+                        </div>
+                        <div class="form-group row" style="justify-content: center">
+                            <div>
+                                <button type="submit" id="loadBtn" class="btn btn-primary" ng-click="GetSAReport(fromDate, toDate, courierId, paymentType, districtId, statusId,hubName)"><strong>LoadReport</strong></button>
+                            </div>
+                        </div>
+
+                        @*Report Table*@
+                        <div style="height:1cm">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12" id="reportHeader" align="center" style="font-size:large">
+                                <b>{{HubName}} Booking Report</b>
+                            </div>
+                        </div>
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" ng-show="invoiceCombo">
+                            <div class="col-md-2">
+                                <select id="invoiceNumber" ng-model="invoiceNumber" class="form-control" ng-change="Search(invoiceNumber)">
+                                    <option value="-1">Select All Invoice</option>
+                                    <option value="-2">N/A</option>
+                                    <option ng-repeat="data in invoiceNumbers" value="{{data}}">{{data}}</option>
+                                </select>
+                            </div>
+                            @*<div class="col-md-3">
+                                   <input type="button" class="btn btn-primary" value="FILTER" ng-click="Search(invoiceNumber)" />
+                            </div>*@
+                            <div class="col-md-10" ng-show="showButton">
+                                <input type="button" class="btn btn-success btn-sm" ng-click="createExcelSheet('exportTable', $event)" value="Expot Excel" style="float: right; margin-right: 18px;" />
+                            </div>
+                        </div>
+                        <div style="height:1cm">
+                        </div>
+                        <div class="row" ng-show="showTable">
+                            <div class="col-md-2">
+                                <input type="button" style="margin-left:5px;" class="btn btn-success btn-sm" data-toggle="modal" data-target="#updateModal" data-backdrop="static" data-keyboard="false" ng-click="UpdateInvoice(CheckedCodes, CheckedInvoices)" value="Update Invoice" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" style="margin-left:5px;" class="btn btn-success btn-sm" ng-click="UpdateStatus(CheckedCodes)" value="Update Status" />
+                            </div>
+                            <div class="col-md-4" style="text-align:center; font-size:large;">
+                                <label><b>Total Data: <span>{{totalData}}</span></b></label>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn btn-primary btn-sm" value="Send SMS" data-toggle="modal" data-target="#smsModal" data-backdrop="static" data-keyboard="false" ng-click="SendSMS(CheckedCodes, CheckedInvoices)" ng-show="smsButton" style="float: right; margin-right: 18px;"/>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="button" class="btn btn-primary btn-sm" value="Check All" ng-click="CheckAll()" style="float: right; margin-right: 18px;" ng-show="showcheckAll"/>
+                                <input type="button" class="btn btn-primary btn-sm" value="Uncheck All" ng-click="UncheckAllData()" style="float: right; margin-right: 18px;" ng-show="showuncheckAll"/>
+                            </div>
+                        </div>
+                        <div class="row" ng-show="showTable">
+                            <div class="col-lg-12 align-content-center" id="reportDetails" style="height: 634px; overflow: auto;">
+                                <div class="table table-responsive" id="exportTable">
+                                    <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                        <thead>
+                                            <tr>
+                                                <th style="text-align: center;width: 96px;" class="text-lg">#</th>
+                                                <th style="text-align: center;" class="text-lg">Order Code</th>
+                                                <th style="text-align: center;" class="text-lg">Customer Name</th>
+                                                <th style="text-align: center;" class="text-lg">Mobile</th>
+                                                <th style="text-align: center;" class="text-lg">POD</th>
+                                                <th style="text-align: center;" class="text-lg">SA Invoice No</th>
+                                                <th style="text-align: center;" class="text-lg">Courier</th>
+                                                <th style="text-align: center;" class="text-lg">Last Status</th>
+                                                <th style="text-align: center;" class="text-lg">Collection Amount</th>
+                                                <th style="text-align: center;" class="text-lg">Service Type</th>
+                                                <th style="text-align: center;" class="text-lg">District</th>
+                                                <th style="text-align: center;" class="text-lg">Thana</th>
+                                                <th style="text-align: center;" class="text-lg">Area</th>
+                                                <th style="text-align: center;" class="text-lg">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="reportTable">
+                                            <tr ng-repeat="data in reportData">
+                                                <td style="text-align:center;">{{$index + 1}}</td>
+                                                <td style="text-align:center;">DT-{{data.id}}</td>
+                                                <td style="text-align:center;">{{data.customerName}}</td>
+                                                <td style="text-align:center;">{{data.mobile}}</td>
+                                                <td style="text-align:center;">{{data.podNumber}}</td>
+                                                <td style="text-align:center;">{{data.invoiceNumber != ''? data.invoiceNumber: 'N/A'}}</td>
+                                                <td style="text-align:center;">{{data.couriers.courierName}}</td>
+                                                <td style="text-align:center;">{{data.courierOrderStatus.statusNameEng}}</td>
+                                                <td style="text-align:center;">{{data.collectionAmount}}</td>
+                                                <td style="text-align:center;">{{data.paymentType}}</td>
+                                                <td style="text-align:center;">{{data.districtsViewModel.district}}</td>
+                                                <td style="text-align:center;">{{data.districtsViewModel.thana != null?data.districtsViewModel.thana : 'N/A'}}</td>
+                                                <td style="text-align:center;">{{data.districtsViewModel.area != null?data.districtsViewModel.area : 'N/A'}}</td>
+                                                <td style="text-align:center;">
+                                                    <input type="checkbox" ng-checked="checkAll" ng-model="data.checked" id="{{data.id}}" ng-change="Clicked(data.id,data.invoiceNumber,data.checked)" />
+                                                </td>
+                                            </tr>
+                                            @*<tr>
+                                                <td style="text-align:center;">
+                                                    <input type="button" style="margin-left:5px;" class="btn btn-success btn-sm" data-toggle="modal" data-target="#updateModal" data-backdrop="static" data-keyboard="false" ng-click="UpdateInvoice(data.id)" value="Update" />
+                                                    <div style="height:7px">
+                                                    </div>
+                                                    <input type="button" style="margin-left:5px; width: 62px;" class="btn btn-success btn-sm" value="SMS" ng-click="
+                                                (data.id, data.invoiceNumber)" ng-if="data.invoiceNumber != ''" />
+                                                </td>
+                                            </tr>*@
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal inmodal fade" id="updateModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateDistrictModalHeader">Update Invoice</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <label class="col-lg-4 col-form-label">DT Code</label>
+                            </div>
+                            <div class="col-md-4">
+                                <textarea class="form-control" ng-model="selectedDTCode" id="selectedDTCode" value="" disabled rows="6" cols="50"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <label class="col-lg-4 col-form-label">New InvoiceNumber</label>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="newInvoice" ng-model="newInvoiceNumber" placeholder="...Insert Invoice Number" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="UpdateSAInvoice(selectedDTCode, newInvoiceNumber)" data-dismiss="modal">Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal inmodal fade" id="smsModal" tabindex="-1" role="dialog" aria-hidden="true" ng-show="showSMSModal" style="display:none;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateDistrictModalHeader">Send SMS</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <label class="col-lg-4 col-form-label">DT Code</label>
+                            </div>
+                            <div class="col-md-4">
+                                <textarea class="form-control" ng-model="sendDTCodes" id="selectedDTCode" value="" disabled rows="6" cols="50"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <label class="col-lg-4 col-form-label">New InvoiceNumber</label>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="newInvoice" ng-model="sendInvoiceNumber" disabled/>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <label class="col-lg-4 col-form-label">New InvoiceNumber</label>
+                            </div>
+                            <div class="col-md-4">
+                                <textarea ng-model="smsBody" id="smsBody" rows="6" cols="50"></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="SendSMSContent(sendDTCodes, sendInvoiceNumber, smsBody)" data-dismiss="modal">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http, $anchorScroll, $location) {
+        $scope.smallTitle = 'Load All Tiger Courier';
+        $scope.userId = sessionStorage.getItem("userId");
+        $scope.hubName = sessionStorage.getItem("hubName").trim();
+        $scope.courierId = '-2';
+        $scope.paymentType = '-1';
+        $scope.districtId = '0';
+        $scope.invoiceNumber = '-1';
+        $scope.hubName = '-1';
+        $scope.statusId = -1;
+        $scope.statusTable = 'statusTable';
+        $scope.CheckedCodes = [];
+        $scope.CheckedInvoices = [];
+        $scope.courier = [
+            {
+                'id': -1,
+                'name': 'Select All Courier'
+            },
+            {
+                'id': 32,
+                'name': 'E-Desh'
+            },
+            {
+                'id': 49,
+                'name': 'Steadfast Courier'
+            },
+            {
+                'id': 50,
+                'name': 'Chittagong Tiger'
+            },
+            {
+                'id': 51,
+                'name': 'Sylhet Tiger'
+            },
+            {
+                'id': 52,
+                'name': 'Khulna Tiger'
+            },
+            {
+                'id': 53,
+                'name': 'Narayangonj Tiger'
+            },
+            {
+                'id': 54,
+                'name': 'Gazipur Tiger'
+            },
+            {
+                'id': 55,
+                'name': 'Dhaka Tiger'
+            },
+            {
+                'id': 56,
+                'name': 'Coxsbazar Tiger'
+            },
+            {
+                'id': 57,
+                'name': 'Jatrabari Tiger'
+            },
+            {
+                'id': 58,
+                'name': 'Uttara Tiger'
+            },
+            {
+                'id': 59,
+                'name': 'Mirpur10 Tiger'
+            },
+            {
+                'id': 60,
+                'name': 'Mirpur01 Tiger'
+            },
+            {
+                'id': 61,
+                'name': 'Lalmatia Tiger'
+            },
+            {
+                'id': 62,
+                'name': 'NewMarket Tiger'
+            },
+            {
+                'id': 63,
+                'name': 'Islampur Tiger'
+            },
+            {
+                'id': 64,
+                'name': 'Santinagar Tiger'
+            },
+            {
+                'id': 65,
+                'name': 'Gulisthan Tiger'
+            },
+            {
+                'id': 66,
+                'name': 'Rampura Tiger'
+            },
+            {
+                'id': 67,
+                'name': 'Badda Tiger'
+            },
+            {
+                'id': 75,
+                'name': 'Savar Tiger'
+            }
+        ];
+
+        $scope.HubValue = [
+            {
+                'val': 'sa-hub',
+                'Name': 'SA হাব'
+            },
+            {
+                'val': 'USB-hub',
+                'Name': 'ইউএসবি হাব'
+            },
+            {
+                'val': 'Postal Hub',
+                'Name': 'পোস্টাল হাব'
+            }
+        ];
+
+        $scope.init = () => {
+            $scope.showTable = false;
+            $scope.showLoader = false;
+            $scope.showButton = false;
+            $scope.showuncheckAll = false; 
+            $scope.showcheckAll = true;
+            $scope.SetDate();
+            //$scope.GetDeliveryRange();
+            $scope.LoadDistricts();
+            $scope.LoadAllCourierOrderStatus();
+        }
+
+        $scope.SetDate = () => {
+
+            let date = new Date();
+            var dd = String(date.getDate()).padStart(2, '0');
+            var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = date.getFullYear();
+            var toDate = yyyy + '-' + mm + '-' + dd;
+
+            let days = 0; // 7 days behind current date
+            var last = new Date(date.getTime() - (days * 24 * 60 * 60 * 1000));
+            var day = String(last.getDate()).padStart(2, '0');
+            var month = String(last.getMonth() + 1).padStart(2, '0');
+            var year = last.getFullYear();
+            var fromDate = year + '-' + month + '-' + day;
+
+            $scope.fromDate = fromDate;
+            $scope.toDate = toDate;
+
+        }
+
+        $scope.DeliveryRange = [
+            {
+                "id": 5,
+                "name": "Same Day Delivery",
+                "day": "১০"
+            },
+            {
+                "id": 7,
+                "name": "Next Day Delivery",
+                "day": "১"
+            },
+            {
+                "id": 14,
+                "name": "Dhaka Next Day",
+                "day": "১"
+            },
+            {
+                "id": 16,
+                "name": "Dhaka Regular 48 hours",
+                "day": "২"
+            },
+            {
+                "id": 17,
+                "name": "City Next Day",
+                "day": "১"
+            },
+            {
+                "id": 18,
+                "name": "Sador Express 48 hours",
+                "day": "৩"
+            },
+            {
+                "id": 19,
+                "name": "Sador Regular 3 days",
+                "day": "৪"
+            }
+
+        ];
+
+        $scope.GetDeliveryRange = () => {
+
+            let url = apiBaseURL + 'Fetch/GetDeliveryRange';
+
+            $http.get(url, { headers: { 'ContentType': 'application/json;charset= utf-8', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+
+                    $scope.deliveryRangeInfo = response.data.model;
+
+                }), function error(response) {
+                    alert('Error White Fetching Paymentinfo');
+                }
+
+        }
+
+
+        $scope.LoadAllCourierOrderStatus = () => {
+
+            $http.get(apiBaseURL + "Fetch/LoadCourierOrderStatus", { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+
+                    $scope.courierOrderStatus = response.data.model;
+                }), function error(response) {
+                    console.log("Failed to load OrderStatus");
+                }
+        }
+
+        $scope.LoadDistricts = () => {
+            let url = apiBaseURL + 'Fetch/LoadAllDistricts';
+
+            $http.get(url, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    console.log(response);
+                    $scope.Districts = response.data.model.filter(x => x.parentId == 0);
+
+                }), function error(response) {
+                    alert('Error White Fetching Paymentinfo');
+                }
+        }
+
+
+
+        $scope.GetSAReport = (fromDate, toDate, courierId, paymentType, districtId, statusId, hubName) => {
+
+            if (courierId == '-2' /*|| paymentType == '-1'*/) {
+                alert('Please Insert Courier');
+                return false;
+            }
+            if (hubName == '-1' || hubName == null) {
+                alert('Please Select Hub');
+                return false;
+            }
+
+            $scope.HubName = (hubName == 'SA হাব' ? 'SA' : (hubName == 'পোস্টাল হাব' ? 'Postal' : 'USB'));
+
+            //let url = 'http://localhost:58676/api/Fetch/GetSABookingReport';
+            let url = apiBaseURL + 'Fetch/GetSABookingReport';
+
+            let obj = {
+                fromDate: fromDate,
+                toDate: toDate,
+                courierId: courierId,
+                deliveryRangeId: paymentType,
+                districtId: districtId,
+                statusId: statusId,
+                hubName: hubName
+            }
+
+            $scope.showLoader = true;
+            $http.post(url, obj, { headers: { 'Content-Type': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    console.log(response);
+                    if (response.data.model.length <= 0) {
+                        alert('There is no Data to Show');
+                        $scope.showLoader = false;
+                        $scope.showTable = false;
+                        $scope.showButton = false;
+                        $scope.invoiceCombo = false;
+                        return false;
+                    }
+                    $scope.showLoader = false;
+                    $scope.allData = response.data.model;
+                    $scope.reportData = $scope.allData;
+                    $scope.totalData = response.data.model.length;
+
+                    var data = $scope.allData;
+                    $scope.invoiceNumbers = $scope.uniqueInvoice(data);
+                    $scope.invoiceNumber = '-1';
+
+                    $scope.showTable = true;
+                    $scope.showButton = true;
+                    $scope.invoiceCombo = true;
+
+                    if ($scope.courierId == '-1') {
+                        $scope.smsButton = false;
+                    }
+                    else {
+                        //$scope.smsButton = true;
+                    }
+                   
+                    $scope.gotoDiv('reportHeader');
+
+                }),
+                function error(response) {
+                    $scope.showLoader = false;
+                    alert('Error occured while fetching data');
+                }
+        }
+
+
+        $scope.Search = (invoiceNumber) => {
+            //alert(invoiceNumber);
+            //console.log($scope.allData);
+            $scope.CheckedCodes = [];
+            $scope.CheckedInvoices = [];
+            $scope.uncheckAll();
+
+            if (invoiceNumber == '-1') {
+                $scope.reportData = $scope.allData;
+                $scope.totalData = $scope.reportData.length;
+                //$scope.smsButton = true;
+            }
+            else if (invoiceNumber == '-2') {
+                $scope.reportData = $scope.allData.filter(x => x.invoiceNumber == '');
+                $scope.totalData = $scope.reportData.length;
+                //$scope.smsButton = false;
+            }
+            else{
+                data = $scope.allData.filter(x => x.invoiceNumber == invoiceNumber);
+                $scope.reportData = data;
+                //$scope.smsButton = true;
+                $scope.totalData = $scope.reportData.length;
+            }
+            
+        }
+
+
+
+        $scope.createExcelSheet = (tableName, event) => {
+            var element = encodeURIComponent($('#' + tableName).html());
+            //window.open('data:application/vnd.ms-excel,' + encodeURIComponent(element));
+            var a = document.createElement('a');
+            var data_type = 'data:application/vnd.ms-excel';
+            a.href = data_type + ', ' + element;
+            a.download = 'SABookingReport.xls';
+            a.click();
+            event.preventDefault();
+        }
+
+
+        $scope.uniqueInvoice = (arr) => {
+            var a = [];
+            for (var i = 0; i < arr.length; i++) {
+
+                if (a.indexOf(arr[i].invoiceNumber) === -1 && arr[i].invoiceNumber !== '') {
+                    a.push(arr[i].invoiceNumber);
+                }
+            }
+            return a;
+        }
+
+        $scope.UpdateInvoice = (dtCode, invoices) => {
+
+            //alert('DT-' + dtCode);
+            $scope.selectedDTCode = dtCode.map(x => 'DT-' + x).join(',');
+
+            if (invoices.length > 0) {
+                invoices = [...new Set(invoices)];
+
+                if (invoices.length == 1) {
+                    $scope.newInvoiceNumber = invoices[0];
+                }
+            }
+            
+        }
+
+        $scope.UpdateStatus = (dtCodes) => {
+
+            let dcMobile = '';
+            if(dtCodes.length <= 0) {
+                alert('Select DT Code');
+                return false;
+            }
+            district = $scope.GetUniqueDistrict($scope.reportData);
+            if(district.length > 1) {
+                alert('DT Codes with common district is allowed to update');
+                return false;
+            }
+
+            let courierId = $scope.courierId;
+
+            if (courierId == 32) {
+                dcMobile = $scope.reportData[0].districtsViewModel.edeshMobileNo;
+            }
+            else if ([57, 56, 55, 54, 53, 52, 51, 50].includes(courierId)) {
+                dcMobile = $scope.reportData[0].districtsViewModel.tigerMobileNo;
+            }
+
+            if (!confirm('Are you sure? Status: Received From Hub')) {
+                return false;
+            }
+            let courierOrdersId = dtCodes.map(x => 'DT-' + x);
+            let objList = [];
+
+            let hubValue = $scope.HubValue.find(x => x.Name == $scope.hubName);
+            for (let i = 0; i < courierOrdersId.length; i++) {
+                
+                    let obj = {
+                        updatedBy: +$scope.userId,
+                        courierOrdersId: courierOrdersId[i],
+                        status: 37,
+                        isConfirmedBy: "admin",
+                        hubName: hubValue == null ? $scope.hubName : hubValue.val,
+                        comment: "Received From Hub-"+ district[0]
+                    }
+                objList.push(obj);   
+            }
+
+            console.log(objList);
+            let url = apiBaseURL + 'Update/UpdateBulkStatus';
+            //let url = 'http://localhost:58676/api/Update/UpdateBulkStatus';
+            $http.put(url, objList, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    if (response.data.model > 0) {
+                        alert('Update Successful');
+
+                        let smsBody = "আপনার পার্সেলটি " + district[0] + " এ পৌঁছেছে।"+ (dcMobile != ""?"দ্রুত ডেলিভারী এর জন্য কল করুন " + dcMobile : "");
+                        let customerMobile = $scope.reportData.filter(x => dtCodes.includes(x.id)).map(x => x.mobile);
+                        $scope.SendSMSGateway(smsBody,'',customerMobile);
+                        //$scope.GetSAReport($scope.fromDate, $scope.toDate, $scope.courierId, $scope.paymentType, $scope.districtId)
+                    }
+                    else {
+                        alert('Update was unsuccessful');
+                        return false;
+                    }
+                }), function error(response) {
+                    alert('Something went wrong');
+                    return false;
+                }
+
+        }
+
+        $scope.UpdateSAInvoice = (orderIds, invoiceNumber) => {
+
+            if (invoiceNumber == undefined || invoiceNumber == null || invoiceNumber == '') {
+                alert('Please insert Invoice Number');
+                return false;
+            }
+            if (orderIds == null || orderIds == '' || orderIds == undefined) {
+                alert('Please Select OrderIds Number');
+                return false;
+            }
+            //let dtCode = courierOrderId.replace('DT-','');
+            let courierOrderId = orderIds.replace(/[DT-]/gm, '').split(',')
+            let objList = [];
+
+            for (let i = 0; i < courierOrderId.length; i++) {
+                let obj = {
+                    id: parseInt(courierOrderId[i]),
+                    invoiceNumber: invoiceNumber,
+                    invoiceCourier: $scope.hubName == 'SA হাব'?'sa':'usb'
+                };
+                objList.push(obj);
+            }
+
+            //let url = 'http://localhost:58676/api/Update/UpdateRangeInvoiceNumber';
+            let url = apiBaseURL + 'Update/UpdateRangeInvoiceNumber';
+
+            $http.put(url, objList, { headers: { 'ContentType': 'application/json;utf=charset-8' } })
+                .then(function (response) {
+                    //console.log(response);
+                    if (response.data.didError) {
+                        alert('Something went wrong');
+                        return false;
+                    }
+                    alert('Update Successful');
+                    $scope.CheckedCodes = [];
+                    $scope.CheckedInvoices = [];
+
+                    let smsBody = 'dt-code পার্সেলটি আজকে ডেলিভারী হবে। দ্রুত ডেলিভারী  করার ব্যবস্থা  করুন।\n এস.এ ইনভয়েস নম্বর: dt-invoice';
+                    $scope.SendSMSContent(orderIds, invoiceNumber, smsBody);
+
+                    //$scope.GetSAReport($scope.fromDate, $scope.toDate, $scope.courierId, $scope.paymentType, $scope.districtId)
+
+                }), function error(response) {
+                    
+                    alert('Error occured while updating');
+                }
+
+        }
+
+        $scope.Clicked = (bookingCode, invoiceNumber, isChecked) => {
+            //alert(isChecked);
+            if(isChecked) {
+                $scope.CheckedCodes.push(parseInt(bookingCode));
+                $scope.CheckedInvoices.push(invoiceNumber);
+            }
+            else {
+                var index1 = $scope.CheckedCodes.indexOf(parseInt(bookingCode));
+                $scope.CheckedCodes.splice(index1, 1);
+
+                var index2 = $scope.CheckedInvoices.indexOf(invoiceNumber);
+                $scope.CheckedInvoices.splice(index2, 1);
+            }
+        }
+
+
+        $scope.SendSMS = (dtCode, invoiceNumber) => {
+            //alert('Update Coming soon');
+            //$scope.showSMSModal = true;
+            $scope.sendDTCodes = dtCode.map(x => 'DT-' + x).join(',');
+
+            if (invoiceNumber.length > 0) {
+                invoices = [...new Set(invoiceNumber)];
+
+                if (invoices.length == 1) {
+                    $scope.sendInvoiceNumber = invoices[0];
+                }
+                else {
+                    alert('Different InvoiceNumber can not be selected');
+                    //$scope.showSMSModal = false;
+                    $('#smsModal').modal('hide');
+                    return false;
+                }
+
+            }
+            else {
+                alert('You need to choose Invoice Number');
+                //$scope.showSMSModal = false;
+                $('#smsModal').modal('hide');
+                return false;
+            }
+
+            $scope.smsBody ='dt-code পার্সেলটি আজকে ডেলিভারী হবে। এস.এ ইনভয়েস নম্বর: dt-invoice';
+
+        }
+
+
+
+        $scope.SendSMSContent = (courierOrdersId, invoiceNumber, messageBody) => {
+
+            if (invoiceNumber == '' || invoiceNumber == null) {
+                alert('Please choose unique invoice Number');
+                $scope.uncheckAll();
+                return false;
+            }
+            if (messageBody == '' || messageBody == '') {
+                alert('Message body is empty. Need to write message content');
+                return false;
+            }
+            let edeshMobile = '';
+            let tigerMobile = '';
+            let courierId = $scope.courierId;
+            let smsBody = messageBody.replace('dt-code', courierOrdersId).replace('dt-invoice', invoiceNumber);
+            //alert(smsBody);
+
+            district = $scope.GetUniqueDistrict($scope.reportData);
+            //console.log(district);
+            if (district.length == 1) {
+                tigerMobile = $scope.reportData[0].districtsViewModel.tigerMobileNo;
+                edeshMobile = $scope.reportData[0].districtsViewModel.edeshMobileNo;
+            }
+            else {
+                alert('District is not Same');
+                return false;
+            }
+
+            if (courierId == 32) {
+                //Edesh Send Message
+                if (edeshMobile == '' || edeshMobile == null) {
+                    alert('Please Entry DC incharges Mobile... There is no Mobile Number');
+                    $scope.GetSAReport($scope.fromDate, $scope.toDate, $scope.courierId, $scope.paymentType, $scope.districtId, $scope.statusId, $scope.hubName)
+                    return false;
+                }
+
+                $scope.SendSMSGateway(smsBody, edeshMobile, "");
+            }
+
+            else if (courierId == 49) {
+                alert('Not Possible now Select Courier');
+                $scope.GetSAReport($scope.fromDate, $scope.toDate, $scope.courierId, $scope.paymentType, $scope.districtId, $scope.statusId, $scope.hubName)
+            }
+
+            else if ([57, 56, 55, 54, 53, 52, 51, 50].includes(courierId)) {
+                //Tiger Send Message
+                if (tigerMobile == '' || tigerMobile == null) {
+                    alert('Please Entry DC incharges Mobile... There is no Mobile Number');
+                    $scope.GetSAReport($scope.fromDate, $scope.toDate, $scope.courierId, $scope.paymentType, $scope.districtId, $scope.statusId, $scope.hubName)
+                    return false;
+                }
+
+                $scope.SendSMSGateway(smsBody, tigerMobile,"");
+            }
+
+            else {
+                alert('Select Courier to send sms to DC');
+                $scope.GetSAReport($scope.fromDate, $scope.toDate, $scope.courierId, $scope.paymentType, $scope.districtId, $scope.statusId, $scope.hubName)
+                return false;
+            }
+
+        }
+
+        $scope.gotoDiv = (x) => {
+
+            $location.hash(x);
+            $anchorScroll();
+
+        }
+
+        $scope.uncheckAll = function () {
+            angular.forEach($scope.allData, function (data) {
+                data.checked = false;
+            });
+        };
+
+        $scope.CheckAll = () => {
+
+            //for(let i = 0; i < $scope.reportData.length; i++) {
+            //    $scope.CheckedCodes.push($scope.reportData[i].id);
+            //}
+            //for(let i = 0; i < $scope.reportData.length; i++) {
+            //    $scope.CheckedInvoices.push($scope.reportData[i].invoiceNumber);
+            //}
+
+            angular.forEach($scope.reportData, function (data) {
+                data.checked = true;
+                $scope.CheckedCodes.push(data.id);
+                $scope.CheckedInvoices.push(data.invoiceNumber)
+            });
+            $scope.showuncheckAll = true;
+            $scope.showcheckAll = false;
+        }
+
+        $scope.UncheckAllData = () => {
+
+            $scope.CheckedCodes = [];
+            $scope.CheckedInvoices = [];
+            angular.forEach($scope.allData, function (data) {
+                data.checked = false;
+            });
+            $scope.showuncheckAll = false;
+            $scope.showcheckAll = true;
+        }
+
+
+        $scope.GetUniqueDistrict = (dataModel) => {
+
+            var a = [];
+            for (var i = 0; i < dataModel.length; i++) {
+
+                if (a.indexOf(dataModel[i].districtsViewModel.district) === -1 && dataModel[i].districtsViewModel.district !== '') {
+                    a.push(dataModel[i].districtsViewModel.district);
+                }
+            }
+            return a;
+        }
+
+
+        $scope.SendSMSGateway = (smsBody, dcMobileNumber, customerMobile) => {
+
+
+            let numberList = [];
+            let toSms = "";
+            if (dcMobileNumber != "") {
+                numberList.push(dcMobileNumber);
+                toSms = "DC"
+            }
+
+            else if (customerMobile != "") {
+                numberList = customerMobile;
+                toSms = "Customer(s)";
+            }
+           
+
+            let obj = {
+                numbers: numberList,
+                text: smsBody,
+                type: 0,
+                datacoding: 0
+            };
+
+            let objList = [];
+            objList.push(obj);
+            //console.log(objList);
+
+            let url = bridgeBaseUrl + 'SmsComunication/SendSms';
+
+            $http.post(url, objList, { headers: { 'ContentType': 'application/json;utf=charset-8', 'API_KEY': 'Ajkerdeal_~La?Rj73FcLm' } })
+                .then(function (response) {
+                    //console.log(response);
+                    if (!response.data[0].Status) {
+                        alert('SMS Sent unsuccessful.');
+                        return false;
+                    }
+                    alert('SMS Sent Successfully to ' + toSms);
+                    $scope.GetSAReport($scope.fromDate, $scope.toDate, $scope.courierId, $scope.paymentType, $scope.districtId, $scope.statusId, $scope.hubName)
+
+                }), function error(response) {
+                    alert('error Occured while sending sms');
+                }
+
+        }
+    });
+
+
+</script>
+
+
+

@@ -1,0 +1,385 @@
+﻿
+@{
+
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@*<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+    <script src="~/Scripts/Common/Common.js"></script>
+    <script src="~/Scripts/Operation/Operation.js"></script>
+    <script src="~/Scripts/plugins/dataTables/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Scripts/plugins/dataTables/datatables.min.js"></script>
+    <link href="~/Content/plugins/dataTable/datatables.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/select2.min.css" rel="stylesheet" />
+    <script src="~/Scripts/plugins/select2/select2.full.min.js"></script>
+    <link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+    <script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+    <script src="~/Scripts/Common/Dashboard.js"></script>*@
+
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
+<script type="text/javascript" src="https://code.highcharts.com/modules/exporting.js"></script>
+<link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+<script src="https://rawgit.com/fordth/jinqJs/master/jinqjs.min.js"></script>
+
+<script>
+    //var AllStatusGroupWiseData;
+    $(document).ready(function () {
+        $('#datepickerOrders').datepicker({
+            keyboardNavigation: false,
+            forceParse: false,
+            autoclose: true,
+            endDate: new Date(new Date().setDate(new Date().getDate()))
+        });
+        $('#datepickerCourier').datepicker({
+            keyboardNavigation: false,
+            forceParse: false,
+            autoclose: true,
+            endDate: new Date(new Date().setDate(new Date().getDate()))
+        });
+        
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            //loadAllStatusGroupWise();
+            //$(".datepicker").datepicker({
+            //    autoclose: true,
+            //    endDate: new Date(new Date().setDate(new Date().getDate()))
+            //});
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+
+
+<script type="text/javascript">
+
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http) {
+
+        //var localUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+
+        $scope.dateFormat = 'date';
+
+        $scope.dateFormats = [
+            //{
+            //    'id': 'daterange',
+            //    'name': 'DateRange'
+            //},
+            {
+                'id': 'date',
+                'name': 'Date'
+            },
+            {
+                'id': 'month',
+                'name': 'Month'
+            }
+        ];
+
+
+        $scope.getOrders = function (fromDate, toDate, dateFormat) {
+
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "dateFormat": dateFormat
+            };
+
+            //$scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/GetOrders', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(response.data.model);
+                    //var element = response.data.model.pop();
+                    //console.log(element);
+                    $scope.orders = response.data.model.pop();
+                    //$scope.showLoader = false;
+
+                    let names = [];
+                    let placed = [];
+                    let confirmed = [];
+                    let needToPick = [];
+                    let pickedByDTCollector = [];
+                    let receivedByDTHeadOffice = [];
+                    let shipment = [];
+                    let postRejected = [];
+                    let delivered = [];
+
+                    for (var i = 0; i < response.data.model.length; i++) {
+                        names.push(response.data.model[i].name);
+                        placed.push(response.data.model[i].orders.placed.order);
+                        confirmed.push(response.data.model[i].orders.confirmed.order);
+                        needToPick.push(response.data.model[i].orders.needToPick.order);
+                        pickedByDTCollector.push(response.data.model[i].orders.pickedByDTCollector.order);
+                        receivedByDTHeadOffice.push(response.data.model[i].orders.receivedByDTHeadOffice.order);
+                        shipment.push(response.data.model[i].orders.shipment.order);
+                        postRejected.push(response.data.model[i].orders.postRejected.order);
+                        delivered.push(response.data.model[i].orders.delivered.order);
+                    }
+
+                    orderLineChart(dateFormat, names, placed, confirmed, needToPick,
+                        pickedByDTCollector, receivedByDTHeadOffice, shipment, postRejected, delivered);
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+
+        function orderLineChart(dateFormat, names, placed, confirmed, needToPick,
+            pickedByDTCollector, receivedByDTHeadOffice, shipment, postRejected, delivered) {
+
+            Highcharts.chart('lineChart', {
+                title: {
+                    text: 'Visual Dt ' + dateFormat+' wise order report'
+                },
+
+                xAxis: {
+                    categories: names
+                },
+                series: [{
+                    name: 'Placed',
+                    data: placed
+                }, {
+                    name: 'Confirmed',
+                    data: confirmed
+                }, {
+                    name: 'Need to Pick',
+                    data: needToPick
+                },
+                {
+                    name: 'Picked by DT Collector',
+                    data: pickedByDTCollector
+                },
+                {
+                    name: 'Received by DT Head Office',
+                    data: receivedByDTHeadOffice
+                },
+                {
+                    name: 'Shipment',
+                    data: shipment
+                },
+                {
+                    name: 'Post Rejected',
+                    data: postRejected
+                },
+                {
+                    name: 'Delivery',
+                    data: delivered
+                }
+
+                ]
+            });
+        }
+
+        $scope.getCourierConsignment = function (fromDate, toDate) {
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/CourierConsignment', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(response.data.model);
+
+                    $scope.sumPodNumber = response.data.model.map(o => o.podNumber).reduce((a, c) => { return a + c });
+                    $scope.courierConsignment = response.data.model;
+                    $scope.showLoader = false;
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+    });
+
+</script>
+
+<div ng-app="myModule">
+    <div ng-controller="myController">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <div class="input-daterange input-group" id="datepickerOrders">
+                        <input type="text" class="form-control-sm form-control" ng-model="fromDate" name="start" placeholder="From Date" />
+                        <span class="input-group-addon">to</span>
+                        <input type="text" class="form-control-sm form-control" ng-model="toDate" name="end" placeholder="To Date" />
+                        <select style="border: 1px solid #46b8da" class="btn btn-default" ng-model="dateFormat" ng-options="dateFormat.id as dateFormat.name for dateFormat in dateFormats"></select>
+                        <button type="button" class="btn btn-w-m btn-success" ng-click="getOrders(fromDate, toDate, dateFormat)">Search</button>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12" id="lineChart"><h3>Visual Dt order report</h3></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <div class="input-daterange input-group" id="datepickerCourier">
+                        <input type="text" class="form-control-sm form-control" ng-model="fromDate" name="start" placeholder="From Date" />
+                        <span class="input-group-addon">to</span>
+                        <input type="text" class="form-control-sm form-control" ng-model="toDate" name="end" placeholder="To Date" />
+                        <button style="margin-left: 6px;" type="button" class="btn btn-w-m btn-success" ng-click="getCourierConsignment(fromDate, toDate)">Search</button>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="ibox ">
+                                <div class="ibox-title">
+                                    <h5>Courier Consignment</h5>
+                                </div>
+                                <div class="ibox-content">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Name</th>
+                                                <th>Unique Pod Number</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="o in courierConsignment">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{o.courierName}}</td>
+                                                <td>{{o.podNumber}}({{100 * o.podNumber  / sumPodNumber | number:2}} %)</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@*off code*@
+<div class="row" id="dashboardFirstDiv">
+    @*<div class="col-lg-12" onclick="generateDashboardReport()" style="display:block;">
+            <div class="widget navy-bg no-padding">
+                <div class="p-m">
+                    <h1><b>@DateTime.Now.Hour:@DateTime.Now.Minute</b></h1>
+
+                    <h3 class="font-bold no-margins">
+                        Development Going On
+                    </h3>
+                    <small>Click To Generate Dashboard Report</small>
+                </div>
+            </div>
+        </div>*@
+</div>
+<div class="col-lg-12" id="dashboardCurrentReportDiv" style="display:none;">
+    <div class="ibox">
+        <div class="ibox-title">
+            <h4 id="dashboardCurrentReportDivHeader">
+                Order Status Report
+                <span class="label label-success" style="margin-left:20px;">
+                    Current
+                </span>
+            </h4>
+        </div>
+        <div class="ibox-content">
+            <div class="row" id="dashboardCurrentReportDivBody">
+            </div>
+        </div>
+    </div>
+</div>
+<div class="col-lg-12" id="dashboardLogReportDiv" style="display:none;padding-bottom:60px;">
+    <div class="ibox">
+        <div class="ibox-title">
+            <h4>
+                Order Status Log Report
+                <span class="label label-primary" id="dashboardLogReportDivHeader" style="margin-left:20px;">
+                    Today
+                </span>
+            </h4>
+            <div class="ibox-tools">
+                <a class="dropdown-toggle" data-toggle="modal" data-target="#logReportEditorModal">
+                    <i class="fa fa-wrench"></i>
+                </a>
+                @*<a class="collapse-link" onclick="loadLogReportEditor()" data-toggle="modal" data-target="#logReportEditorModal">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>*@
+            </div>
+        </div>
+        <div class="ibox-content">
+            <div class="row" id="dashboardLogReportDivBody">
+            </div>
+        </div>
+    </div>
+</div>
+@*Action Button Group Modal*@
+<div class="modal inmodal fade" id="logReportEditorModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-sm" style="max-width:450px;">
+        <div class="modal-content">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title">Log Report Editor</h5>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-lg-6 col-form-label">Form Date</label>
+                    <div class="col-lg-6">
+                        <input type="text" id="fromDate" class="form-control datepicker" placeholder="From Date" />
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-lg-6 col-form-label">To Date</label>
+                    <div class="col-lg-6">
+                        <input type="text" id="toDate" class="form-control datepicker" placeholder="To Date" />
+                    </div>
+                </div>
+                <div class="form-group row" style="justify-content: center">
+                    <div>
+                        <button type="submit" class="btn btn-info" onclick="loadLogReportData()"><strong>Load</strong></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

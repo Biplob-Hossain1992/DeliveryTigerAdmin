@@ -1,0 +1,208 @@
+﻿
+@{
+    ViewBag.Title = "MailAndSmsEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/Content/plugins/summernote/summernote-bs4.css" rel="stylesheet" />
+<script>
+    var AllStatusListData = [];
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+            loadAllStatus("Status");
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/GeneralSettings/generalSettings.js"></script>
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<input id="UserHidden" type="hidden" value="" />
+<div class="row" style="margin-top:10px;">
+    <div class="col-lg-12">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Select Status <small>to load sms and mail formats</small></h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content no-padding">
+                <input type="hidden" id="idHidden" />
+                <div class="row" style="margin-top:10px;">
+                    <div class="col-lg-12" style="display:flex;">
+                        <div class="col-lg-6 offset-2" style="padding:10px;">
+                            <div class="form-group row">
+                                <label class="col-lg-2 offset-3 col-form-label">Status: </label>
+                                <div class="col-lg-7">
+                                    <select id="Status" class="form-control" onchange="loadSmsAndMailDetails()" placeholder="Select Status">
+                                        <option value="-1" selected>Select Status</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2">
+                            <div class="form-group row" style="justify-content: center">
+                                <button id="updateMailSmsBtn" class="btn btn-primary" style="margin:10px;" onclick="updateSmsMailFormat()" type="button">Update</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 " style="display:flex;justify-content:center;padding:2px 20px 2px 20px;">
+                        <div class="alert alert-info" style="justify-content:center;width:100%;">
+                            <i class="fa fa-circle-o"></i>
+                            Order Id = dt-orderid &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Merchant Name = dt-merchantname &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Company Name = dt-companyname &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Pod Number = dt-podnumber &emsp;<br />
+                            <i class="fa fa-circle-o"></i>
+                            Courier Name = dt-couriername &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Customer Name = dt-customername &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Customer Mobile = dt-customermobile &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            BkashNumber = dt-bkashnumber &emsp;<br />
+                            <i class="fa fa-circle-o"></i>
+                            MerchantPaymentAmount = dt-merchantpaymentamount &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            District Name = dt-districtname &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Thana Name = dt-thananame &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Area Name = dt-areaname &emsp;<br />
+                            <i class="fa fa-circle-o"></i>
+                            Rider Mobile = dt-ridermobile &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Commited Delivery Date = dt-cdddate &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Delivery Man Name (Last Mile) = dt-courier-deliveryman-name &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Delivery Man Mobile (Last Mile) = dt-courier-deliveryman-mobile &emsp;
+                            <i class="fa fa-circle-o"></i>
+                            Hub Incharge Edesh Mobile = dt-edeshmobileno &emsp;
+                        </div>
+                    </div> 
+                </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <h5>Merchant Sms <small>format</small></h5>
+                                <div class="ibox-tools">
+                                    <a class="collapse-link">
+                                        <i class="fa fa-chevron-up"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ibox-content no-padding">
+                                <div style="padding:10px;">
+                                    <textarea rows="8" cols="50" class="form-control" id="smsText" style="height:150px;"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <h5>Customer Sms <small>format</small></h5>
+                                <div class="ibox-tools">
+                                    <a class="collapse-link">
+                                        <i class="fa fa-chevron-up"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ibox-content no-padding">
+                                <div style="padding:10px;">
+                                    <textarea rows="8" cols="50" class="form-control" id="customerSmsText" style="height:150px;"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="ibox">
+                            <div class="ibox-title">
+                                <h5>Retention Manager Sms <small>format</small></h5>
+                                <div class="ibox-tools">
+                                    <a class="collapse-link">
+                                        <i class="fa fa-chevron-up"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ibox-content no-padding">
+                                <div style="padding:10px;">
+                                    <textarea rows="8" cols="50" class="form-control" id="retentionSmsText" style="height:150px;"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="row" style="margin-top:10px;">
+                    <div class="col-lg-12">
+                        <div class="ibox ">
+                            <div class="ibox-title">
+                                <h5>Merchant Email <small>format</small></h5>
+                                <div class="ibox-tools">
+                                    <a class="collapse-link">
+                                        <i class="fa fa-chevron-up"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ibox-content" style="padding:10px;">
+                                <div class="click2edit wrapper p-md" id="emailHtml" style="padding:10px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="ibox ">
+                            <div class="ibox-title">
+                                <h5>Customer Email <small>format</small></h5>
+                                <div class="ibox-tools">
+                                    <a class="collapse-link">
+                                        <i class="fa fa-chevron-up"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ibox-content" style="padding:10px;">
+                                <div class="click2edit wrapper p-md" id="customerEmailHtml" style="padding:10px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/plugins/summernote")
+}
+

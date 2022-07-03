@@ -1,0 +1,715 @@
+﻿
+@{
+    ViewBag.Title = "Status Wise Order Details Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+
+<div ng-app="StatusWiseOrderDetailsReportModule">
+    <div ng-controller="StatusWiseOrderDetailsReportCtrl">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">Status Wise Order Details Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="margin-right: 2px;" type="text" class="form-control-sm form-control" ng-model="mainSearch" placeholder="Search" />
+                                <div class="input-daterange input-group">
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                    <select style="border: 1px solid #46b8da;margin-left: 2px;" class="btn btn-default" ng-model="dateFormat" name="dateFormat" id="dateFormat" ng-options="dformat.id as dformat.name for dformat in dateFormate"></select>
+
+                                    @*<select style="border: 1px solid #46b8da;margin-left: 2px;" class="btn btn-default" ng-model="dateFormat">
+                                        <option ng-repeat="d in dateFormate" value="{{d.id}}">{{d.name}}</option>
+                                    </select>*@
+
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="TotalOrderCount(fromDate,toDate,dateFormat)">Show</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            @*Table collection*@
+                            <div class="col-lg-12" ng-init="totalCollection=0">
+                                <div class="form-group">
+                                    <h4><b>Collection</b><span ng-if="totalCollection!=0">({{totalCollection}})</span></h4>
+                                </div>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a href="#" ng-click="orderByField = 'statusId'; reverseSort = !reverseSort">
+                                                    Status Id
+                                                </a>
+                                            </th>
+                                            <th>Status Name</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="s in collectionShipmentData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{s.statusId}}</td>
+                                            <td>{{s.statusName}}</td>
+                                            <td ng-init="$parent.totalCollection=$parent.totalCollection+s.orderCount" style="cursor: pointer;" ng-click="TotalOrderCountDetails(fromDate,toDate,s.statusId,s.statusName,dateFormat)" data-toggle="modal" data-target="#totalOrderDetailsModal">
+                                                {{s.orderCount}}
+                                                <i class="fa fa-hand-o-left"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @*Table parcel is in sorting*@
+                            <div class="col-lg-12" ng-init="totalParcelSorting=0">
+                                <div class="form-group">
+                                    <h4><b>Parcel Is In Sorting</b><span ng-if="totalParcelSorting!=0">({{totalParcelSorting}})</span></h4>
+                                </div>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a href="#" ng-click="orderByField = 'statusId'; reverseSort = !reverseSort">
+                                                    Status Id
+                                                </a>
+                                            </th>
+                                            <th>Status Name</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="s in parcelIsInSortingData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{s.statusId}}</td>
+                                            <td>{{s.statusName}}</td>
+                                            <td ng-init="$parent.totalParcelSorting=$parent.totalParcelSorting+s.orderCount" style="cursor: pointer;" ng-click="TotalOrderCountDetails(fromDate,toDate,s.statusId,s.statusName,dateFormat)" data-toggle="modal" data-target="#totalOrderDetailsModal">
+                                                {{s.orderCount}}
+                                                <i class="fa fa-hand-o-left"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @*Table own delivery*@
+                            <div class="col-lg-12 mt-3" ng-init="totalOwnDelivery=0">
+                                <div class="form-group">
+                                    <h4><b>Own Delivery</b><span ng-if="totalOwnDelivery!=0">({{totalOwnDelivery}})</span></h4>
+                                </div>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a href="#" ng-click="orderByField = 'statusId'; reverseSort = !reverseSort">
+                                                    Status Id
+                                                </a>
+                                            </th>
+                                            <th>Status Name</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="s in ownDeliveryData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{s.statusId}}</td>
+                                            <td>{{s.statusName}}</td>
+                                            <td ng-init="$parent.totalOwnDelivery=$parent.totalOwnDelivery+s.orderCount" style="cursor: pointer;" ng-click="TotalOrderCountDetails(fromDate,toDate,s.statusId,s.statusName,dateFormat)" data-toggle="modal" data-target="#totalOrderDetailsModal">
+                                                {{s.orderCount}}
+                                                <i class="fa fa-hand-o-left"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @*Table post shipment*@
+                            <div class="col-lg-12 mt-3" ng-init="totalPostShipment=0">
+                                <div class="form-group">
+                                    <h4><b>Post Shipment</b><span ng-if="totalPostShipment!=0">({{totalPostShipment}})</span></h4>
+                                </div>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a href="#" ng-click="orderByField = 'statusId'; reverseSort = !reverseSort">
+                                                    Status Id
+                                                </a>
+                                            </th>
+                                            <th>Status Name</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="s in postShipmentData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{s.statusId}}</td>
+                                            <td>{{s.statusName}}</td>
+                                            <td ng-init="$parent.totalPostShipment=$parent.totalPostShipment+s.orderCount" style="cursor: pointer;" ng-click="TotalOrderCountDetails(fromDate,toDate,s.statusId,s.statusName,dateFormat)" data-toggle="modal" data-target="#totalOrderDetailsModal">
+                                                {{s.orderCount}}
+                                                <i class="fa fa-hand-o-left"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @*Table customer unreachable*@
+                            <div class="col-lg-12 mt-3" ng-init="totalUnreachable=0">
+                                <div class="form-group">
+                                    <h4><b>Customer Unreachable</b><span ng-if="totalUnreachable!=0">({{totalUnreachable}})</span></h4>
+                                </div>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a href="#" ng-click="orderByField = 'statusId'; reverseSort = !reverseSort">
+                                                    Status Id
+                                                </a>
+                                            </th>
+                                            <th>Status Name</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="s in customerUnreachableData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{s.statusId}}</td>
+                                            <td>{{s.statusName}}</td>
+                                            <td ng-init="$parent.totalUnreachable=$parent.totalUnreachable+s.orderCount" style="cursor: pointer;" ng-click="TotalOrderCountDetails(fromDate,toDate,s.statusId,s.statusName,dateFormat)" data-toggle="modal" data-target="#totalOrderDetailsModal">
+                                                {{s.orderCount}}
+                                                <i class="fa fa-hand-o-left"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @*Table return order*@
+                            <div class="col-lg-12 mt-3" ng-init="totalReturn=0">
+                                <div class="form-group">
+                                    <h4><b>Return Order</b><span ng-if="totalReturn!=0">({{totalReturn}})</span></h4>
+                                </div>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a href="#" ng-click="orderByField = 'statusId'; reverseSort = !reverseSort">
+                                                    Status Id
+                                                </a>
+                                            </th>
+                                            <th>Status Name</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="s in returnOrderData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{s.statusId}}</td>
+                                            <td>{{s.statusName}}</td>
+                                            <td ng-init="$parent.totalReturn=$parent.totalReturn+s.orderCount" style="cursor: pointer;" ng-click="TotalOrderCountDetails(fromDate,toDate,s.statusId,s.statusName,dateFormat)" data-toggle="modal" data-target="#totalOrderDetailsModal">
+                                                {{s.orderCount}}
+                                                <i class="fa fa-hand-o-left"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @*Table all type cancel*@
+                            <div class="col-lg-12 mt-3" ng-init="totalCancel=0">
+                                <div class="form-group">
+                                    <h4><b>All Type Cancel</b><span ng-if="totalCancel!=0">({{totalCancel}})</span></h4>
+                                </div>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a href="#" ng-click="orderByField = 'statusId'; reverseSort = !reverseSort">
+                                                    Status Id
+                                                </a>
+                                            </th>
+                                            <th>Status Name</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="s in cancelData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{s.statusId}}</td>
+                                            <td>{{s.statusName}}</td>
+                                            <td ng-init="$parent.totalCancel=$parent.totalCancel+s.orderCount" style="cursor: pointer;" ng-click="TotalOrderCountDetails(fromDate,toDate,s.statusId,s.statusName,dateFormat)" data-toggle="modal" data-target="#totalOrderDetailsModal">
+                                                {{s.orderCount}}
+                                                <i class="fa fa-hand-o-left"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @*Table final stage*@
+                            <div class="col-lg-12 mt-3" ng-init="totalFinalStage=0">
+                                <div class="form-group">
+                                    <h4><b>Final Stage</b><span ng-if="totalFinalStage!=0">({{totalFinalStage}})</span></h4>
+                                </div>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a href="#" ng-click="orderByField = 'statusId'; reverseSort = !reverseSort">
+                                                    Status Id
+                                                </a>
+                                            </th>
+                                            <th>Status Name</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='orderCount'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="s in finalStageOrderData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{s.statusId}}</td>
+                                            <td>{{s.statusName}}</td>
+                                            <td ng-init="$parent.totalFinalStage=$parent.totalFinalStage+s.orderCount" style="cursor: pointer;" ng-click="TotalOrderCountDetails(fromDate,toDate,s.statusId,s.statusName,dateFormat)" data-toggle="modal" data-target="#totalOrderDetailsModal">
+                                                {{s.orderCount}}
+                                                <i class="fa fa-hand-o-left"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Modal Section Start*@
+        <div class="container">
+            <div class="row">
+
+                @*Total Order Details Modal*@
+                <div id="totalOrderDetailsModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title"><b>Order Details - (Status Name - {{statusNameFlag}}) (Status Id - {{statusIdFlag}})</b></h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="spiner-example" ng-show="showLoaderModal">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1"></div>
+                                    <div class="sk-rect2"></div>
+                                    <div class="sk-rect3"></div>
+                                    <div class="sk-rect4"></div>
+                                    <div class="sk-rect5"></div>
+                                </div>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Id'; reverseSort=!reverseSort">
+                                                        Order Id
+                                                    </a>
+                                                </th>
+                                                <th>Customer Name</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CompanyName'; reverseSort = !reverseSort">
+                                                        Company Name
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a ng-if="dateFormat == 1" href="#" ng-click="orderByField='OrderDate'; reverseSort = !reverseSort">
+                                                        Order Date
+                                                    </a>
+                                                    <a ng-if="dateFormat == 2" href="#" ng-click="orderByField='UpdatedOn'; reverseSort = !reverseSort">
+                                                        Comment Date
+                                                    </a>
+                                                </th>
+                                                <th>Is Office Drop</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CollectionTime'; reverseSort=!reverseSort">
+                                                        Collection Time
+                                                    </a>
+
+                                                </th>
+                                                <th>Payment Type</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CollectionAmount'; reverseSort = !reverseSort">
+                                                        Collection Amount
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveryCharge'; reverseSort = !reverseSort">
+                                                        Delivery Charge
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CodCharge'; reverseSort = !reverseSort">
+                                                        Cod Charge
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CourierName'; reverseSort = !reverseSort">
+                                                        Courier Name
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='PodNumber'; reverseSort = !reverseSort">
+                                                        PodNumber
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CollectionCharge'; reverseSort = !reverseSort">
+                                                        Collection Charge
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='ReturnCharge'; reverseSort = !reverseSort">
+                                                        Return Charge
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='RiderName'; reverseSort = !reverseSort">
+                                                        Rider Name
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in totalOrderDetails | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td style="cursor: pointer;" ng-click="getOrderHistoryInformation(a.Id)" data-target="#orderInformationModal" data-toggle="modal">
+                                                    DT-{{a.Id}}
+                                                    <i class="fa fa-hand-o-left"></i>
+                                                </td>
+                                                <td>{{a.CustomerName}}</td>
+                                                <td>{{a.CompanyName}}</td>
+                                                <td>
+                                                    <span ng-if="dateFormat == 1">
+                                                        {{a.OrderDate | date:'medium'}}<br />
+                                                    </span>
+                                                    <span ng-if="dateFormat == 2">
+                                                        {{a.UpdatedOn | date:'medium'}}<br />
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span ng-if="a.OfficeDrop == true">
+                                                        Yes
+                                                    </span>
+                                                    <span ng-if="a.OfficeDrop == false">
+                                                        No
+                                                    </span>
+                                                </td>
+                                                <td>{{a.CollectionTime | date:'medium'}}</td>
+                                                <td>{{a.PaymentType}}</td>
+                                                <td>{{a.CollectionAmount}}</td>
+                                                <td>{{a.DeliveryCharge}}</td>
+                                                <td>{{a.CodCharge}}</td>
+                                                <td>
+                                                    <span ng-if="a.CourierName == ''">
+                                                        N/A
+                                                    </span>
+                                                    <span ng-if="a.CourierName != ''">
+                                                        {{a.CourierName}}
+                                                    </span>
+                                                </td>
+                                                <td>{{a.PodNumber}}</td>
+                                                <td>{{a.CollectionCharge}}</td>
+                                                <td>{{a.ReturnCharge}}</td>
+                                                <td>
+                                                    <span ng-if="a.RiderName != null">
+                                                        {{a.RiderName}}
+                                                    </span>
+                                                    <span ng-if="a.RiderName == null">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="col-lg-12 text-center">
+                                        <button style="text-align:center;" type="button" class="btn btn-secondary" ng-click="LoadMoreTotalOrderCountDetails(fromDate,toDate,statusIdFlag,0,dateFormat)">Load More</button>
+                                        <div id="spinner-front" ng-show="showLoadMoreSpinner">
+                                            <img src="~/Content/loading-spinner.gif" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Total Order Details Modal End*@
+
+                @*Order Information Modal*@
+                <div id="orderInformationModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Order Informations</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <table class="table table-hover" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>OrderId</th>
+                                            <th>Confirmed By</th>
+                                            <th>Order Date</th>
+                                            <th>Confirmation Date</th>
+                                            <th>Status</th>
+                                            <th>Comment</th>
+                                            <th>Hub Name</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="o in OrderInformations">
+                                            <td>{{$index +1}}</td>
+                                            <td>
+                                                {{o.courierOrderId}}
+                                                @*<a ng-href="https://admin.deliverytiger.com.bd/Operation/Operation?orderId={{o.courierOrderId}}"> {{o.courierOrderId}}</a>*@
+                                                @*<a href="" ng-click="redirectToDtOperation(o.courierOrderId)"> {{o.courierOrderId}}</a>
+                                                <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>*@
+                                            </td>
+                                            <td>{{o.isConfirmedBy}}({{o.namePostedBy}})</td>
+                                            <td>{{o.orderDate | date:'medium'}}</td>
+                                            <td>{{o.postedOn | date:'medium'}}</td>
+                                            <td>{{o.statusNameEng}}-{{o.status}}</td>
+                                            <td>{{o.comment}}</td>
+                                            <td>{{o.hubName}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Order Information Modal End*@
+            </div>
+        </div>
+        @*Modal Section End*@
+
+    </div>
+</div>
+
+<script>
+    var app = angular.module('StatusWiseOrderDetailsReportModule', []);
+    app.controller('StatusWiseOrderDetailsReportCtrl', function ($scope, $http) {
+        //URL
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+        var LocalCoreUrl = "http://localhost:58676/api/";
+
+        $scope.totalOrderDetails = [];
+        var collectionShipment = [0, 1, 40, 41, 44];
+        var ownDelivery = 53;
+        var postShipment = [11, 12, 13, 14, 23, 32, 45];
+        var allTypeCancel = [2, 16, 26, 42];
+        var parcelIsInSorting = [7, 8, 9, 10, 36, 37];
+        var returnOrder = [17, 18, 19, 20, 22, 38, 39, 59, 60];
+        var customerUnreachable = [27, 33, 34, 47, 64];
+        var finalStageOrder = [25, 21, 31, 56];
+
+        $scope.dateFormat = 1;
+        $scope.dateFormate = [
+            {
+                'id': 1,
+                'name': 'Order Date',
+            },
+            {
+                'id': 2,
+                'name': 'Comment Date',
+            }
+        ];
+
+        $scope.TotalOrderCount = function (fromDate, toDate, dateFormat) {
+            if (typeof fromDate === 'undefined' || fromDate === "" || typeof toDate === 'undefined' || toDate === "") {
+                alert('Please must be select From and To Date');
+                return false;
+            }
+
+            let requestBodyModel = {
+                'FromDate': fromDate,
+                'ToDate': toDate,
+                'InputDateType': dateFormat
+            };
+
+            $scope.showLoader = true;
+            $http.post(CoreOnlineUrl + 'Report/StatusWiseTotalOrder', requestBodyModel, { header: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.totalOrderDetails = []; //empty modal data on click show button
+                    $scope.statusWiseOrderData = response.data.model;
+                    $scope.collectionShipmentData = $scope.statusWiseOrderData.filter(d => collectionShipment.includes(d.statusId));
+                    $scope.ownDeliveryData = $scope.statusWiseOrderData.filter(d => d.statusId == ownDelivery);
+                    $scope.postShipmentData = $scope.statusWiseOrderData.filter(d => postShipment.includes(d.statusId));
+                    $scope.cancelData = $scope.statusWiseOrderData.filter(d => allTypeCancel.includes(d.statusId));
+                    $scope.parcelIsInSortingData = $scope.statusWiseOrderData.filter(d => parcelIsInSorting.includes(d.statusId));
+                    $scope.returnOrderData = $scope.statusWiseOrderData.filter(d => returnOrder.includes(d.statusId));
+                    $scope.customerUnreachableData = $scope.statusWiseOrderData.filter(d => customerUnreachable.includes(d.statusId));
+                    $scope.finalStageOrderData = $scope.statusWiseOrderData.filter(d => finalStageOrder.includes(d.statusId));
+                }, function error(error) {
+                    $scope.showLoader = false;
+                    console.log(error);
+                });
+        }
+
+        //function call for each status
+        $scope.TotalOrderCountDetails = function (fromDate, toDate, statusId, statusName, dateFormat) {
+            if (typeof fromDate === 'undefined' || fromDate === "" || typeof toDate === 'undefined' || toDate === "") {
+                alert('Please must be select From and To Date');
+                return false;
+            }
+
+            //check whether the status id is changed
+            if ($scope.statusIdFlag != statusId) $scope.totalOrderDetails = [];
+            $scope.statusNameFlag = statusName; //set status name and id globally
+            $scope.statusIdFlag = statusId;
+
+            let requestBodyModel = {
+                'FromDate': fromDate,
+                'ToDate': toDate,
+                'StatusId': parseInt(statusId),
+                'Index': 0,
+                'Count': 20,
+                'DateFlag': dateFormat
+            };
+            if ($scope.totalOrderDetails.length == 0) //call LoadData if this function is called for first time or status id is changed
+                $scope.LoadData(requestBodyModel);
+        }
+
+        //function load more data
+        $scope.LoadMoreTotalOrderCountDetails = function (fromDate, toDate, statusId, index, dateFormat) {
+            if (typeof fromDate === 'undefined' || fromDate === "" || typeof toDate === 'undefined' || toDate === "") {
+                alert('Please must be select From and To Date');
+                return false;
+            }
+
+            if (index == 0) index = $scope.totalOrderDetails.length;
+            let requestBodyModel = {
+                'FromDate': fromDate,
+                'ToDate': toDate,
+                'StatusId': parseInt(statusId),
+                'Index': parseInt(index),
+                'Count': 20,
+                'DateFlag': dateFormat
+            };
+            $scope.LoadData(requestBodyModel);
+        }
+
+        //function call api with post data
+        $scope.LoadData = function (requestBodyModel) {
+            if ($scope.totalOrderDetails.length > 0)
+                $scope.showLoadMoreSpinner = true;
+            else $scope.showLoaderModal = true;
+            $http.post(CoreOnlineUrl + 'Report/StatusWiseTotalOrderDetails', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if ($scope.totalOrderDetails.length == 0) { //first time data load
+                        $scope.showLoaderModal = false;
+                        $scope.totalOrderDetails = response.data.model;
+                    }
+                    else { //push array to load more data
+                        $scope.showLoadMoreSpinner = false;
+                        loadMoreData = response.data.model;
+                        loadMoreData.forEach(insertNewData);
+                        function insertNewData(data) {
+                            $scope.totalOrderDetails.push(data);
+                        }
+                    }
+                }, function error(error) {
+                    $scope.showLoadMoreSpinner = false;
+                    console.log(error);
+                });
+        }
+
+        $scope.getOrderHistoryInformation = function (orderId) {
+            orderId = 'DT-' + orderId;
+            $http.get(CoreOnlineUrl + 'Fetch/OrderUpdateHistory/' + orderId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.OrderInformations = response.data.model;
+                }, function error(error) {
+                    console.log(error);
+                });
+        }
+
+    });
+</script>

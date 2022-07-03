@@ -1,0 +1,171 @@
+﻿
+@{
+    ViewBag.Title = "GetReferrerRefereeList";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<div ng-app="orderModule">
+    <div ng-controller="merchantOrderController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="getReferrerReferee(fromDate, toDate)">Search</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Date
+                                            </th>
+                                            <th>
+                                                Referrer Count
+                                            </th>
+
+                                            <th>
+                                                Free order
+                                            </th>
+                                            <th>
+                                                Use Free order
+                                            </th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="r in referrerReferee.referrer">
+                                            <td>
+                                                {{ r.joinDate | date}}
+                                            </td>
+                                            <td>
+                                                {{r.referrerCount}}
+                                            </td>
+                                            <td>
+                                                {{r.referrerOrder}}
+                                            </td>
+                                            <td>
+                                                {{r.referrerOrderUse}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-lg-6">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Date
+                                            </th>
+                                            <th>
+                                                Referee Count
+                                            </th>
+
+                                            <th>
+                                                Free order
+                                            </th>
+                                            <th>
+                                                Use Free order
+                                            </th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="r in referrerReferee.referee">
+                                            <td>
+                                                {{ r.joinDate | date}}
+                                            </td>
+                                            <td>
+                                                {{r.refereeCount}}
+                                            </td>
+                                            <td>
+                                                {{r.refereeOrder}}
+                                            </td>
+                                            <td>
+                                                {{r.refereeOrderUse}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<script type="text/javascript">
+    var app = angular.module('orderModule', []);
+    app.controller('merchantOrderController', function ($scope, $http) {
+
+        //var OnlineUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+        $scope.getReferrerReferee = function (fromDate, toDate) {
+
+
+            let orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/GetReferrerRefereeList', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(response.data.model);
+                    $scope.referrerReferee = response.data.model;
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        };
+    });
+</script>

@@ -1,0 +1,146 @@
+﻿
+@{
+    ViewBag.Title = "RiderPaymentAdjustment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    })
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+
+<div ng-app="pageModule">
+    <div ng-controller="pageController" ng-init="init()">
+        <div class="row wrapper border-bottom white-bg page-heading">
+            <div class="col-lg-9">
+                <h2 id="title">@ViewBag.Title</h2>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/Admin/Index">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <strong>@ViewBag.Title</strong>
+                    </li>
+                </ol>
+            </div>
+        </div>
+        <div class="ibox">
+            <div class="ibox-title">
+                <h5>Rider Payment Adjustment</h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="container" style="display:flex">
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="row col-lg-12">
+
+                            <div class="col-lg-4">
+                                <div class="form-group row">
+
+                                    <div class="col-lg-8">
+                                        <select class="form-control" ng-model="riderData">
+                                            <option value="-1" selected>Select Rider </option>
+                                            <option ng-repeat="rider in allRiderInfo" value="{{rider.id}}">{{rider.name}}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="form-group">
+
+                                    <input type="text" ng-model="adjustmentAmount" class="form-control" style="width: 80%;" placeholder="Amount">
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="form-group row">
+                                    <button type="button" class="btn btn-success" ng-click="submitAdjustment(riderData,adjustmentAmount)"><strong> Submit </strong></button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+
+    </div>
+</div>
+
+<script>
+    var app = angular.module('pageModule', []);
+    app.controller('pageController', function ($scope, $http) {
+        $scope.riderData = "-1";
+        let userId = sessionStorage.userId;
+
+        $scope.init = () => {
+            $scope.getAllRider();
+
+        }
+
+
+        $scope.getAllRider = () => {
+            $http.get(apiBaseURL + 'Fetch/GetAllDeliveryMan', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allRiderInfo = response.data.model;
+                    $scope.allRiderInfo.sort((a, b) => parseFloat(a.id) - parseFloat(b.id));
+                })
+        }
+
+
+        $scope.submitAdjustment = (riderId, amount) => {
+            if (riderId == "-1" || riderId == null || amount == "" || amount == null) {
+                alert("Please Insert all Information..");
+                return false;
+            }
+            //let  riderPaymentAdjustmentObj = {
+            //    "RiderId": riderId,
+            //    "AdjustMentAmount": amount,
+            //    "PostedBy": userId
+            //  }
+
+            let riderPaymentAdjustmentObj = {
+                "RiderId": parseInt(riderId),
+                "AdjustMentAmount": parseInt(amount),
+                "PostedBy": parseInt(userId)
+
+            }
+            $http.post(admBaseUrl + "account/reports/InsertAndUpdateRiderPaymentAdjustment", riderPaymentAdjustmentObj)
+                .then(function (response) {
+                    if (response.status == 200) {
+                        alert("Successful!!");
+                    }
+                }),
+                function error(response) {
+                 
+                }
+
+        }
+
+        $scope.createExcelSheet = function (tablename) {
+            var element = $('#' + tablename).html();
+            window.open('data:application/vnd.ms-excel,' + encodeURIComponent(element));
+        }
+
+    })
+
+</script>

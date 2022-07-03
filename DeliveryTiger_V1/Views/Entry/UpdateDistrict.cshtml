@@ -1,0 +1,778 @@
+﻿
+@{
+    ViewBag.Title = "UpdateDistrict";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script type="text/javascript">
+    var app = angular.module('updateDistrictModule', []);
+    app.controller('updateDistrictController', function ($scope, $http) {
+
+        //let localUrl = "http://localhost:58676/api/";
+        $scope.isDtOwnSecondMileDelivery = '0';
+        $scope.OwnSecondMileDelivery = '';
+        $scope.district = '-1';
+        $scope.thana = '-1';
+        $scope.isDisabled = true;
+
+        //globally declared variables
+        $scope.globalDistrict = [];
+        $scope.districts = [];
+        $scope.districtName = {};
+        $scope.allThana = [];
+
+        $scope.districtShow = true;
+        $scope.thanaShow = false;
+        $scope.areaShow = false;
+
+        $scope.init = () => {
+            $scope.getAllDistrict();
+        }
+
+        //getAll time slot
+        $scope.getCollectionTimeSlot = () => {
+
+            $scope.showDataTable = true;
+
+            $http.get(apiBaseURL + 'Fetch/GetCollectionTimeSlot',
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+
+                    $scope.timeSlotData = response.data.model;
+
+                    let obj = {
+                        collectionTimeSlotId: 0,
+                        slotName: "Select-Slot"
+                    };
+                    $scope.timeSlotData.push(obj);
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        //get All Districts
+        $scope.getAllDistrict = () => {
+
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + 0, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.globalDistrict = response.data.model;
+                    $scope.districts = response.data.model.filter(d => d.parentId === 0 && d.isActive === true);
+                    $scope.allThana = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+
+                }, function error(response) {
+                })
+        };
+
+        //get All Thana
+        $scope.getAllThana = (district) => {
+            if ($scope.district != "-1") {
+                $scope.isDisabled = false;
+            }
+            else {
+                $scope.isDisabled = true;
+            }
+
+            $scope.thana = '-1';
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + district, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allThanas = response.data.model.filter(d => d.areaType === 3 && d.isActive === true);
+
+                }, function error(response) {
+                })
+
+        }
+        //get All Area
+        $scope.getAllArea = (thana) => {
+            if ($scope.thana != "-1") {
+                $scope.isDisabled = false;
+            }
+            else {
+                $scope.isDisabled = true;
+            }
+
+            $scope.area = '-1';
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + thana, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allAreas = response.data.model.filter(d => d.isActive === true);
+                    $scope.allAreas = $scope.allAreas.map(area => {
+                        return {
+                            ...area,
+                            grandParentId: $scope.allThanas.find(x => x.districtId == area.parentId).parentId
+                        }
+                    });
+                },
+                    function error(response) {
+                    })
+
+        }
+
+        // Search Area
+        $scope.search = (district, thana) => {
+
+            if (+district != -1 && +thana == -1) {
+                $scope.districtShow = false;
+                $scope.thanaShow = true;
+                $scope.areaShow = false;
+
+                $scope.districtName = $scope.districts.find(d => d.districtId === +district).district;
+
+                $scope.getAllThana(+district);
+            }
+            else if (+district != -1 && +thana != -1) {
+                $scope.districtShow = false;
+                $scope.thanaShow = false;
+                $scope.areaShow = true;
+                $scope.districtNames = $scope.districts.find(d => d.districtId === +district).district;
+                $scope.thanaName = $scope.allThanas.filter(d => d.districtId === +thana)[0].district;
+                $scope.getAllArea(+thana);
+            }
+
+        };
+
+        //Modal Data
+        $scope.getModalData = (...parentIds) => {
+
+            let distictId = parentIds[0] ? parentIds[0] : '';
+            let thanaId = parentIds[1] ? parentIds[1] : '';
+            let areaId = parentIds[2] ? parentIds[2] : '';
+
+            $scope.modalData = $scope.globalDistrict.filter(d => d.districtId === +distictId && d.isActive === true);
+            $scope.selectedDistrict = $scope.modalData[0].district;
+            $scope.isDtOwnSecondMileDelivery = $scope.modalData[0].isDtOwnSecondMileDelivery;
+            $scope.isActiveForCorona = $scope.modalData[0].isActiveForCorona;
+            $scope.isActive = $scope.modalData[0].isActive;
+
+            if (thanaId) {
+                $scope.getCollectionTimeSlot();
+                $scope.modalDataForThana = $scope.allThanas.filter(d => d.districtId === +thanaId && d.isActive === true);
+                $scope.selectedThana = $scope.modalDataForThana[0].district;
+                $scope.isDtOwnSecondMileDelivery = $scope.modalDataForThana[0].isDtOwnSecondMileDelivery;
+                $scope.isActiveForCorona = $scope.modalDataForThana[0].isActiveForCorona;
+                $scope.isActive = $scope.modalDataForThana[0].isActive;
+            }
+
+            if (areaId) {
+                $scope.modalDataForArea = $scope.allAreas.filter(d => d.districtId === +areaId && d.isActive === true);
+                $scope.selectedArea = $scope.modalDataForArea[0].districtId;
+                $scope.isDtOwnSecondMileDelivery = $scope.modalDataForArea[0].isDtOwnSecondMileDelivery;
+                $scope.isActiveForCorona = $scope.modalDataForArea[0].isActiveForCorona;
+                $scope.isActive = $scope.modalDataForArea[0].isActive;
+            }
+
+            if ($scope.isDtOwnSecondMileDelivery == true) {
+                $scope.isDtOwnSecondMileDelivery = '1';
+            }
+            else {
+                $scope.isDtOwnSecondMileDelivery = '0';
+            }
+
+
+            if ($scope.isActiveForCorona == true) {
+                $scope.isActiveForCorona = '1';
+            }
+            else {
+                $scope.isActiveForCorona = '0';
+            }
+
+            if ($scope.isActive == true) {
+                $scope.isActive = '1';
+            }
+            else {
+                $scope.isActive = '0';
+            }
+
+        }
+
+        $scope.updateDistrict = (districtId, district, districtBng, postalCode, eDeshMobileNo, tigerMobileNo, districtPriority, isActive, isDtOwnSecondMileDelivery, OwnSecondMileDelivery, isActiveForCorona, redxAreaId, redxAreaName, edeshAreaName, collectionTimeSlotId, nextDayAlertMessage) => {
+
+            if (OwnSecondMileDelivery == undefined || OwnSecondMileDelivery == '') {
+                OwnSecondMileDelivery = '';
+            }
+            if (isDtOwnSecondMileDelivery == '0') {
+                OwnSecondMileDelivery = '';
+            }
+
+            if (collectionTimeSlotId == undefined || collectionTimeSlotId == '') {
+                collectionTimeSlotId = '0';
+            }
+            if (nextDayAlertMessage == undefined) {
+                nextDayAlertMessage = '';
+            }
+
+            var requestBodyModel = {
+                "DistrictId": districtId,
+                "District": district,
+                "DistrictBng": districtBng,
+                "IsDtOwnSecondMileDelivery": +isDtOwnSecondMileDelivery,
+                "EDeshMobileNo": eDeshMobileNo,
+                "TigerMobileNo": tigerMobileNo,
+                "OwnSecondMileDelivery": OwnSecondMileDelivery,
+                "UpdatedBy": +sessionStorage.getItem('userId'),
+                "IsActiveForCorona": +isActiveForCorona,
+                "DistrictPriority": districtPriority,
+                "IsActive": +isActive,
+                "PostalCode": postalCode,
+                "RedxAreaId": +redxAreaId,
+                "RedxAreaName": redxAreaName,
+                "CollectionTimeSlotId": +collectionTimeSlotId,
+                "NextDayAlertMessage": nextDayAlertMessage,
+                "EdeshThana": edeshAreaName
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateDistrict', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Updated Succeefully...!!!");
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        $scope.isDtOwnSecondMileDeliverys = [
+            {
+                'id': '1',
+                'name': 'True'
+            },
+            {
+                'id': '0',
+                'name': 'False'
+            }
+        ]
+
+        $scope.OwnSecondMileDeliverys = [
+            {
+                'id': '',
+                'name': 'Select'
+            },
+            {
+                'id': 'SA',
+                'name': 'SA'
+            },
+            {
+                'id': 'Own Car',
+                'name': 'Own Car'
+            },
+            {
+                'id': 'USB',
+                'name': 'USB'
+            },
+            {
+                'id': 'Postal',
+                'name': 'Postal'
+            }
+        ]
+
+        $scope.isActiveForCoronas = [
+            {
+                'id': '1',
+                'name': 'True'
+            },
+            {
+                'id': '0',
+                'name': 'False'
+            }
+        ]
+
+        $scope.isActives = [
+            {
+                'id': '1',
+                'name': 'True'
+            },
+            {
+                'id': '0',
+                'name': 'False'
+            }
+        ]
+
+    });
+</script>
+
+<div class="row" ng-app="updateDistrictModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="updateDistrictController" data-ng-init="init()">
+        @*Update District Modal*@
+        <div class="modal inmodal fade" id="updateDistrictModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" ng-repeat="o in modalData">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateDistrictModalHeader">Update District</h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">District</label>
+                            <div class="col-lg-4">
+                                @*<select class="form-control" ng-model="selectedDistrict" ng-options="d.districtId as d.district for d in districts" disabled></select>*@
+                                <input type="text" ng-model="o.district" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">District-Bng</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.districtBng" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">PostalCode</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.postalCode" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Mobile</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.eDeshMobileNo" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Tiger Mobile</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.tigerMobileNo" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">District Priority</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.districtPriority" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Redx Area Id</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.redxAreaId" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Redx Area Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.redxAreaName" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">E-Desh Area Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.edeshThana" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Is Active</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isActive" ng-options="d.id as d.name for d in isActives"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Temporary On/Off</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isActiveForCorona" ng-options="d.id as d.name for d in isActiveForCoronas"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Second Mile Delivery</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isDtOwnSecondMileDelivery" ng-options="d.id as d.name for d in isDtOwnSecondMileDeliverys"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row" ng-show="isDtOwnSecondMileDelivery">
+                            <label class="col-lg-4 col-form-label">Own Car/SA</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="o.ownSecondMileDelivery" ng-options="d.id as d.name for d in OwnSecondMileDeliverys"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Next Day Alert Message</label>
+                            <div class="col-lg-4">
+                                <textarea ng-model="o.nextDayAlertMessage" class="form-control" style="height:auto;margin-bottom: 10px;" rows="3"></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="updateDistrict(o.districtId,o.district,o.districtBng,o.postalCode,o.eDeshMobileNo,o.tigerMobileNo,o.districtPriority,isActive,isDtOwnSecondMileDelivery,o.ownSecondMileDelivery,isActiveForCorona,o.redxAreaId, o.redxAreaName,o.edeshThana,o.collectionTimeSlotId,o.nextDayAlertMessage)" data-dismiss="modal">Update</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*Update Thana Modal*@
+        <div class="modal inmodal fade" id="updateThanaModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" ng-repeat="o in modalDataForThana">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateThanaModalHeader">Update Thana</h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">District</label>
+                            <div class="col-lg-4">
+                                @*<select class="form-control" ng-model="selectedDistrict" ng-options="d.districtId as d.district for d in districts" disabled></select>*@
+                                <input type="text" ng-model="selectedDistrict" class="form-control" disabled />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Thana</label>
+                            <div class="col-lg-4">
+                                @*<select class="form-control" ng-model="selectedThana" ng-options="d.districtId as d.district for d in allThanas" disabled></select>*@
+                                <input type="text" ng-model="o.district" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Thana-Bng</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.districtBng" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">PostalCode</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.postalCode" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Mobile</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.eDeshMobileNo" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Tiger Mobile</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.tigerMobileNo" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">District Priority</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.districtPriority" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Redx Area Id</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.redxAreaId" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Redx Area Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.redxAreaName" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">E-Desh Area Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.edeshThana" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Is Active</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isActive" ng-options="d.id as d.name for d in isActives"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Temporary On/Off</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isActiveForCorona" ng-options="d.id as d.name for d in isActiveForCoronas"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Second Mile Delivery</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isDtOwnSecondMileDelivery" ng-options="d.id as d.name for d in isDtOwnSecondMileDeliverys"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row" ng-show="isDtOwnSecondMileDelivery">
+                            <label class="col-lg-4 col-form-label">Own Car/SA</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="o.ownSecondMileDelivery" ng-options="d.id as d.name for d in OwnSecondMileDeliverys"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Collection Time Slot</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="o.collectionTimeSlotId" ng-options="d.collectionTimeSlotId as d.slotName +' ('+ d.formattingStartTime +' - '+ d.formattingEndTime +')' for d in timeSlotData"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Next Day Alert Message</label>
+                            <div class="col-lg-4">
+                                <textarea ng-model="o.nextDayAlertMessage" class="form-control" style="height:auto;margin-bottom: 10px;" rows="3"></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="updateDistrict(o.districtId,o.district,o.districtBng,o.postalCode,o.eDeshMobileNo,o.tigerMobileNo,o.districtPriority,isActive,isDtOwnSecondMileDelivery,o.ownSecondMileDelivery,isActiveForCorona,o.redxAreaId,o.redxAreaName,o.edeshThana,o.collectionTimeSlotId, o.nextDayAlertMessage)" data-dismiss="modal">Update</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*Update Area Modal*@
+        <div class="modal inmodal fade" id="updateAreaModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" ng-repeat="o in modalDataForArea">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateAreaModalHeader">Update Area</h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">District</label>
+                            <div class="col-lg-4">
+                                @*<select class="form-control" ng-model="selectedDistrict" ng-options="d.districtId as d.district for d in districts" disabled></select>*@
+                                <input type="text" ng-model="selectedDistrict" class="form-control" disabled />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Thana</label>
+                            <div class="col-lg-4">
+                                @*<select class="form-control" ng-model="selectedThana" ng-options="d.districtId as d.district for d in allThanas" disabled></select>*@
+                                <input type="text" ng-model="selectedThana" class="form-control" disabled />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Area</label>
+                            <div class="col-lg-4">
+                                @*<select class="form-control" ng-model="selectedArea" ng-options="d.districtId as d.district for d in allAreas" disabled></select>*@
+                                <input type="text" ng-model="o.district" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Area-Bng</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.districtBng" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">PostalCode</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.postalCode" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Mobile</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.eDeshMobileNo" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Tiger Mobile</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.tigerMobileNo" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">District Priority</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.districtPriority" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Redx Area Id</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.redxAreaId" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Redx Area Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.redxAreaName" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">E-Desh Area Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="o.edeshThana" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Is Active</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isActive" ng-options="d.id as d.name for d in isActives"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Temporary On/Off</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isActiveForCorona" ng-options="d.id as d.name for d in isActiveForCoronas"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Second Mile Delivery</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isDtOwnSecondMileDelivery" ng-options="d.id as d.name for d in isDtOwnSecondMileDeliverys"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row" ng-show="isDtOwnSecondMileDelivery">
+                            <label class="col-lg-4 col-form-label">Own Car/SA</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="o.ownSecondMileDelivery" ng-options="d.id as d.name for d in OwnSecondMileDeliverys"></select>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="updateDistrict(o.districtId,o.district,o.districtBng,o.postalCode,o.eDeshMobileNo,o.tigerMobileNo,o.districtPriority,isActive,isDtOwnSecondMileDelivery,o.ownSecondMileDelivery,isActiveForCorona,o.redxAreaId, o.redxAreaName,o.edeshThana,o.collectionTimeSlotId,o.nextDayAlertMessage)" data-dismiss="modal">Update</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Modal End*@
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="margin-right:5px;" type="text" class="form-control-lg form-control col-lg-2" placeholder="Search" ng-model="mainSearch" />
+                                <div class="col-lg-3">
+                                    <div class="form-group row">
+                                        <select ng-model="district" class="form-control" ng-change="getAllThana(district)">
+                                            <option value="-1" selected>Select District</option>
+                                            <option ng-repeat="d in districts" value="{{d.districtId}}">{{d.district}} ({{d.districtId}})</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group row">
+                                        <select ng-model="thana" class="form-control" ng-disabled="isDisabled">
+                                            <option value="-1" selected>Select Thana</option>
+                                            <option ng-repeat="t in allThanas" value="{{t.districtId}}">{{t.district}} ({{t.districtId}})</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button type="button" ng-click="search(district, thana)" class="btn btn-primary">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+
+                <table class="table table-bordered" ng-show="districtShow">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>District</th>
+                            <th>District-Bng</th>
+                            <th>Postal</th>
+                            <th>Edesh-Mobile</th>
+                            <th>Tiger-Mobile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="d in districts | filter:mainSearch ">
+                            <td>{{$index +1}}</td>
+                            <td>{{d.district}} ({{d.districtId}})</td>
+                            <td>{{d.districtBng}} ({{d.districtId}})</td>
+                            <td>{{d.postalCode}}</td>
+                            <td>{{d.eDeshMobileNo}}</td>
+                            <td>{{d.tigerMobileNo}}</td>
+
+                            <td style='white-space: nowrap'>
+
+                                <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="getModalData(d.districtId)" data-toggle="modal" data-target="#updateDistrictModal"><strong><i class='fa fa-pencil'></i></strong></button>
+
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-bordered" ng-show="thanaShow">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>District</th>
+                            <th>Thana</th>
+                            <th>Thana-Bng</th>
+                            <th>Postal</th>
+                            <th>Edesh-Mobile</th>
+                            <th>Tiger-Mobile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="d in allThanas | filter:mainSearch">
+                            <td>{{$index +1}}</td>
+                            <td>{{districtName}}</td>
+                            <td>{{d.district}} ({{d.districtId}})</td>
+                            <td>{{d.districtBng}} ({{d.districtId}})</td>
+                            <td>{{d.postalCode}}</td>
+                            <td>{{d.eDeshMobileNo}}</td>
+                            <td>{{d.tigerMobileNo}}</td>
+
+                            <td style='white-space: nowrap'>
+
+                                <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="getModalData(d.parentId, d.districtId)" data-toggle="modal" data-target="#updateThanaModal"><strong><i class='fa fa-pencil'></i></strong></button>
+
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table class="table table-bordered" ng-show="areaShow">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>District</th>
+                            <th>Thana</th>
+                            <th>Area</th>
+                            <th>Area-Bng</th>
+                            <th>Postal</th>
+                            <th>Edesh-Mobile</th>
+                            <th>Tiger-Mobile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="d in allAreas | filter:mainSearch">
+                            <td>{{$index +1}}</td>
+                            <td>{{districtNames}}</td>
+                            <td>{{thanaName}}</td>
+                            <td>{{d.district}} ({{d.districtId}})</td>
+                            <td>{{d.districtBng}} ({{d.districtId}})</td>
+                            <td>{{d.postalCode}}</td>
+                            <td>{{d.eDeshMobileNo}}</td>
+                            <td>{{d.tigerMobileNo}}</td>
+
+                            <td style='white-space: nowrap'>
+
+                                <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="getModalData(d.grandParentId, d.parentId, d.districtId)" data-toggle="modal" data-target="#updateAreaModal"><strong><i class='fa fa-pencil'></i></strong></button>
+
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br />
+                <br />
+                <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+

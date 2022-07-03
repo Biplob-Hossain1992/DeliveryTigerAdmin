@@ -1,0 +1,372 @@
+﻿
+@{
+    ViewBag.Title = "GetAllRiders";
+}
+<style>
+    .activetoggle, .inactivetoggle {
+        font-size: 40px;
+        cursor: pointer;
+    }
+
+    .activetoggle, .inactivetoggle {
+        font-size: 40px;
+        cursor: pointer;
+    }
+
+    i.activetoggle {
+        color: #5cb85c
+    }
+
+    i.inactivetoggle {
+        color: #d9534f
+    }
+</style>
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<script type="text/javascript">
+
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http, $timeout) {
+
+        $scope.userId = sessionStorage.getItem("userId");
+        //var OnlineUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+        $scope.riderTypes = [
+            {
+                "id": '',
+                "name": "Select"
+            },
+            {
+                "id": 'all',
+                "name": "All"
+            },
+            {
+                "id": 'return',
+                "name": "Return"
+            }
+        ];
+        $scope.riderActive = [
+            {
+                'isActive': 1,
+                'name': 'True'
+            },
+            {
+                'isActive': 0,
+                'name': 'False'
+            }
+        ];
+        $scope.riderType = '';
+        $scope.hubName = [
+            {
+                'id': 0,
+                'name': "Select Hub",
+                'value': "",
+            }
+        ];
+
+        angular.element(document).ready(function () {
+            $timeout(function () {
+                $http.get(apiBaseURL + 'Fetch/GetAllHubs', { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        hubnames = response.data.model;
+                        hubnames.forEach(addHubNames);
+                        function addHubNames(item) {
+                            $scope.hubName.push(item);
+                        }
+                    }, function error(error) {
+                            console.log(error);
+                    });
+            }, 2000);
+        });
+
+        getAllRiders();
+        function getAllRiders() {
+            $http.get(apiBaseURL + 'Fetch/GetLocationAssignDeliveryMan', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allRiderss = response.data.model;
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+
+        $scope.changePermanentRider = function (isPermanentRider, riderId) {
+
+            let rider = {
+                Id: riderId,
+                IsPermanentRider: isPermanentRider
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateIsPermanentRider/' + riderId, rider,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    getAllRiders();
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.changeOffOnStatus = function (offOnStatus, riderId) {
+
+            let rider = {
+                Id: riderId,
+                IsNowOffline: offOnStatus
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateNowOfflineRiders/' + riderId, rider,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    getAllRiders();
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.removeRiderAllAcceptedOrder = function (riderId) {
+            $http.get(ajkerdealBaseUrl + 'api/SelfDelivery/UserAccess/' + riderId + '/true/1', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (respose) {
+                    getAllRiders();
+                }, function error(response) {
+                    console.log(response.data);
+                    getAllRiders();
+                });
+        }
+        $scope.changeRiderType = function (riderId, riderType) {
+            let rider = {
+                Id: riderId,
+                RiderType: riderType
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateRiderTypeOfDeliveryBondhu/' + riderId, rider,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    getAllRiders();
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+
+        }
+
+
+        $scope.UpdateRiderInfo = (riderObj) => {
+
+            $scope.updateObj = {
+                'id': riderObj.id,
+                'riderName': riderObj.name,
+                'riderMobile': riderObj.mobile,
+                'riderType': {
+                    'id': riderObj.riderType
+                },
+                'isActive': riderObj.isActive,
+                'hubName': riderObj.hubName
+            };
+            //alert('Inside Update');
+        }
+
+
+        $scope.UpdateProcess = (updateObj) =>{
+
+            console.log(updateObj);
+            if (confirm('Are you sure?')) {
+
+                let sendObj = {
+                    id: updateObj.id,
+                    name: updateObj.riderName,
+                    mobile: updateObj.riderMobile,
+                    riderType: updateObj.riderType.id,
+                    isActive: updateObj.isActive,
+                    hubName: updateObj.hubName
+                }
+
+                let url = apiBaseURL + 'Update/UpdateDeliveryUsers/' + $scope.userId;
+                $http.put(url, sendObj, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                    .then(function (response) {
+                        if (response.data.didError){
+                            alert('Update was unsuccessful');
+                            getAllRiders();
+                            return false;
+                        }
+
+                        alert('Update Successful');
+                        getAllRiders();
+                    }), function error() {
+                        alert('Something went Wrong');
+                        return false;
+                    }
+            }
+
+        }
+
+    });
+
+</script>
+<h2 style="text-align:center;">All Riders</h2>
+
+<div ng-app="myModule">
+    <div ng-controller="myController">
+        <div class="row">
+            <div class="col-lg-12">
+                <br />
+                <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                <table class="table table-bordered" id="tlb">
+                    <thead>
+                        <tr>
+                            <th>
+                                #
+                            </th>
+                            <th>
+                                Rider Name
+                            </th>
+
+                            <th>
+                                Mobile
+                            </th>
+                            @*<th>
+                                Rider Type
+                            </th>*@
+                            <th>
+                                Permanent Rider (<span style="color:red;">No</span>/<span style="color:limegreen;">Yes</span>)
+                            </th>
+                            <th>
+                                NowOffline (<span style="color:red;">OFF</span>/<span style="color:limegreen;">ON</span>)
+                            </th>
+                            <th>
+                                Rider Order Cancel
+                            </th>
+                            <th>
+                                Location
+                            </th>
+                            <th>
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @*<tr ng-repeat="o in allRiderss | filter:mainSearch | orderBy:'-isNowOffline'">*@
+                        <tr ng-repeat="o in allRiderss | filter:mainSearch">
+                            <td>
+                                {{$index +1}}
+                            </td>
+                            <td>
+                                {{o.name}} ({{o.id}})
+                            </td>
+                            <td>
+                                {{ o.mobile}}
+                            </td>
+                            @*<td>
+                                <select class="form-control" ng-change="changeRiderType(o.id, o.riderType)" ng-model="o.riderType" ng-options="riderType.id as riderType.name for riderType in riderTypes"></select>
+                            </td>*@
+                            <td>
+                                <i class="fa fa-toggle-on activetoggle"
+                                   ng-if="o.isPermanentRider == true"
+                                   ng-click="changePermanentRider(false, o.id)">
+                                </i>
+                                <i class="fa fa-toggle-on fa-rotate-180 inactivetoggle"
+                                   ng-if="o.isPermanentRider == false"
+                                   ng-click="changePermanentRider(true,o.id)">
+                                </i>
+                            </td>
+                            <td>
+                                <i class="fa fa-toggle-on activetoggle"
+                                   ng-if="o.isNowOffline == false"
+                                   ng-click="changeOffOnStatus(true, o.id)">
+                                </i>
+                                <i class="fa fa-toggle-on fa-rotate-180 inactivetoggle"
+                                   ng-if="o.isNowOffline == true"
+                                   ng-click="changeOffOnStatus(false,o.id)">
+                                </i>
+                            </td>
+                            <td>
+                                <i class="fa fa-trash-o" aria-hidden="true" style="font-size:48px"
+                                   ng-click="removeRiderAllAcceptedOrder(o.id)">
+                                </i>
+                            </td>
+                            <td>
+
+                                <a href="https://maps.google.com/?q={{o.latitude}},{{o.longitude}}" target="_blank"><i class="fa fa-globe" aria-hidden="true" style="font-size:48px"> </i></a>
+                                <p>last update time: {{o.updatedOn}}</p>
+                            </td>
+                            <td>
+                                <button type="submit" id="SubmitBtn" class="btn btn-primary" ng-click="UpdateRiderInfo(o)" data-toggle="modal" data-target="#updateModal" data-backdrop="static" data-keyboard="false"><strong>Update</strong></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br />
+        <br />
+
+        <div class="modal inmodal fade" id="updateModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title">Rider Update</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="col-lg-12 align-content-center">
+                            <div class="row form-group">
+                                <div class="col-md-4">
+                                    <label class="col-form-label"><b>Name</b></label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="text" ng-model="updateObj.riderName" class="form-control" placeholder="...Rider Name" />
+                                </div>
+                            </div>
+                            <div class="row form-group">
+                                <div class="col-md-4">
+                                    <label class="col-form-label"><b>Mobile</b></label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="text" ng-model="updateObj.riderMobile" class="form-control" placeholder="...Rider Mobile" />
+                                </div>
+                            </div>
+                            <div class="row form-group">
+                                <div class="col-md-4">
+                                    <label class="col-form-label"><b>Rider Type</b></label>
+                                </div>
+                                <div class="col-md-8">
+                                    <select ng-model="updateObj.riderType.id" class="form-control" ng-options="riderType.id as riderType.name for riderType in riderTypes">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row form-group">
+                                <div class="col-md-4">
+                                    <label class="col-form-label"><b>Is Active</b></label>
+                                </div>
+                                <div class="col-md-8">
+                                    <select ng-model="updateObj.isActive" class="form-control" ng-options="active.isActive as active.name for active in riderActive">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row form-group">
+                                <div class="col-md-4">
+                                    <label class="col-form-label"><b>Hub</b></label>
+                                </div>
+                                <div class="col-md-8">
+                                    <select ng-model="updateObj.hubName" class="form-control" ng-options="hub.value as hub.name for hub in hubName">
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                        <div><button type="button" class="btn btn-success" data-dismiss="modal" ng-click="UpdateProcess(updateObj)">Update</button></div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+

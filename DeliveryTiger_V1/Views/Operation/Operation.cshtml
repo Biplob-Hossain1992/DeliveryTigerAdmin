@@ -1,0 +1,658 @@
+﻿
+@{
+    ViewBag.Title = "Operation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/Operation/Operation.js"></script>
+
+<script src="~/Scripts/plugins/dataTables/dataTables.bootstrap4.min.js"></script>
+<script src="~/Scripts/plugins/dataTables/datatables.min.js"></script>
+<link href="~/Content/plugins/dataTable/datatables.min.css" rel="stylesheet" />
+<link href="~/Content/plugins/select2/select2.min.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/select2/select2.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/jsbarcode/3.6.0/JsBarcode.all.min.js"></script>
+<script>
+    var AllStatusGroupWiseData;
+
+    $(document).ready(function () {
+
+         if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+             $("#UserHidden").val(sessionStorage.getItem("userId"));
+             //$("#deliveryChargeSectionId").hide();
+             //if (sessionStorage.getItem("userId") == 115 || sessionStorage.getItem("userId") == 67) {
+             //    $("#deliveryChargeSectionId").show();
+             //}
+
+             let priorityField = window.location.search
+             if (priorityField != '') {
+                 priorityField = priorityField.split("?")[1].split("=")[1];
+             }
+             priorityField == 'priority' && loadOrderDetails();
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+             loadAllStatus("Status");
+             loadAllStatusGroupWise();
+             LoadAllDistrictsOperation();
+             LoadDeliveryRange();
+             var AllMerchantInfo;
+             //loadMerchantInfo("Merchant");
+             //loadMerchantInfoList("Merchant");
+             $("#Merchant").select2();
+             $(document).on('keyup keydown', 'input.select2-search__field', function (e) {
+
+                 //keyup keydown
+                 //keypress
+                 //console.log(e.keyCode);
+                 let selectTagId = "Merchant";
+                 //console.log($("input.select2-search__field").val());
+                 if ($("input.select2-search__field").val().length >= 2) {
+                     let searchData = $("input.select2-search__field").val();
+                     let url = apiBaseURL + "Fetch/GetAllCourierUsersList/" + searchData;
+                     $.ajax({
+                         type: "GET",
+                         headers: { "Authorization": "Bearer " + sessionStorage.getItem("token").trim() },
+                         crossDomain: true,
+                         url: url,
+                         contentType: "application/json",
+                         dataType: 'json',
+                         success: function (response) {
+                             if (response != null) {
+                                 AllMerchantInfo = response.model;
+                                 //console.log(AllMerchantInfo);
+                                 DrawMerchantListData(response.model, selectTagId);
+                             }
+                             else {
+                                 alert("Error.");
+                             }
+                         },
+                         Error: function (response) {
+                             console.log(response);
+                             alert("Error.");
+                         }
+                     });
+                 }
+
+             });
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+</script>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div class="row">
+    @{string priorityField = Request.QueryString["priority"];}
+    @if (priorityField != "priority")
+    {
+        @Html.Partial("SearchField")
+    }
+
+</div>
+<input id="UserHidden" type="hidden" value="" />
+<div class="row" id="orderDetailDiv" style="display:none;">
+    <div class="col-lg-12">
+        <div class="ibox">
+            <div class="ibox-title">
+                <h5>Order Details <small>Detailed Order From Search Result</small></h5>
+                <span class="label label-primary" id="totalOrderCount"></span>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="table-responsive" style="padding:0px;" id="orderDetailTable">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*Action Button Group Modal*@
+<div class="modal inmodal fade" id="groupWiseButtonModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-sm" style="max-width:450px;">
+        <div class="modal-content">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="groupWiseButtonModalHeader"></h5>
+            </div>
+            <div class="modal-body">
+                <div id="groupWiseButtonModalBody" style="padding:0px;">
+                </div>
+                <br />
+                <div id="hubGroup" style="display:inline-flex;">
+                    <select id="hubId" style="margin-right:10px;" class="form-control"></select>
+                    <button type="button" class="btn btn-warning" onclick="updateSelectiveStatus()">Update</button>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Packaging Modal*@
+<div class="modal inmodal fade" id="PackagingModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none; overflow-x: auto;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="height:600px;width:750px;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="PackagingModalHeader">Package</h5>
+            </div>
+            <div class="modal-body">
+                <div id="PackagingModalBody" style="padding:0px;">
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white pull-left" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning pull-left" id="onlyPrintBtn" data-dismiss="modal">Only Print</button>
+                <div class="col-lg-4">
+                    <select id="courier" class="form-control" onchange="setWeightField()">
+                        <option value="-1" selected>Select Courier</option>
+                        <option value="28">Postal</option>
+                        <option value="32">E-Desh</option>
+                        <option value="34">Redx</option>
+                        <option value="49">Steadfast</option>
+                        <option value="30">Paperfly</option>
+                        <option value="52">Khulna Tiger</option>
+                        <option value="51">Sylhet Tiger</option>
+                        <option value="50">Chittagong Tiger</option>
+                        <option value="53">Narayangonj Tiger</option>
+                        <option value="54">Gazipur Tiger</option>
+                        <option value="55">Dhaka Tiger</option>
+                        <option value="56">Coxsbazar Tiger</option>
+                        <option value="57">Jatrabari Tiger</option>
+                        <option value="58">Uttara Tiger</option>
+                        <option value="59">Mirpur10 Tiger</option>
+                        <option value="60">Mirpur01 Tiger</option>
+                        <option value="61">Lalmatia Tiger</option>
+                        <option value="62">NewMarket Tiger</option>
+                        <option value="63">Islampur Tiger</option>
+                        <option value="64">Santinagar Tiger</option>
+                        <option value="65">Gulisthan Tiger</option>
+                        <option value="66">Rampura Tiger</option>
+                        <option value="67">Badda Tiger</option>
+                        <option value="69">KawranBazar Tiger</option>
+                        <option value="75">Savar Tiger</option>
+                    </select>
+                </div>
+                <div class="col-lg-3" id="epostWeightField" style="display:none;padding-left:0px;padding-right:0px;">
+                    <div class="col-lg-12" style="display:flex;padding:0px;">
+                        <div class="col-lg-5" style="padding:0px;"><button type="button" class="btn btn-white pull-left">Weight: </button></div>
+                        <div class="col-lg-7" style="padding:0px;">
+                            <input class="form-control" type="number" id="epostWeight" value=".400" />
+                        </div>
+
+                    </div>
+                </div>
+                <button style="display:none;" type="button" class="btn btn-success" id="printPackageBtn">Print</button>
+                @*<button style="display:none;" type="button" class="btn btn-primary" id="onlyStatusUpdateBtn">Only Update</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+@*Epost Invoice Modal*@
+<div class="modal inmodal fade" id="epostInvoiceModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="height:auto;width:750px;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="epostInvoiceModalHeader">Bangladesh Postal Service Invoice</h5>
+            </div>
+            <div class="modal-body">
+                <div id="epostInvoiceModalBody" class="col-md-12 table-container" style="padding:0px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                @*<div class="col-lg-4">
+                        <input class="form-control" type="number" id="epostWeight" value="400" onkeyup="calculateEpostDeliveryCharge();" />
+                    </div>*@
+                <button type="button" class="btn btn-white pull-left" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="printEpostInvoiceBtn">Print</button>
+            </div>
+        </div>
+    </div>
+</div>
+@*Show All Comments Modal*@
+<div class="modal inmodal fade" id="showAllCommentsModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="height:auto;width:950px;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="showAllCommentsModalHeader">All Comments</h5>
+            </div>
+            <div class="modal-body">
+                <div id="showAllCommentsModalBody" style="padding:0px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@*Update Order Modal*@
+<div class="modal inmodal fade" id="updateOrderModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="height:auto;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="updateOrderModalHeader">Update Order</h5>
+            </div>
+            <div class="modal-body" style="padding:30px 20px 20px 20px;">
+                <div class="col-lg-12" id="updateOrderModalBody" style="padding:0px;">
+                    <input type="hidden" id="orderIdHiddenField" />
+                    <input type="hidden" id="idHiddenField" />
+                    <input type="hidden" id="offerCodeHiddenField" />
+                    <input type="hidden" id="offerCodDiscountHiddenField" />
+                    <input type="hidden" id="offerBkashDiscountHiddenField" />
+                    <input type="hidden" id="isOfferCodActiveHiddenField" />
+                    <input type="hidden" id="isOfferBkashActiveHiddenField" />
+                    <input type="hidden" id="classifiedIdHiddenField" />
+                    <input type="hidden" id="offerType" />
+                    <input type="hidden" id="deliveryCharge" />
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Customer Name</label>
+                        <div class="col-lg-8">
+                            <input type="text" id="customerName" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Customer Mobile</label>
+                        <div class="col-lg-8">
+                            <input type="text" id="customerMobile" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Alternate Mobile</label>
+                        <div class="col-lg-8">
+                            <input type="text" id="alternateMobile" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Customer Address</label>
+                        <div class="col-lg-8">
+                            <textarea type="text" id="customerAddress" class="form-control" style="height:auto" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Product Name</label>
+                        <div class="col-lg-8">
+                            <input type="text" id="productName" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Collection Address</label>
+                        <div class="col-lg-8">
+                            <textarea type="text" id="collectionAddress" class="form-control" style="height:auto" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    @*<div class="form-group row" id="deliveryChargeSectionId">
+                            <label class="col-lg-4 col-form-label">Delivery Charge</label>
+                            <div class="col-lg-4">
+                                <input type="number" id="deliveryCharge" class="form-control" />
+                            </div>
+                            <div class="col-lg-4">
+                                <input type="checkbox" checked id="deliveryChargeApply">
+                                <label>Apply</label>
+                            </div>
+                        </div>*@
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Packaging Charge</label>
+                        <div class="col-lg-8">
+                            <select id="packaging" class="form-control"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Product Type</label>
+                        <div class="col-lg-8">
+                            <select id="productType" class="form-control">
+                                <option value="big">Big</option>
+                                <option value="small">Small</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Weight</label>
+                        <div class="col-lg-8">
+                            <select id="weight" onchange="weightChange(this);" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">AlltoAll/CitytoCity</label>
+                        <div class="col-lg-8">
+                            <select id="serviceType" onchange="serviceTypeOnchange(this);" class="form-control">
+                                <option value="citytocity">City-to-City</option>
+                                <option value="alltoall">All-to-All</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Service Type</label>
+                        <div class="col-lg-8">
+                            <select id="deliveryType" class="form-control"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">District</label>
+                        <div class="col-lg-8">
+                            <select id="district" onchange="districtOnchange(this);" class="form-control"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Thana</label>
+                        <div class="col-lg-8">
+                            <select id="thana" onchange="thanaOnchange(this);" class="form-control"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Area</label>
+                        <div class="col-lg-8">
+                            <select id="area" class="form-control"></select>
+                        </div>
+                    </div>
+
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Collect District</label>
+                        <div class="col-lg-8">
+                            <select id="collectDistrict" onchange="collectDistrictOnchange(this);" class="form-control"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Collect Thana</label>
+                        <div class="col-lg-8">
+                            <select id="collectThana" class="form-control"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Office Drop</label>
+                        <div class="col-lg-8">
+                            <select id="officeDrop" class="form-control">
+                                <option value="1">অফিস এ ড্রপ করতে চাই</option>
+                                <option value="0">অফিস এ ড্রপ করতে চাই না</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Merchant Delivery Date</label>
+                        <div class="col-lg-8">
+                            <input type="text" id="merchantDeliveryDate" class="form-control datepicker" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Merchant Collection Date</label>
+                        <div class="col-lg-8">
+                            <input type="text" id="merchantCollectionDate" class="form-control datepicker" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row" id="makeNormalOrder">
+                        <label class="col-lg-4 col-form-label">Make Normal Order</label>
+                        <div class="col-lg-6">
+                            <div class="input-group m-b">
+                                <div class="input-group-prepend">
+                                    @*<span class="input-group-addon">*@
+                                    <label>
+                                        <input type="checkbox" id="normalOrder" style="height:30px; width:30px;" />
+                                    </label>
+                                    @*</span>*@
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-success" data-dismiss="modal" onclick="updateOrderInfo()">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+@*onverificationModal*@
+<div class="modal inmodal fade" id="onverificationModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content" style="height:auto;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="showAllCommentsModalHeader">On Verification</h5>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-lg-4 col-form-label">Comment</label>
+                    <div class="col-lg-8">
+                        <input type="text" id="onVerificationComment" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="onVerificationUpdateButton">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Invoice Number Update Modal*@
+<div class="modal inmodal fade" id="updateInvoiceNumberModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="height:auto; width:730px;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="updateInvoiceNumberModalHeader">Update Invoice Number</h5>
+            </div>
+            <div class="modal-body" style="padding:30px 20px 20px 20px;">
+                <div class="col-lg-12" id="updateInvoiceNumberModalBody" style="padding:0px;">
+                    <input type="hidden" id="idHiddenField" />
+                    <div class="form-group row">
+                        <label class="col-lg-3 col-form-label">Invoice Courier</label>
+                        <div class="col-lg-4">
+                            <select id="invoiceCourier" class="form-control">
+                                <option value="sa">SA</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-3 col-form-label">Invoice Number</label>
+                        <div class="col-lg-4">
+                            <input type="text" id="invoiceNumber" class="form-control" />
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-success" data-dismiss="modal" onclick="UpdateInvoiceNumber()">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*probableLostModal*@
+<div class="modal inmodal fade" id="probableLostModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content" style="height:auto;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="dynamicLostModalHeader"></h5>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-lg-4 col-form-label">Comment</label>
+                    <div class="col-lg-8">
+                        <input type="text" id="probableLostComment" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="probableLostUpdateButton">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal inmodal fade" id="MailandSmsModal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content" style="height:auto;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="dynamicLostModalHeader">Send Mail and SMS</h5>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-lg-4 col-form-label">Date</label>
+                    <div class="col-lg-8">
+                        <input type="date" id="smsDate" class="form-control" />
+                    </div>
+                    <input type="hidden" id="statusId" />
+                    <input type="hidden" id="hiddenObjString" />
+                    <input type="hidden" id="hiddenObjstatusName" />
+                    <input type="hidden" id="hiddenObjstatusModel" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="UpdateandSend($('#smsDate').val(), $('#statusId').val(), $('#hiddenObjString').val(),$('#hiddenObjstatusName').val(),$('#hiddenObjstatusModel').val())">Update and Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Show Rider Info Modal*@
+<div class="modal inmodal fade" id="riderInfoModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="height:auto;width:500px;margin-left:160px;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="riderInfoModalHeader">Rider Info</h5>
+            </div>
+            <div class="modal-body">
+                <div id="riderInfoModalBody" style="padding:0px;">
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Rider Name</label>
+                        <div class="col-lg-8">
+                            <input type="text" id="riderName" class="form-control" disabled />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-lg-4 col-form-label">Mobile</label>
+                        <div class="col-lg-8">
+                            <input type="text" id="riderMobile" class="form-control" disabled />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*DateModal for 15 Status*@
+<div class="modal inmodal fade" id="dateModal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content" style="height:auto;">
+
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-lg-4 col-form-label">Date</label>
+                    <div class="col-lg-6">
+                        <input type="date" id="selectedDate" class="form-control" />
+                    </div>
+                    <input type="hidden" id="statusId15" />
+                    <input type="hidden" id="hiddenObjString15" />
+                    <input type="hidden" id="hiddenObjstatusName15" />
+                    <input type="hidden" id="hiddenObjstatusModel15" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="changeOrderStatus($('#hiddenObjString15').val(), $('#statusId15').val(), $('#hiddenObjstatusName15').val(), $('#hiddenObjstatusModel15').val())">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*addCustomCommentModal*@
+<div class="modal inmodal fade" id="addCustomCommentModal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content" style="height:auto;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="addCustomCommentModalHeader"></h5>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-lg-4 col-form-label">Add Comment</label>
+                    <div class="col-lg-8">
+                        <input style="height:60px;" type="text" id="addCustomComment" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="addCustomCommentButton">Add Comment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Show Custom Comments Modal*@
+<div class="modal inmodal fade" id="showCustomCommentsModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="height:auto;width:950px;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="showCustomCommentsModalHeader">Custom Comments</h5>
+            </div>
+            <div class="modal-body">
+                <div id="showCustomCommentsModalBody" style="padding:0px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

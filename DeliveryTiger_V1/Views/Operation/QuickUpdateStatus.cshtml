@@ -1,0 +1,670 @@
+﻿
+@{
+    ViewBag.Title = "QuickUpdateStatus";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+<script src="https://cdn.jsdelivr.net/jsbarcode/3.6.0/JsBarcode.all.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+<!--Page Header & Dashboard link-->
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title">Quick Office Recieve</h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<!--Header end-->
+<!--Page Start-->
+
+<div ng-app="updateStatusModule">
+    <div ng-controller="updateStatusController">
+
+        <!--Paid-Unpaid Status-->
+        <div class="col-lg-12" ng-init="init()">
+            <label class="col-form-label"><strong>Paid-Unpaid Status (9,10)</strong></label>
+            <div class="col-md-3" style=" float: right; ">
+                <select class="form-control" style=" margin-bottom: 10px;margin-top: 10px;" ng-model="SelectedCourierId">
+                    <option value="0" selected>Select Courier </option>
+                    <option value="32">E-Desh</option>
+                    <option value="34">Redx</option>
+                    <option value="28">Postal</option>
+                    <option value="30">Paperfly</option>
+                    <option value="49">Steadfast</option>
+                    <option value="26">Biddyut</option>
+                    <option value="22">Pathao</option>
+                    <option value="35">Delivey Bondhu</option>
+                    <option value="50">Chittagong Tiger</option>
+                    <option value="51">Sylhet Tiger</option>
+                    <option value="52">Khulna Tiger</option>
+                    <option value="53">Narayangonj Tiger</option>
+                    <option value="54">Gazipur Tiger</option>
+                    <option value="55">Dhaka Tiger</option>
+                    <option value="56">Coxsbazar Tiger</option>
+                    <option value="57">Jatrabari Tiger</option>
+                    <option value="58">Uttara Tiger</option>
+                    <option value="59">Mirpur10 Tiger</option>
+                    <option value="60">Mirpur01 Tiger</option>
+                    <option value="61">Lalmatia Tiger</option>
+                    <option value="62">NewMarket Tiger</option>
+                    <option value="63">Islampur Tiger</option>
+                    <option value="64">Santinagar Tiger</option>
+                    <option value="65">Gulisthan Tiger</option>
+                    <option value="66">Rampura Tiger</option>
+                    <option value="67">Badda Tiger</option>
+                    <option value="69">KawranBazar Tiger</option>
+                    <option value="75">Savar Tiger</option>
+                </select>
+            </div>
+            <textarea ng-model="ScannedPaidUnpaidStatusValue" placeholder="Ex: DT-1,DT-106959" id="orderIdForPaidUnpaid" class="form-control" style="height:auto;margin-bottom: 10px;" rows="2" ng-keydown="getPaidUnpaidKeys($event)"></textarea>
+            <div class="row">
+                <div class="col-lg-4">
+
+                </div>
+                <div class="col-lg-4 text-center">
+                    <button type="submit" style="margin-bottom: 10px;" class="btn btn-info" ng-click="getPaidUnpaidKeys('click')"><strong>Update Paid-Unpaid Status</strong></button>
+                </div>
+                <div class="col-lg-4">
+
+                </div>
+            </div>
+        </div>
+        <!--Paid-Unpaid Status End-->
+        <!--Sent To Hub-->
+        <div class="col-lg-12">
+  
+         
+                <label class="col-form-label"><strong>Sent To Hub (36)</strong></label>
+                <div class="col-md-3" style=" float: right; ">
+                    <select class="form-control" style=" margin-bottom: 10px;" ng-model="hubvalue" ng-selected="setHubName(hubvalue);">
+                        <option value="0" selected>Select Hub </option>
+                        <option ng-repeat="data in hublist" value="{{data.name}}">{{data.name}}</option>
+                    </select>
+                </div>
+            <textarea ng-model="ScannedSentToHubValue" placeholder="Ex: DT-1,DT-106959" id="orderIdForSentToHub" class="form-control" style="height:auto;margin-bottom: 10px;" rows="2" ng-keydown="getSentToHubKeys($event)"></textarea>
+            <div class="row">
+                <div class="col-lg-4">
+
+                </div>
+                <div class="col-lg-4 text-center">
+                    <button type="submit" style="margin-bottom: 10px;" class="btn btn-info" ng-click="getSentToHubKeys('click')"><strong>Sent To Hub</strong></button>
+                </div>
+                <div class="col-lg-4">
+
+                </div>
+            </div>
+        </div>
+        <!--Sent To Hub End-->
+        <!--Received From Hub-->
+        <div class="col-lg-12">
+            <label class="col-form-label"><strong>Received From Hub (37)</strong></label>
+            <textarea ng-model="ScannedReceivedFromHubValue" placeholder="Ex: DT-1,DT-106959" id="orderId" class="form-control" style="height:auto;margin-bottom: 10px;" rows="2" ng-keydown="getReceivedFromHubKeys($event)"></textarea>
+            <div class="row">
+                <div class="col-lg-4">
+
+                </div>
+                <div class="col-lg-4 text-center">
+                    <button type="submit" style="margin-bottom: 10px;" class="btn btn-info" ng-click="getReceivedFromHubKeys('click')"><strong>Received From Hub</strong></button>
+                </div>
+                <div class="col-lg-4">
+
+                </div>
+            </div>
+        </div>
+        <!--Received From Hub End-->
+        <!--Paid-Unpaid Status Data-->
+        <div class="row" style="display:flex;margin-top:10px;">
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-content" style="text-align:left;display:flex;">
+                        <div class="col-lg-3">
+                            <h4>Paid-Unpaid Status 9,10</h4>
+                        </div>
+
+                        <div class="col-lg-3">
+                            <div class="form-group row">
+                                <label class="col-lg-2 col-form-label">Form</label>
+                                <div class="col-lg-10">
+
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <div class="form-group row">
+                                <label class="col-lg-2 col-form-label">To</label>
+                                <div class="col-lg-10">
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2">
+                            <select class="form-control" ng-model="courierId">
+                                <option value="0" selected>Select Courier </option>
+                                <option value="32">E-Desh</option>
+                                <option value="34">Redx</option>
+                                <option value="28">Postal</option>
+                                <option value="30">Paperfly</option>
+                                <option value="49">Steadfast</option>
+                                <option value="26">Biddyut</option>
+                                <option value="22">Pathao</option>
+                                <option value="35">Delivey Bondhu</option>
+                                <option value="50">Chittagong Tiger</option>
+                                <option value="51">Sylhet Tiger</option>
+                                <option value="52">Khulna Tiger</option>
+                                <option value="53">Narayangonj Tiger</option>
+                                <option value="54">Gazipur Tiger</option>
+                                <option value="55">Dhaka Tiger</option>
+                                <option value="56">Coxsbazar Tiger</option>
+                                <option value="57">Jatrabari Tiger</option>
+                                <option value="58">Uttara Tiger</option>
+                                <option value="59">Mirpur10 Tiger</option>
+                                <option value="60">Mirpur01 Tiger</option>
+                                <option value="61">Lalmatia Tiger</option>
+                                <option value="62">NewMarket Tiger</option>
+                                <option value="63">Islampur Tiger</option>
+                                <option value="64">Santinagar Tiger</option>
+                                <option value="65">Gulisthan Tiger</option>
+                                <option value="66">Rampura Tiger</option>
+                                <option value="67">Badda Tiger</option>
+                                <option value="69">KawranBazar Tiger</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-1">
+                            <button type="submit" class="btn btn-info" ng-click="paidUnpaidDataload(fromDate,toDate,courierId)"><strong>Load</strong></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loader">
+            <div class="spiner-example" ng-show="showLoader">
+                <div class="sk-spinner sk-spinner-wave">
+                    <div class="sk-rect1">
+                    </div>
+                    <div class="sk-rect2">
+                    </div>
+                    <div class="sk-rect3">
+                    </div>
+                    <div class="sk-rect4">
+                    </div>
+                    <div class="sk-rect5">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" ng-show="showTable">
+
+            <div class="col-lg-3">
+                <input ng-model="searchBox" type="text" class="form-control" placeholder="Search" style="margin-top: -3px;" />
+            </div>
+            <div>
+                <span>Total: <button class="btn btn-info">{{PaidUnpaidTableData.length}}</button></span>
+            </div>
+            <div class="col-lg-3">
+                <input type="button" style="margin-bottom: 6px;" class="btn btn-success btn-sm" ng-click="createExcelSheet('exportExcelPaidUnpaidData')" value="Expot Excel" />
+            </div>
+            <div class="col-lg-12 align-content-center" id="reportDetails" style="height: 634px; overflow: auto;">
+                <div class="table table-responsive" id="exportExcelPaidUnpaidData">
+                    <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                        <thead>
+                            <tr>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>No.</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Order Id</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Customer Info</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>District</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Customer Mobile</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Customer Address</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Postal Code</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Cash to Collect</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>POD Number</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Hub Name</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Redx Hub Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTable">
+                            <tr ng-repeat=" c in  PaidUnpaidTableData | filter : searchBox" style='border:1px solid lightgray'>
+                                <td style='text-align:center;border:1px solid lightgray'>{{$index+1}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>DT-{{c.id}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.customerName}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierAddressContactInfo.districtNameEng}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierAddressContactInfo.mobile}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierAddressContactInfo.address}}</td>
+                                <td ng-if="c.courierAddressContactInfo.areaPostalCode == 0" style='text-align:center;border:1px solid lightgray'>{{ c.courierAddressContactInfo.thanaPostalCode}}</td>
+                                <td ng-if="c.courierAddressContactInfo.areaPostalCode != 0" style='text-align:center;border:1px solid lightgray'>{{ c.courierAddressContactInfo.areaPostalCode}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierPrice.collectionAmount}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.podNumber}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.hubName}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierAddressContactInfo.redxHubName}}</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!--Paid-Unpaid Status Data End-->
+        <!--Sent Received Hub-->
+        <div class="row" style="display:flex;margin-top:10px;">
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-content" style="text-align:left;display:flex;">
+                        <div class="col-lg-3">
+                            <h4>Sent to and Received from hub</h4>
+                        </div>
+                        <div class="col-lg-3">
+                            <div class="form-group row">
+                                <label class="col-lg-2 col-form-label">Form</label>
+                                <div class="col-lg-10">
+
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDateSR" name="fromDateSent" class="btn flatpickr" placeholder="From Date" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <div class="form-group row">
+                                <label class="col-lg-2 col-form-label">To</label>
+                                <div class="col-lg-10">
+
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="toDateSR" name="fromDateSent" class="btn flatpickr" placeholder="To Date" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2">
+                            <select class="form-control" ng-model="courierIdSR">
+                                <option value="0" selected>Select Courier </option>
+                                <option value="32">E-Desh</option>
+                                <option value="34">Redx</option>
+                                <option value="28">Postal</option>
+                                <option value="30">Paperfly</option>
+                                <option value="49">Steadfast</option>
+                                <option value="26">Biddyut</option>
+                                <option value="22">Pathao</option>
+                                <option value="35">Delivey Bondhu</option>
+                                <option value="50">Chittagong Tiger</option>
+                                <option value="51">Sylhet Tiger</option>
+                                <option value="52">Khulna Tiger</option>
+                                <option value="53">Narayangonj Tiger</option>
+                                <option value="54">Gazipur Tiger</option>
+                                <option value="55">Dhaka Tiger</option>
+                                <option value="56">Coxsbazar Tiger</option>
+                                <option value="57">Jatrabari Tiger</option>
+                                <option value="58">Uttara Tiger</option>
+                                <option value="59">Mirpur10 Tiger</option>
+                                <option value="60">Mirpur01 Tiger</option>
+                                <option value="61">Lalmatia Tiger</option>
+                                <option value="62">NewMarket Tiger</option>
+                                <option value="63">Islampur Tiger</option>
+                                <option value="64">Santinagar Tiger</option>
+                                <option value="65">Gulisthan Tiger</option>
+                                <option value="66">Rampura Tiger</option>
+                                <option value="67">Badda Tiger</option>
+                                <option value="69">KawranBazar Tiger</option>
+                                <option value="75">Savar Tiger</option>
+                            </select>
+                        </div>
+
+
+                        <div class="col-lg-6">
+                            <button type="submit" class="btn btn-info" ng-click="SentAndRecievedData(fromDateSR,toDateSR,courierIdSR)"><strong>Load</strong></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loader">
+            <div class="spiner-example" ng-show="showLoader2">
+                <div class="sk-spinner sk-spinner-wave">
+                    <div class="sk-rect1">
+                    </div>
+                    <div class="sk-rect2">
+                    </div>
+                    <div class="sk-rect3">
+                    </div>
+                    <div class="sk-rect4">
+                    </div>
+                    <div class="sk-rect5">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" ng-show="showSentAndRecieveTable">
+
+            <div class="col-lg-3">
+                <input ng-model="searchBox" type="text" class="form-control" placeholder="Search" style="margin-top: -3px;" />
+            </div>
+            <div>
+                <span>Total: <button class="btn btn-info">{{SentRecieveData.length}}</button></span>
+            </div>
+            <div class="col-lg-3">
+                <input type="button" style="margin-bottom: 6px;" class="btn btn-success btn-sm" ng-click="createExcelSheet('exportExcelSendToRecieveData')" value="Expot Excel" />
+            </div>
+            <div class="col-lg-12 align-content-center" id="reportDetails" style="height: 634px; overflow: auto;">
+                <div class="table table-responsive" id="exportExcelSendToRecieveData">
+                    <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                        <thead>
+                            <tr>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>No.</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Order Id</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Customer Info</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>District</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Customer Mobile</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Customer Address</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Postal Code</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Cash to Collect</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>POD Number</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Hub Name</th>
+                                <th style='text-align:center;border:1px solid lightgray;background-Color:steelblue;color:white;'>Redex Hub Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTable">
+                            <tr ng-repeat=" c in  SentRecieveData | filter : searchBox" style='border:1px solid lightgray'>
+                                <td style='text-align:center;border:1px solid lightgray'>{{$index+1}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>DT-{{c.id}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.customerName}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierAddressContactInfo.districtNameEng}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierAddressContactInfo.mobile}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierAddressContactInfo.address}}</td>
+                                <td ng-if="c.courierAddressContactInfo.areaPostalCode == 0" style='text-align:center;border:1px solid lightgray'>{{ c.courierAddressContactInfo.thanaPostalCode}}</td>
+                                <td ng-if="c.courierAddressContactInfo.areaPostalCode != 0" style='text-align:center;border:1px solid lightgray'>{{ c.courierAddressContactInfo.areaPostalCode}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierPrice.collectionAmount}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.podNumber}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.hubName}}</td>
+                                <td style='text-align:center;border:1px solid lightgray'>{{c.courierAddressContactInfo.redxHubName}}</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Page End-->
+
+<script type="text/javascript">
+    var app = angular.module('updateStatusModule', []);
+    app.controller('updateStatusController', function ($scope, $http) {
+
+
+        let userId = sessionStorage.userId;
+        let hubName = sessionStorage.hubName;
+        let quickRequestModel;
+        $scope.showTable = false;
+        $scope.courierId = "0";
+        $scope.courierIdSR = "0";
+        $scope.hubvalue = "0";
+        $scope.SelectedCourierId = "0";
+        /*  let dtOrderIds = [];*/
+
+        //Block for paid unpaid status
+        var paidUnpaidOrderID = document.getElementById('orderIdForPaidUnpaid');
+        var angularElforPaidUnpaid = angular.element(paidUnpaidOrderID);
+        angularElforPaidUnpaid.focus();
+
+        //$scope.getDetails("0");
+
+        $scope.init = () => {
+            $scope.getHubList();
+        }
+        $scope.getHubList = () => {
+            let url = apiBaseURL + "Fetch/GetAllHubs";
+            $http.get(url)
+                .then(function (response) {
+                    $scope.hublist = response.data.model;
+                }),
+                function error(response) {
+                    console.log(response);
+                    alert("something went wrong");
+                }
+        }
+        $scope.setHubName = (hubname) =>
+        {
+            console.log(hubname);
+        }
+        $scope.setCourierId = (courierId) => {
+            $scope.courierID
+        }
+        $scope.updateData = (courierOrdersId, flag) => {
+            if (flag == 1) {
+                quickRequestModel = {
+                    flag: flag,
+                    courierOrdersId: courierOrdersId,
+                    userId: userId,
+                    hubName: hubName,
+                    CourierId: $scope.SelectedCourierId
+
+                }
+            }
+            if (flag == 2) {
+                quickRequestModel = {
+                    flag: flag,
+                    courierOrdersId: courierOrdersId,
+                    userId: userId,
+                    hubName: hubName,
+                    SentToHubName: $scope.hubvalue
+
+                }
+            }
+            if (flag == 3) {
+                quickRequestModel = {
+                    flag: flag,
+                    courierOrdersId: courierOrdersId,
+                    userId: userId,
+                    hubName: hubName
+                }
+            }
+          
+            $http.put(apiBaseURL + "Update/QuickUpdateStatus", quickRequestModel)
+                .then(function (response) {
+                    /*console.log(response);*/
+                    if (response.data.model == 0) {
+                        alert("আপনি ভুল কুরিয়ার নির্বাচন করেছেন");
+                        return false;
+                    }
+                    else if (response.data.model == 10) {
+                        alert("Please verify customer && Parcel then update this status. More details contact CRM sidhu OR FF Tuser");
+                        return false;
+                    }
+                }),
+                function error(response) {
+                    console.log(response);
+                    alert('Something went wrong');
+                }
+
+        }
+
+        $scope.getPaidUnpaidKeys = function (event) {
+            
+            if (event.keyCode == 17 || event.keyCode == 74 || event.keyCode == 13 || event == "click") {
+                if (event != "click") {
+                    event.preventDefault();
+                }
+                if ($scope.SelectedCourierId == null || $scope.SelectedCourierId == '' || $scope.SelectedCourierId == 0) {
+                    alert("Please Select a Courier");
+                    return false;
+                }
+                var courierOrdersId = $scope.ScannedPaidUnpaidStatusValue;
+                if (courierOrdersId.startsWith("DT-") || courierOrdersId == '0') {
+
+                    $scope.updateData(courierOrdersId, 1);
+                    $scope.ScannedPaidUnpaidStatusValue = '';
+
+                }
+                else {
+                    /* alert('Invalid input');*/
+                    $scope.ScannedPaidUnpaidStatusValue = '';
+                }
+            } //This one
+
+        }
+
+        //Block for paid unpaid status end
+
+        $scope.getSentToHubKeys = function (event) {
+
+            if (event.keyCode == 17 || event.keyCode == 74 || event.keyCode == 13 || event == "click") {
+                if (event != "click") {
+                    event.preventDefault();
+                }
+                if ($scope.hubvalue == 0 || $scope.hubvalue == null || $scope.hubvalue == '') {
+                    alert("Please Select a Hub");
+                    return false;
+                }
+                var courierOrdersId = $scope.ScannedSentToHubValue;
+                if (courierOrdersId.startsWith("DT-") || courierOrdersId == '0') {
+
+                    $scope.updateData(courierOrdersId, 2);
+                    $scope.ScannedSentToHubValue = '';
+
+                }
+                else {
+                    /* alert('Invalid input');*/
+                    $scope.ScannedSentToHubValue = '';
+                }
+            }
+
+        }
+
+        $scope.getReceivedFromHubKeys = function (event) {
+
+            if (event.keyCode == 17 || event.keyCode == 74 || event.keyCode == 13 || event == "click") {
+                if (event != "click") {
+                    event.preventDefault();
+                }
+                var courierOrdersId = $scope.ScannedReceivedFromHubValue;
+                if (courierOrdersId.startsWith("DT-") || courierOrdersId == '0') {
+
+                    $scope.updateData(courierOrdersId, 3);
+                    $scope.ScannedReceivedFromHubValue = '';
+
+                }
+                else {
+                    /* alert('Invalid input');*/
+                    $scope.ScannedReceivedFromHubValue = '';
+                }
+            }
+
+        }
+
+        $scope.paidUnpaidDataload = function (fromDate, toDate, courierId) {
+            $scope.courierId = courierId;
+            $scope.showLoader = true;
+            $scope.showTable = false;
+            /* let hubName = sessionStorage.hubName;*/
+            if (fromDate == '' || fromDate == null || toDate == '' || toDate == null) {
+                alert("Please insert From/To Date");
+                $scope.showLoader = false;
+                return false;
+            }
+            //else if (courierID == '' || courierID == null || courierID == 0) {
+            //    alert("Please Select a Courier");
+            //    return false;
+            //}
+            /* $scope.showTable = true;*/
+            var requestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "StatusIds": "9,10",
+                "HubName": hubName,
+                "CourierId": courierId
+            }
+            $http.post(apiBaseURL + "Fetch/GetQuickUpdateStatusDetails", requestBodyModel, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                   
+                    $scope.showTable = true;
+                    $scope.showLoader = false;
+                    $scope.PaidUnpaidTableData = response.data.model;
+                }),
+                function error(response) {
+                    console.log(response);
+                    alert('Something went wrong');
+                };
+         
+        }
+
+
+        $scope.SentAndRecievedData = function (fromDate, toDate, courierId) {
+            $scope.courierIdcheck = courierId;
+            $scope.showLoader2 = true;
+            $scope.showSentAndRecieveTable = false;
+            /* let hubName = sessionStorage.hubName;*/
+            if (fromDate == '' || fromDate == null || toDate == '' || toDate == null) {
+                alert("Please insert From/To Date");
+                $scope.showLoader2 = false;
+                return false;
+            }
+            //else if (courierID == '' || courierID == null || courierID == 0) {
+            //    alert("Please Select a Courier");
+            //    return false;
+            //}
+            /* $scope.showTable = true;*/
+            var requestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "StatusIds": "36,37",
+                "HubName": hubName,
+                "CourierId": courierId
+            }
+            $http.post(apiBaseURL + "Fetch/GetQuickUpdateStatusDetails", requestBodyModel, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    $scope.showSentAndRecieveTable = true;
+                    $scope.showLoader2 = false;
+                    $scope.SentRecieveData = response.data.model;
+                }),
+                function error(response) {
+                    console.log(response);
+                    alert('Something went wrong');
+                };
+         
+        }
+
+
+
+
+        $scope.createExcelSheet = function (tablename) {
+            var element = $('#' + tablename).html();
+            window.open('data:application/vnd.ms-excel,' + encodeURIComponent(element));
+        }
+
+    });
+
+</script>
+
+
+

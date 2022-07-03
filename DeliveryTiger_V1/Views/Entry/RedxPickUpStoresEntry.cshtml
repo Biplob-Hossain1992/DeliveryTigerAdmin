@@ -1,0 +1,157 @@
+﻿
+@{
+    ViewBag.Title = "RedxPickUpStoresEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title">Redx PickUp Stores Entry</h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<div ng-app="RedxPickUpStoresEntryModule">
+    <div ng-controller="RedxPickUpStoresEntryController" ng-init="loadInitializeData()">
+        <div class="container-fluid">
+            <div class="card" ng-show="showEntryPanelBody">
+                <div class="card-body">
+                    <div class="col-md-12">
+                        <div class="form-inline">
+                            <div class="form-group mb-2 mr-2">
+                                <label for="hubName" class="sr-only">Hub-Name</label>
+                                <input type="text" ng-model="hubName" id="hubNameId" class="form-control" placeholder="Hub-Name">
+                            </div>
+                            <div class="form-group mb-2 mr-2">
+                                <label for="hubPhoneNo" class="sr-only">Hub-Phone No.</label>
+                                <input type="number" ng-model="hubPhoneNo" id="hubPhoneNoId" class="form-control" placeholder="Hub-Phone No">
+                            </div>
+                            <div class="form-group mb-2 mr-2">
+                                <label for="hubAddress" class="sr-only">Hub-Address</label>
+                                <textarea ng-model="hubAddress" id="hubAddressId" class="form-control" style="height: 3rem;" placeholder="Hub-Address" rows="3"></textarea>
+                            </div>
+                            <div class="form-group mb-2 mr-2">
+                                <label for="areaId" class="sr-only">Hub-Phone No.</label>
+                                <select ng-model="areaId" class="form-control" id="areaId">
+                                    <option value="" selected>Select Area</option>
+                                    <option ng-repeat="d in allRedexAreas" value="{{d.id}}">{{d.name}} ({{d.district_name}}-{{d.post_code== null?"No PostCode":d.post_code}})</option>
+                                </select>
+                            </div>
+                            <button type="button" ng-click="insertRedxPickUpStores(hubName,hubPhoneNo,hubAddress,areaId)" class="btn btn-primary mb-2">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">PickUpStore Id</th>
+                                <th scope="col">Hub Name</th>
+                                <th scope="col">Area Id</th>
+                                <th scope="col">Area Name</th>
+                                <th scope="col">Phone Number</th>
+                                <th scope="col">Created At</th>
+                                <th scope="col">Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="data in loadAllPickUpStores">
+                                <th>{{$index + 1}}</th>
+                                <td>{{data.id}}</td>
+                                <td>{{data.name}}</td>
+                                <td>{{data.area_id}}</td>
+                                <td>{{data.area_name}}</td>
+                                <td>{{data.phone}}</td>
+                                <td>{{data.created_at | date:"MM/dd/yyyy 'at' h:mma"}}</td>
+                                <td>{{data.address}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    var app = angular.module('RedxPickUpStoresEntryModule', []);
+    app.controller('RedxPickUpStoresEntryController', ($scope, $http) => {
+        var bridgeConfig = {
+            headers: {
+                'Content-Type': 'application/json',
+                'API_KEY': 'Ajkerdeal_~La?Rj73FcLm'
+            }
+        }
+
+        $scope.loadInitializeData = () => {
+            let currentUserId = +sessionStorage.getItem("userId");
+            let userAdminType = +sessionStorage.getItem("adminType");
+            if (currentUserId == 0) {
+                window.location.href = "/Account/Login";
+            }
+            if (userAdminType == 11 || currentUserId == 642) {
+                $scope.showEntryPanelBody = true;
+            }
+            $scope.GetAllRedxAreas();
+            $scope.GetRedxPickUpStores();
+        }
+
+        $scope.GetAllRedxAreas = () => {
+            let url = bridgeBaseUrl + 'Courier/GetRedxAreas';
+            $http.get(url, bridgeConfig)
+                .then((response) => {
+                    $scope.allRedexAreas = response.data.areas;
+                    //console.log(response);
+                }, (error) => {
+                    console.log(error);
+                })
+        }
+
+        $scope.GetRedxPickUpStores = () => {
+            let url = bridgeBaseUrl + 'Courier/GetRedxPickUpStores';
+            $http.get(url, bridgeConfig)
+                .then((response) => {
+                    $scope.loadAllPickUpStores = response.data.pickup_stores;
+                    //console.log(response);
+                }, (error) => {
+                    console.log(error);
+                })
+        }
+        $scope.insertRedxPickUpStores = (hubName, hubPhoneNo, hubAddress, areaId) => {
+            let url = bridgeBaseUrl + 'Courier/InsertRedxPickUpStore';
+            if (hubName == null || hubPhoneNo == null || hubAddress == null || areaId == null) {
+                alert("Please Enter Required Information!");
+                return false;
+            }
+            const model = {
+                "name": hubName,
+                "phone": "880"+ hubPhoneNo,
+                "address": hubAddress,
+                "area_id": areaId
+            }
+            $http.post(url,model, bridgeConfig)
+                .then((response) => {
+                    //console.log(response);
+                    swal("Good job!", "Data Inserted Successfully!", "success");
+                    $scope.GetRedxPickUpStores();
+                    document.getElementById('hubNameId').value = "";
+                    document.getElementById('hubPhoneNoId').value = "";
+                    document.getElementById('hubAddressId').value = "";
+                    document.getElementById('areaId').value = "";
+                }, (error) => {
+                    console.log(error);
+                })
+        }
+    });
+</script>

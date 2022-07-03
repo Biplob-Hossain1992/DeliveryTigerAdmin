@@ -1,0 +1,507 @@
+﻿
+@{
+    ViewBag.Title = "LocationAssign";
+}
+<style>
+    .red {
+        color: red;
+    }
+
+    .black {
+        color: black;
+    }
+</style>
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+
+
+<script type="text/javascript">
+
+    var app = angular.module('myModule', ['multipleSelect']);
+    app.controller('myController', function ($scope, $http) {
+
+        //var OnlineUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+
+        $scope.defaultAssignDtList = [
+            {
+                "id": '',
+                "name": "Select"
+            },
+            {
+                "id": 'collector',
+                "name": "Collector"
+            },
+            {
+                "id": 'deliveryuser',
+                "name": "Rider"
+            }
+        ]
+
+        $scope.defaultAssignAdList = [
+            {
+                "id": '',
+                "name": "Select"
+            },
+            {
+                "id": 'collector',
+                "name": "Collector"
+            },
+            {
+                "id": 'deliveryuser',
+                "name": "Rider"
+            }
+        ]
+
+        var addCollectorDefault =
+        {
+            "collectorId": 0,
+            "collectorName": "No collector assign"
+        }
+        var addDeliveryManDefault =
+        {
+            "id": 0,
+            "name": "No rider assign"
+        }
+        var addDistinctDefault =
+        {
+            "districtId": 0,
+            "district": "Select",
+            "districtBng": "Select"
+        }
+
+        $scope.showThana = false;
+        $scope.showArea = false;
+        $scope.defaultAssignDt = '';
+        $scope.defaultAssignAd = '';
+        $scope.deliveryMan = 0;
+        $scope.collector = 0;
+        $scope.district = 0;
+        //$scope.thana = [
+        //    {
+        //        "districtId": 0,
+        //        "district": "Select",
+        //        "districtBng": "Select"
+        //    }
+        //]
+
+        //$scope.area = [
+        //    {
+        //        "districtId": 0,
+        //        "district": "Select",
+        //        "districtBng": "Select"
+        //    }
+        //]
+        getAllDistricts();
+        getCollectors();
+        getAllDeliveryMan();
+        getAllLocationAssign();
+
+        function getCollectors() {
+            $http.get(apiBaseURL + 'Fetch/GetAllCollectors', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.collectors = response.data.model;
+
+                    $scope.collectors.push(addCollectorDefault);
+                    $scope.collectors.sort((a, b) => parseFloat(a.collectorId) - parseFloat(b.collectorId));
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        function getAllDeliveryMan() {
+            $http.get(apiBaseURL + 'Fetch/GetAllDeliveryMan', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.deliveryMans = response.data.model;
+
+                    $scope.deliveryMans.push(addDeliveryManDefault);
+
+                    $scope.deliveryMans.sort((a, b) => parseFloat(a.id) - parseFloat(b.id));
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        function getAllDistricts() {
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistricts', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.allDistricts = response.data.model;
+
+                    $scope.districts = response.data.model.filter(d => d.parentId == 0);
+                    $scope.districts.forEach(element => {
+                        element.districtBng = element.district + "-" + element.districtBng
+                    });
+
+                    $scope.districts.push(addDistinctDefault);
+                    $scope.districts.sort((a, b) => parseFloat(a.districtId) - parseFloat(b.districtId));
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+
+        function getAllLocationAssign() {
+            $http.get(apiBaseURL + 'Fetch/GetAllLocationAssign', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.locationData = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        $scope.changeDistrict = function (districtId) {
+
+            $scope.thanas = $scope.allDistricts.filter(d => d.parentId == districtId);
+            $scope.thanas.forEach(element => {
+                element.districtBng = element.district + "-" + element.districtBng
+            });
+
+            //$scope.thanas.push(addDistinctDefault);
+            //$scope.thanas.sort((a, b) => parseFloat(a.districtId) - parseFloat(b.districtId));
+            $scope.showThana = true;
+        }
+
+        $scope.afterSelectItemThana = function (item) {
+            $scope.areas = $scope.allDistricts.filter(d => d.parentId == item.districtId);
+            if ($scope.areas.length > 0) {
+                $scope.areas.forEach(element => {
+                    element.districtBng = element.district + "-" + element.districtBng
+                });
+                $scope.showArea = true;
+            }
+
+        }
+
+        $scope.afterRemoveItemThana = function (item) {
+            if ($scope.areas.length > 0) {
+                $scope.area = $scope.area.filter(d => d.parentId != item.districtId);
+            }
+        }
+
+        $scope.search = function (collector, deliveryMan, district, thana, area) {
+            console.log(collector, deliveryMan, district, thana, area);
+
+            if (deliveryMan > 0 && district == 0 && thana.length == 0 && area.length == 0) {
+                $scope.locationData = $scope.locationData.filter(d => d.deliveryUserId == deliveryMan);
+            }
+            else if (collector > 0 && district == 0 && thana.length == 0 && area.length == 0) {
+                $scope.locationData = $scope.locationData.filter(d => d.collectorId == collector);
+            }
+            else if (deliveryMan == 0 && collector == 0 && district > 0 && thana.length == 0 && area.length == 0) {
+                $scope.locationData = $scope.locationData.filter(d => d.districtId == district);
+            }
+            else if (deliveryMan == 0 && collector == 0 && district > 0 && thana.length > 0 && area.length == 0) {
+
+                var thanaIds = [];
+                for (var i = 0; i < thana.length; i++) {
+                    thanaIds.push(thana[i].districtId)
+                }
+
+                $scope.locationData = $scope.locationData.filter(d => d.districtId == district && thanaIds.includes(d.thanaId));
+            }
+            else {
+                getAllLocationAssign();
+            }
+        }
+
+        $scope.assign = function (collector, deliveryMan, district, thana, area, defaultAssignDt, defaultAssignAd) {
+
+            if (collector == 0 && deliveryMan == 0) {
+                alert("Please seelct collector OR delivery man");
+                return false;
+            }
+
+            if (defaultAssignDt == "") {
+                alert("Please seelct Default Assign DT");
+                return false;
+            }
+            if (defaultAssignAd == "") {
+                alert("Please seelct Default Assign AD");
+                return false;
+            }
+            if (district == 0) {
+                alert("Please seelct district");
+                return false;
+            }
+
+            if (thana.length == 0) {
+                alert("Please seelct thana");
+                return false;
+            }
+
+
+            var locationAssignList = [];
+
+            if (thana.length > 0 && area.length > 0) {
+                for (var i = 0; i < area.length; i++) {
+                    let locationAssign = {
+                        "deliveryUserId": deliveryMan,
+                        "collectorId": collector,
+                        "districtId": district,
+                        "thanaId": area[i].parentId,
+                        "areaId": area[i].districtId,
+                        "dtDefaultAssign": defaultAssignDt,
+                        "adDefaultAssign": defaultAssignAd
+                    };
+                    locationAssignList.push(locationAssign);
+                }
+            }
+
+            if (thana.length > 0 && area.length == 0) {
+                for (var i = 0; i < thana.length; i++) {
+                    let locationAssign = {
+                        "deliveryUserId": deliveryMan,
+                        "collectorId": collector,
+                        "districtId": district,
+                        "thanaId": thana[i].districtId,
+                        "areaId": 0,
+                        "dtDefaultAssign": defaultAssignDt,
+                        "adDefaultAssign": defaultAssignAd
+                    };
+                    locationAssignList.push(locationAssign);
+                }
+            }
+            $http.post(apiBaseURL + 'Entry/AddMultipleLocationAssign', locationAssignList,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    alert("Add");
+                    $scope.deliveryMan = 0;
+                    $scope.collector = 0;
+                    $scope.district = 0;
+                    $scope.thanas = [];
+                    $scope.areas = [];
+                    $scope.thana = [];
+                    $scope.area = [];
+                    getAllLocationAssign();
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.updateLocationAssigns = function (locationAssignId, districtId, thanaId, areaId,
+            collectorId, deliveryUserId, dtDefaultAssign, adDefaultAssign) {
+
+            let locationAssign = {
+                locationAssignId: locationAssignId,
+                deliveryUserId: deliveryUserId,
+                collectorId: collectorId,
+                districtId: districtId,
+                thanaId: thanaId,
+                areaId: areaId,
+                dtDefaultAssign: dtDefaultAssign,
+                adDefaultAssign: adDefaultAssign
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateLocationAssign/' + locationAssignId, locationAssign,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    alert("Update");
+                    getAllLocationAssign();
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+    });
+
+</script>
+
+<div ng-app="myModule">
+    <div ng-controller="myController">
+        <h2 style="text-align:center;">Location Assign</h2>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Select Rider</label>
+                    <select class="form-control" ng-model="deliveryMan" ng-options="deliveryMan.id as deliveryMan.name for deliveryMan in deliveryMans"></select>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Select Collector</label>
+                    <select class="form-control" ng-model="collector" ng-options="collector.collectorId as collector.collectorName for collector in collectors"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Default Assign DT</label>
+                    <select class="form-control" ng-model="defaultAssignDt" ng-options="defaultAssignDt.id as defaultAssignDt.name for defaultAssignDt in defaultAssignDtList"></select>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Default Assign AD</label>
+                    <select class="form-control" ng-model="defaultAssignAd" ng-options="defaultAssignAd.id as defaultAssignAd.name for defaultAssignAd in defaultAssignAdList"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="form-group">
+                    <label>Select District</label>
+                    <select class="form-control" ng-change="changeDistrict(district)" ng-model="district" ng-options="district.districtId as district.districtBng for district in districts"></select>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="form-group" ng-show="showThana">
+                    <label>Select Thana</label>
+
+                    <multiple-autocomplete ng-model="thana" after-select-item="afterSelectItemThana" after-remove-item="afterRemoveItemThana"
+                                           object-property="districtBng"
+                                           suggestions-arr="thanas">
+                    </multiple-autocomplete>
+
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="form-group" ng-show="showArea">
+                    <label>Select Area</label>
+
+                    <multiple-autocomplete ng-model="area"
+                                           object-property="districtBng"
+                                           suggestions-arr="areas">
+                    </multiple-autocomplete>
+
+                </div>
+            </div>
+        </div>
+
+        <button type="button" ng-click="assign(collector, deliveryMan, district, thana, area, defaultAssignDt, defaultAssignAd)" class="btn btn-primary">Save</button>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <br />
+                <h2 style="text-align:center;">Search Filter</h2>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <label>Select Rider</label>
+                            <select class="form-control" ng-model="deliveryMan" ng-options="deliveryMan.id as deliveryMan.name for deliveryMan in deliveryMans"></select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <label>Select Collector</label>
+                            <select class="form-control" ng-model="collector" ng-options="collector.collectorId as collector.collectorName for collector in collectors"></select>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="form-group">
+                            <label>Select District</label>
+                            <select class="form-control" ng-change="changeDistrict(district)" ng-model="district" ng-options="district.districtId as district.districtBng for district in districts"></select>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group" ng-show="showThana">
+                            <label>Select Thana</label>
+
+                            <multiple-autocomplete ng-model="thana" after-select-item="afterSelectItemThana" after-remove-item="afterRemoveItemThana"
+                                                   object-property="districtBng"
+                                                   suggestions-arr="thanas">
+                            </multiple-autocomplete>
+
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group" ng-show="showArea">
+                            <label>Select Area</label>
+
+                            <multiple-autocomplete ng-model="area"
+                                                   object-property="districtBng"
+                                                   suggestions-arr="areas">
+                            </multiple-autocomplete>
+
+                        </div>
+                    </div>
+                </div>
+                <button type="button" ng-click="search(collector, deliveryMan, district, thana, area)" class="btn btn-primary">Search</button>
+                <br />
+                <br />
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                #
+                            </th>
+                            <th>
+                                District
+                            </th>
+                            <th>
+                                Thana
+                            </th>
+                            <th>
+                                Area
+                            </th>
+                            <th>
+                                Collector
+                            </th>
+                            <th>
+                                Rider
+                            </th>
+                            <th>
+                                DT Default
+                            </th>
+                            <th>
+                                AD Default
+                            </th>
+                            <th>
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="o in locationData | orderBy:['-isNowOffline','-isTemporary']">
+                            <td>
+                                {{$index +1}}
+                            </td>
+                            <td>
+                                {{o.district}}
+                            </td>
+                            <td>
+                                <select class="form-control" ng-model="o.thanaId" ng-options="district.districtId as district.districtBng for district in o.thana"></select>
+                            </td>
+                            <td>
+                                <select class="form-control" ng-model="o.areaId" ng-options="district.districtId as district.districtBng for district in o.area"></select>
+                            </td>
+                            <td ng-class='{red : o.isTemporary, info: !o.isTemporary}'>
+                                <select class="form-control" ng-model="o.collectorId" ng-options="collector.collectorId as collector.collectorName for collector in collectors"></select>
+                            </td>
+                            <td ng-class='{red : o.isNowOffline, info: !o.isNowOffline}'>
+                                <select class="form-control" ng-model="o.deliveryUserId" ng-options="deliveryMan.id as deliveryMan.name for deliveryMan in deliveryMans"></select>
+                            </td>
+                            <td>
+                                <select class="form-control" ng-model="o.dtDefaultAssign" ng-options="defaultAssignDt.id as defaultAssignDt.name for defaultAssignDt in defaultAssignDtList"></select>
+                            </td>
+                            <td>
+                                <select class="form-control" ng-model="o.adDefaultAssign" ng-options="defaultAssignAd.id as defaultAssignAd.name for defaultAssignAd in defaultAssignAdList"></select>
+                            </td>
+                            <td>
+                                <button ng-click="updateLocationAssigns(o.locationAssignId,o.districtId,o.thanaId,o.areaId,o.collectorId,o.deliveryUserId, o.dtDefaultAssign, o.adDefaultAssign)" data-toggle="tooltip" data-placement="top" title="Update" type="button" class="btn btn-danger">Update</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br />
+        <br />
+    </div>
+</div>
+

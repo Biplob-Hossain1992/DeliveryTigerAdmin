@@ -1,0 +1,220 @@
+﻿<link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+<style>
+    .col-form-label {
+        font-weight: bold;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        $(".datepicker").datepicker({
+            autoclose: true,
+            endDate: new Date(new Date().setDate(new Date().getDate()))
+        });
+    });
+</script>
+
+<div class="col-md-12">
+    <div class="ibox">
+        <div class="ibox-title">
+            <h5>Search <small>Courier Orders</small></h5>
+            <div class="ibox-tools">
+                <a class="collapse-link">
+                    <i class="fa fa-chevron-up"></i>
+                </a>
+            </div>
+        </div>
+        <div class="ibox-content">
+            <div class="col-md-12" style="align-content:center;">
+
+                <div class="container" style="display:flex">
+                    <div class="col-lg-12">
+                        <label class="col-form-label">Order Ids</label>
+                        <textarea placeholder="Ex: DT-1,DT-106959" id="orderId" class="form-control" style="height:auto;margin-bottom: 10px;" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="container" style="display:flex">
+                    <div class="col-lg-6">
+
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Form Date</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="fromDate" class="form-control datepicker" placeholder="From Date" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Status</label>
+                            <div class="col-lg-6">
+                                <select id="Status" class="form-control">
+                                    <option value="-1" selected>Select Status</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Merchant</label>
+                            <div class="col-lg-6">
+                                <select id="Merchant" class="select2_demo_1 form-control"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">POD Number</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="podNumber" class="form-control" placeholder="POD Number" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Index</label>
+                            <div class="col-lg-6">
+                                <input type="number" id="index" class="form-control" placeholder="0" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Count</label>
+                            <div class="col-lg-6">
+                                <input type="number" id="count" class="form-control" placeholder="30" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Couriers</label>
+                            <div class="col-lg-6">
+                                <select id="couriersId" class="form-control">
+                                    <option value="0" selected>Select</option>
+                                    <option value="32">E-Desh</option>
+                                    <option value="34">Redx</option>
+                                    <option value="28">Postal</option>
+                                    <option value="30">Paperfly</option>
+                                    <option value="49">Steadfast</option>
+                                    <option value="26">Biddyut</option>
+                                    <option value="22">Pathao</option>
+                                    <option value="35">Delivey Bondhu</option>
+                                    <option value="50">Chittagong Tiger</option>
+                                    <option value="51">Sylhet Tiger</option>
+                                    <option value="52">Khulna Tiger</option>
+                                    <option value="53">Narayangonj Tiger</option>
+                                    <option value="54">Gazipur Tiger</option>
+                                    <option value="55">Dhaka Tiger</option>
+                                    <option value="56">Coxsbazar Tiger</option>
+                                    <option value="57">Jatrabari Tiger</option>
+                                    <option value="58">Uttara Tiger</option>
+                                    <option value="59">Mirpur10 Tiger</option>
+                                    <option value="60">Mirpur01 Tiger</option>
+                                    <option value="61">Lalmatia Tiger</option>
+                                    <option value="62">NewMarket Tiger</option>
+                                    <option value="63">Islampur Tiger</option>
+                                    <option value="64">Santinagar Tiger</option>
+                                    <option value="65">Gulisthan Tiger</option>
+                                    <option value="66">Rampura Tiger</option>
+                                    <option value="67">Badda Tiger</option>
+                                    <option value="69">KawranBazar Tiger</option>
+                                    <option value="75">Savar Tiger</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Order From</label>
+                            <div class="col-lg-6">
+                                <select id="orderFrom" class="form-control">
+                                    <option value="-1" selected>Select</option>
+                                    <option value="merchantbulk">Merchant Bulk</option>
+                                    <option value="android">Android</option>
+                                    <option value="desktop site">Desktop</option>
+                                    <option value="instacod">InstaCOD</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Price Range</label>
+                            <div class="col-lg-3">
+                                <input type="number" id="lowestPrice" class="form-control" placeholder="500" />
+                            </div>
+                            <div class="col-lg-3">
+                                <input type="number" id="highestPrice" class="form-control" placeholder="1000" />
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">To Date</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="toDate" class="form-control datepicker" placeholder="To Date" />
+                            </div>
+                        </div>
+                        @*<div class="form-group row">
+            <label class="col-lg-6 col-form-label">Order Id</label>
+            <div class="col-lg-6">
+                <input type="text" id="orderId" class="form-control" placeholder="DT-XXXX" />
+            </div>
+        </div>*@
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">City Or Sadar</label>
+                            <div class="col-lg-6">
+                                <select id="CityOrSadar" class="form-control"></select>
+                            </div>
+                        </div>
+                        <input id="UserHidden" type="hidden" value="" />
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label" for="DistrictLbl">District</label>
+                            <div class="col-lg-6">
+                                <select id="District" class="form-control" onchange="GetThanaList()" data-live-search="true">
+                                    <option value="0">Select District</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label" for="ThanaLbl">Thana</label>
+                            <div class="col-lg-6">
+                                <select id="Thana" class="form-control" onchange="GetAreaList()" disabled>
+                                    <option value="0">Select Thana</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label" for="AreaLbl">Area</label>
+                            <div class="col-lg-6">
+                                <select id="Area" class="form-control" disabled>
+                                    <option value="0">Select Area</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Product Name</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="collectionName" class="form-control" placeholder="T-Shirt" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Service Type</label>
+                            <div class="col-lg-6">
+                                <select id="paymentType" class="form-control"></select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Customer Mobile</label>
+                            <div class="col-lg-6">
+                                <input type="text" id="customerMobileSearch" class="form-control" placeholder="Ex: 01715000000" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-6 col-form-label">Weight Range</label>
+                            <div class="col-lg-3">
+                                <input type="number" id="lowestWeight" class="form-control" placeholder="1" />
+                            </div>
+                            <div class="col-lg-3">
+                                <input type="number" id="highestWeight" class="form-control" placeholder="2" />
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="form-group row" style="justify-content: center">
+                    <div>
+                        <button type="submit" class="btn btn-info" onclick="searchOrderDetails()"><strong>Search</strong></button>
+                    </div>
+                </div>
+            </div>
+            </div>
+    </div>
+</div>

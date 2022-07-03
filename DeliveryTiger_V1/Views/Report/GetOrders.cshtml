@@ -1,0 +1,323 @@
+﻿
+@{
+    ViewBag.Title = "GetOrders";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('#datepickerOrders').datepicker({
+            keyboardNavigation: false,
+            forceParse: false,
+            autoclose: true,
+            endDate: new Date(new Date().setDate(new Date().getDate()))
+        });
+    });
+</script>
+
+<script type="text/javascript">
+
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http) {
+
+        var localUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+
+        $scope.dateFormat = 'date';
+
+        $scope.dateFormats = [
+            {
+                'id': 'date',
+                'name': 'Date'
+            },
+            {
+                'id': 'month',
+                'name': 'Month'
+            },
+            {
+                'id': 'today',
+                'name': 'Today'
+            },
+            {
+                'id': 'yesterday',
+                'name': 'Yesterday'
+            }
+        ]
+
+        $scope.getOrders = function (fromDate, toDate, dateFormat) {
+            if (dateFormat == 'today') {
+                var date = new Date();
+                var month = date.getMonth(), day = date.getDate(), year = date.getFullYear();
+                if (day < 10) day = '0' + day;
+                if (month < 10) month = '0' + (month + 1);
+                var today = month + '/' + day + '/' + year;
+                fromDate = today, toDate = today;
+                $(".fromDate").datepicker("setDate", today);
+                $(".toDate").datepicker("setDate", today);
+            }
+            else if (dateFormat == 'yesterday') {
+                var date = new Date();
+                date.setDate(date.getDate() - 1);
+                var month = date.getMonth(), day = date.getDate(), year = date.getFullYear();
+                if (day < 10) day = '0' + day;
+                if (month < 10) month = '0' + (month + 1);
+                var yesterday = month + '/' + day + '/' + year;
+                fromDate = yesterday, toDate = yesterday;
+                $(".fromDate").datepicker("setDate", yesterday);
+                $(".toDate").datepicker("setDate", yesterday);
+            }
+
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "dateFormat": dateFormat
+            };
+
+            //$scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/GetOrders', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(response.data.model);
+                    $scope.orders = response.data.model;
+                    //$scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+    });
+</script>
+<h4>Dt Order Report</h4>
+<div ng-app="myModule">
+    <div ng-controller="myController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            @*<label class="font-normal">Range select</label>*@
+                            <div class="input-daterange input-group" id="datepickerOrders">
+                                <input type="text" class="form-control-sm form-control fromDate" ng-model="fromDate" name="start" placeholder="From Date" />
+                                <span class="input-group-addon">to</span>
+                                <input type="text" class="form-control-sm form-control toDate" ng-model="toDate" name="end" placeholder="To Date" />
+                                <select style="border: 1px solid #46b8da" class="btn btn-default" ng-model="dateFormat" ng-options="dateFormat.id as dateFormat.name for dateFormat in dateFormats"></select>
+                                <button type="button" class="btn btn-w-m btn-success" ng-click="getOrders(fromDate, toDate, dateFormat)">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <table class="table table-bordered table-responsive">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        #
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='name'; reverseSort = !reverseSort">
+                                            Order Date
+                                        </a>
+                                    </th>
+
+                                    <th>
+                                        <a href="#">
+                                            Placed
+                                        </a><br />
+                                        (Order)<br />
+                                        (Inside Order)<br />
+                                        (Outside Order)<br />
+                                        (Merchant)<br />
+                                    </th>
+                                    <th>
+                                        <a href="#">
+                                            Confirmed
+                                        </a><br />
+                                        (Order)<br />
+                                        (Inside Order <span style="color: mediumvioletred">Count</span> - <span style="color: blueviolet">%</span>)<br />
+                                        (Outside Order <span style="color: mediumvioletred">Count</span> - <span style="color: blueviolet">%</span>)<br />
+                                        (Merchant)<br />
+                                        (Inside Merchant)<br />
+                                        (Outside Merchant)<br />
+                                    </th>
+                                    <th>
+                                        <a href="#">
+                                            Service Type
+                                        </a><br />
+                                        (Inside Next Day <span style="color: mediumvioletred">Count</span> - <span style="color: blueviolet">%</span>)<br />
+                                        (Inside Except Next Day <span style="color: mediumvioletred">Count</span> - <span style="color: blueviolet">%</span>)<br />
+                                        (Outside Next Day <span style="color: mediumvioletred">Count</span> - <span style="color: blueviolet">%</span>)<br />
+                                        (Outside Sador Express <span style="color: mediumvioletred">Count</span> - <span style="color: blueviolet">%</span>)<br />
+                                        (Outside Except NextDaySador <span style="color: mediumvioletred">Count</span> - <span style="color: blueviolet">%</span>)<br />
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='averageRevenue'; reverseSort = !reverseSort">
+                                            Average Revenue
+                                        </a><br />
+                                        (Total Avg Revenue)<br />
+                                        (Inside Avg Revenue)<br />
+                                        (Outside Avg Revenue)<br />
+                                    </th>
+                                    <th>
+                                        <a href="#">
+                                            Avg Cod Charge
+                                        </a><br />
+                                        (Inside Avg Cod)
+                                        (Outside Avg Cod)
+                                    </th>
+                                    <th>
+                                        <a href="#">
+                                            Cod Collection & Charge
+                                        </a><br />
+                                        (Total Cod)<br />
+                                        (Total Collection)<br />
+                                        (%)<br />
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='o.orders.deliveryCharge.insideDeliveryCharge'; reverseSort = !reverseSort">
+                                            Delivery Charge
+                                        </a><br />
+                                        (Inside)<br />
+                                        (Outside)<br />
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='avgCollectionChargeNotOfficeDrop'; reverseSort = !reverseSort">
+                                            Parcel Collection Charge
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#">
+                                            Delivery<br />
+                                            A/C
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='avg'; reverseSort = !reverseSort">
+                                            Avg Ticket Size
+                                        </a>
+                                    </th>
+                                    @*<th>
+                                    <a href="#" ng-click="orderByField='orders.needToPick.order'; reverseSort = !reverseSort">
+                                    Need to Pick
+                                    </a>
+                                    </th>
+                                    <th>
+                                    <a href="#" ng-click="orderByField='orders.pickedByDTCollector.order'; reverseSort = !reverseSort">
+                                    Picked by DT Collector
+                                    </a>
+                                    </th>
+                                    <th>
+                                    <a href="#" ng-click="orderByField='orders.receivedByDTHeadOffice.order'; reverseSort = !reverseSort">
+                                    Received by DT Head Office
+                                    </a>
+                                    </th>
+                                    <th>
+                                    <a href="#" ng-click="orderByField='orders.shipment.order'; reverseSort = !reverseSort">
+                                    Shipment
+                                    </a>
+                                    </th>
+                                    <th>
+                                    <a href="#" ng-click="orderByField='orders.postRejected.order'; reverseSort = !reverseSort">
+                                    Post Rejected
+                                    </a>
+                                    </th>*@
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in orders | orderBy:orderByField:reverseSort">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>
+                                        {{o.name}}
+                                    </td>
+                                    <td>
+                                        ({{ o.orders.placed.order }})<br />
+                                        ({{ (100 / o.orders.placed.order) *  o.orders.placed.insideOrder | number:0 }}%)<br />
+                                        ({{ (100 / o.orders.placed.order) * o.orders.placed.outsideOrder | number:0 }}%)<br />
+                                        (<span style="color:forestgreen;">{{ o.merchants.placed.merchant }}</span>)
+                                    </td>
+                                    <td>
+                                        ({{ o.orders.confirmed.order }})<br />
+                                        ({{o.orders.confirmed.insideOrder}}-{{ (100 / o.orders.confirmed.order) * o.orders.confirmed.insideOrder | number:0 }}%)<br />
+                                        ({{o.orders.confirmed.outsideOrder}}-{{ (100 / o.orders.confirmed.order) * o.orders.confirmed.outsideOrder | number:0}}%)<br />
+                                        (<span style="color:forestgreen;">{{o.merchants.confirmed.merchant}}</span>)<br />
+                                        ({{o.merchants.confirmed.insideMerchant}})<br />
+                                        ({{o.merchants.confirmed.outsideMerchant}})<br />
+                                    </td>
+                                    <td>
+                                        <span style="color: tomato">Order</span><br />
+                                        ({{o.orders.confirmed.serviceType.insideMerchantNextDay}}-{{ (100 / o.orders.confirmed.insideOrder) * o.orders.confirmed.serviceType.insideMerchantNextDay | number:0 }}%)<br />
+                                        ({{o.orders.confirmed.serviceType.insideOtherMerchant}}-{{ (100 / o.orders.confirmed.insideOrder) * o.orders.confirmed.serviceType.insideOtherMerchant | number:0 }}%)<br />
+                                        ({{o.orders.confirmed.serviceType.outsideMerchantNextDay}}-{{ (100 / o.orders.confirmed.outsideOrder) * o.orders.confirmed.serviceType.outsideMerchantNextDay | number:0 }}%)<br />
+                                        ({{o.orders.confirmed.serviceType.outsideMerchantSador}}-{{ (100 / o.orders.confirmed.outsideOrder) * o.orders.confirmed.serviceType.outsideMerchantSador | number:0 }}%)<br />
+                                        ({{o.orders.confirmed.serviceType.outsideOtherMerchant}}-{{ (100 / o.orders.confirmed.outsideOrder) * o.orders.confirmed.serviceType.outsideOtherMerchant | number:0 }}%)<br />
+                                        <span style="color: tomato">Merchant</span><br />
+                                        ({{o.merchants.confirmed.insideMerchantNextDay}}-{{ (100 / o.merchants.confirmed.insideMerchant) * o.merchants.confirmed.insideMerchantNextDay | number:0 }}%)<br />
+                                        ({{o.merchants.confirmed.insideOtherMerchant}}-{{ (100 / o.merchants.confirmed.insideMerchant) * o.merchants.confirmed.insideOtherMerchant | number:0 }}%)<br />
+                                        ({{o.merchants.confirmed.outsideMerchantNextDay}}-{{ (100 / o.merchants.confirmed.outsideMerchant) * o.merchants.confirmed.outsideMerchantNextDay | number:0 }}%)<br />
+                                        ({{o.merchants.confirmed.outsideMerchantSador}}-{{ (100 / o.merchants.confirmed.outsideMerchant) * o.merchants.confirmed.outsideMerchantSador | number:0 }}%)<br />
+                                        ({{o.merchants.confirmed.outsideOtherMerchant}}-{{ (100 / o.merchants.confirmed.outsideMerchant) * o.merchants.confirmed.outsideOtherMerchant | number:0 }}%)<br />
+                                    </td>
+                                    <td>
+                                        ({{o.orders.revenue.averageRevenue | number:2}})<br />
+                                        ({{o.orders.revenue.insideAverageRevenue | number:2}})<br />
+                                        ({{o.orders.revenue.outsideAverageRevenue | number:2}})
+                                    </td>
+                                    <td>
+                                        ({{ o.orders.cod.insideCodAvg | number:2}})<br />
+                                        ({{ o.orders.cod.outsideCodAvg | number:2}})
+                                    </td>
+                                    <td>
+                                        ({{o.orders.cod.totalCodCharge}})<br />
+                                        ({{o.orders.collection.totalCollectionAmount}})<br />
+                                        ({{ (100 / o.orders.collection.totalCollectionAmount) * o.orders.cod.totalCodCharge | number:2 }}%)
+                                    </td>
+                                    <td>
+                                        ({{ o.orders.deliveryCharge.insideDeliveryChargeAvg | number:2 }})<br />
+                                        ({{ o.orders.deliveryCharge.outsideDeliveryChargeAvg | number:2 }})
+                                    </td>
+                                    <td>
+                                        {{ o.orders.collectionCharge.avgCollectionChargeNotOfficeDrop | number:4 }}
+                                    </td>
+                                    <td>
+                                        {{ o.orders.delivered.order }}<br />
+                                        (<span style="color:magenta;">{{ o.orders.delivered.insideOrder.paidOrder + o.orders.delivered.outsideOrder.paidOrder}}</span>)<br />
+                                        (<span style="color:tomato;">{{ o.orders.delivered.insideOrder.codOrder + o.orders.delivered.outsideOrder.codOrder}}</span>)
+                                    </td>
+                                    <td>
+                                        {{ o.orders.confirmed.amount.collectionAmount.avg | number:0 }} ৳
+                                    </td>
+                                    @*<td>
+                                    {{ o.orders.needToPick.order }}
+                                    </td>
+                                    <td>
+                                    {{ o.orders.pickedByDTCollector.order }}
+                                    </td>
+                                    <td>
+                                    {{ o.orders.receivedByDTHeadOffice.order }}
+                                    </td>
+                                    <td>
+                                    {{ o.orders.shipment.order }}
+                                    </td>
+                                    <td>
+                                    {{ o.orders.postRejected.order }}
+                                    </td>*@
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+

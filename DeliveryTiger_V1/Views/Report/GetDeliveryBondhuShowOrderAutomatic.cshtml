@@ -1,0 +1,33 @@
+﻿
+@{
+    ViewBag.Title = "GetDeliveryBondhuShowOrderAutomatic";
+    
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+<script type="text/javascript">
+    var app = angular.module('deliveryBondhuModule', []);
+    app.controller('deliveryBondhuController', function ($scope, $http) {
+
+        $scope.getDeliveryBondhuShowOrderAutomatic = () => {
+
+            $http.get(apiBaseURL + 'Report/GetDeliveryBondhuShowOrderAutomatic', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    //console.log(response.data.model);
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+
+        };
+
+    });
+</script>
+
+<div class="row" ng-app="deliveryBondhuModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="deliveryBondhuController" data-ng-init="getDeliveryBondhuShowOrderAutomatic()">
+
+    </div>
+</div>

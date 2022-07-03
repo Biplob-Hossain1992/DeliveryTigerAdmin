@@ -1,0 +1,126 @@
+﻿
+@{
+    ViewBag.Title = "SingleOrderProcess";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/Operation/Operation.js"></script>
+<script src="~/Scripts/Operation/SingleOrderProcess.js"></script>
+<link href="~/Content/plugins/select2/select2.min.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/select2/select2.full.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+            LoadDistrictParentIdWise(0, "District", null);
+            loadMerchantInfo("Merchant");
+            $("#Merchant").select2();
+            //$("#District").select2();
+            //$("#Thana").select2();
+            //$("#Area").select2();
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<div class="row" style="margin-top:10px;">
+    <div class="col-lg-12">
+        <div class="ibox">
+            <div class="ibox-title">
+                <h5>Single Order <small>Select Merchant And Add Order</small></h5>
+                
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="col-lg-12" style="display:flex">
+                    <div class="col-lg-6 b-r">
+                        <h3 class="m-t-none m-b">Customer & Merchant Details</h3>
+                        <div class="form-group">
+                            <label>Merchant</label>
+                            <select id="Merchant" class="select2_demo_1 form-control" onchange="setMerchant()"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Name</label>
+                            <input type="text" Id="CustomerName" placeholder="Enter Customer Name" class="form-control">
+                        </div>
+                        <div class="col-lg-12" style="display:flex;padding:0px;">
+                            <div class="col-lg-6" style="padding:0px 5px 0px 0px;">
+                                <div class="form-group">
+                                    <label>Customer Mobile</label>
+                                    <input type="text" Id="CustomerMobile" placeholder="01XXXXXXXXX" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-lg-6" style="padding:0px 0px 0px 0px;">
+                                <div class="form-group">
+                                    <label>Alternate Mobile</label>
+                                    <input type="text" Id="AlternateMobile" placeholder="01XXXXXXXXX" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-12" style="display:flex;padding:0px;">
+                            <div class="col-lg-6" style="padding:0px 5px 0px 0px;">
+                                <div class="form-group">
+                                    <label>District</label>
+                                    <select id="District" class=" form-control" onchange="GetThanaList()"><option value="0">Select District</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Thana</label>
+                                    <select id="Thana" class=" form-control" onchange="GetAreaList()" disabled><option value="0">Select Thana</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Area </label>
+                                    <select id="Area" class=" form-control" disabled><option value="0">Select Area</option></select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6" style="padding:0px 0px 0px 0px;">
+                                <div class="form-group">
+                                    <label>Customer Address</label>
+                                    <textarea rows="5" class="form-control" id="CustomerAddress" style="height:186px;"></textarea>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="form-group">
+                            <label>Aditional Note <small>(Optional)</small></label>
+                            <textarea rows="5" class="form-control" id="Note" style="height:80px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <h3 class="m-t-none m-b">Product & Collection Details</h3>
+
+                        <div class="form-group">
+                            <label>Product(s) Name</label>
+                            <input type="text" Id="CollectionName" placeholder="Enter Product(s) Name, Comma Separated" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

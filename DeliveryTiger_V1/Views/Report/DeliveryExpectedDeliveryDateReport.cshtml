@@ -1,0 +1,499 @@
+﻿
+@{
+    ViewBag.Title = "CDD date range Report";
+}
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link href="~/Content/plugins/datePicker/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/plugins/datapicker/bootstrap-datepicker.js"></script>
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+             $('#datepickerReport').datepicker({
+                 keyboardNavigation: false,
+                 forceParse: false,
+                 autoclose: true,
+                 endDate: new Date(new Date().setDate(new Date().getDate()))
+             });
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+</script>
+
+<div class="row" ng-app="reportModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="reportController" data-ng-init="init()">
+
+        @*Modal Start*@
+        <div class="modal fade" id="myModal" role="dialog">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            {{orderId}}, {{deliveryType}}, {{districts}}, {{courierName}}<br />
+                            <span>CDD Date : {{expectedDeliveryDate | date:"MM/dd/yyyy 'at' h:mma"}}</span><br />
+                            <span>Office Received Date : {{receivedDate | date:"MM/dd/yyyy 'at' h:mma"}}</span><br />
+                            <span>Delivered Date : {{deliveredDate | date:"MM/dd/yyyy 'at' h:mma"}}</span>
+                        </h3>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Commented By</th>
+                                    <th>Commented On</th>
+                                    <th>Status</th>
+                                    <th>Comment</th>
+                                    <th>Hub</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in orderDetailsData | filter:mainSearch">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>{{o.namePostedBy}}({{o.isConfirmedBy}})</td>
+                                    <td>{{o.postedOn}}</td>
+                                    <td>{{o.status}}</td>
+                                    <td>{{o.comment}}</td>
+                                    <td>{{o.hubName}}</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*Modal End*@
+
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+
+                                <div class="input-daterange input-group" id="datepickerReport">
+                                    <input type="text" style="width:277px;" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+
+                                    <select style="margin-left:2px;" class="form-control" ng-model="dateFlag">
+                                        <option value="0" selected>Select Date</option>
+                                        <option value="1">Shipment</option>
+                                        <option value="2">Order</option>
+                                    </select>
+
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" autocomplete="off" placeholder="From Date" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" autocomplete="off" placeholder="To Date" />
+
+                                    <select style="margin-left:2px;" class="form-control" ng-model="courier">
+                                        <option value="0" selected>Select Courier</option>
+                                        <option value="28">Bangladesh Postal Service</option>
+                                        <option value="30">Paperfly</option>
+                                        <option value="32">E-Desh</option>
+                                        <option value="34">Redx</option>
+                                        <option value="49">Steadfast</option>
+                                        <option value="50">Chittagong Tiger</option>
+                                        <option value="51">Sylhet Tiger</option>
+                                        <option value="52">Khulna Tiger</option>
+                                        <option value="53">Narayangonj Tiger</option>
+                                        <option value="54">Gazipur Tiger</option>
+                                        <option value="55">Dhaka Tiger</option>
+                                        <option value="56">Coxsbazar Tiger</option>
+                                        <option value="57">Jatrabari Tiger</option>
+                                        <option value="58">Uttara Tiger</option>
+                                        <option value="59">Mirpur10 Tiger</option>
+                                        <option value="60">Mirpur01 Tiger</option>
+                                        <option value="61">Lalmatia Tiger</option>
+                                        <option value="62">NewMarket Tiger</option>
+                                        <option value="63">Islampur Tiger</option>
+                                        <option value="64">Santinagar Tiger</option>
+                                        <option value="65">Gulisthan Tiger</option>
+                                        <option value="66">Rampura Tiger</option>
+                                        <option value="67">Badda Tiger</option>
+                                        <option value="69">KawranBazar Tiger</option>
+                                        <option value="75">Savar Tiger</option>
+                                    </select>
+
+                                </div>
+                                <div style="margin-top:5px;" class="input-group">
+                                    <select style="" class="form-control" ng-model="tigerStatusId" ng-show="showPickDate">
+                                        <option value="-1" selected>Select Delivery Status</option>
+                                        <option value="1">All Delivery Tiger</option>
+                                        <option value="2">Inside Delivery Tigers</option>
+                                        <option value="3">Outside Delivery Tigers</option>
+                                    </select>
+                                    <select style="margin-left:5px;margin-right:5px;" ng-model="district" class="form-control">
+                                        <option value="0" selected>Select District</option>
+                                        <option ng-repeat="d in allDistricts" value="{{d.districtId}}">{{d.district}}</option>
+                                    </select>
+                                    <select style="margin-left:2px;" class="form-control" ng-model="statusFlagId">
+                                        <option value="7" selected>Shipment Date</option>
+                                        <option ng-show="showPickDate" value="11">Pick Date</option>
+                                    </select>
+                                    <div class="form-group" style="margin-left:5px;width: auto;">
+                                        <multiple-autocomplete ng-model="deliveryRangeIds"
+                                                               object-property="name"
+                                                               suggestions-arr="statusMultiSelect">
+                                        </multiple-autocomplete>
+                                    </div>
+                                </div>
+                                <button style="margin-left:5px" type="button" class="btn btn-w-m btn-success" ng-click="reportDate(dateFlag,fromDate, toDate, courier,deliveryRangeIds, district,statusFlagId,tigerStatusId)">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="col-lg-12">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Total Office Received</th>
+                                    <th>Delivery</th>
+                                    <th>InTime Delivery</th>
+                                    <th>OutTime Delivery</th>
+                                    <th ng-show="showDiv">Customer Reject</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="cursor:pointer;" ng-click="timeChange('packageTime')">
+                                        {{allDelivery.length}} <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                    </td>
+                                    <td style="cursor:pointer;" ng-click="timeChange('allTime')">
+                                        {{timeDelivery.length}} ({{timeDelivery.length *100 /allDelivery.length |number:2}} %) <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                    </td>
+                                    <td style="cursor:pointer;" ng-click="timeChange('inTime')">
+                                        {{inTimeDelivery.length}}({{inTimeDelivery.length *100 /timeDelivery.length |number:2}} %) <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                    </td>
+                                    <td style="cursor:pointer;" ng-click="timeChange('outTime')">
+                                        {{outTimeDelivery.length}}({{outTimeDelivery.length *100 /timeDelivery.length |number:2}} %) <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                    </td>
+                                    <td ng-show="showDiv" style="cursor:pointer;" ng-click="timeChange('customerRejectStatus')">
+                                        {{customerRejectStatus.length}}({{customerRejectStatus.length *100 /allDelivery.length |number:2}} %) <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="row">
+                            <div class="col-md-2" ng-show="showExcelButton">
+                                <input type="button" class="btn btn-danger btn-sm" ng-click="createExcelSheet('exportTable', $event)" value="Expot Excel" style="float: left;" />
+                            </div>
+                        </div>
+                        <div id="exportTable">
+                            <table class="table table-bordered" ng-show="showTable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            #
+                                        </th>
+                                        <th>
+                                            OrderId
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='deliveryType'; reverseSort = !reverseSort">
+                                                Delivery Type
+                                            </a>
+
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='district'; reverseSort = !reverseSort">
+                                                District
+                                            </a>
+
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='thana';reverseSort = !reverseSort">
+                                                Thana
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='courierName'; reverseSort = !reverseSort">
+                                                Courier
+                                            </a>
+                                        </th>
+                                        <th>
+                                            PodNumber
+                                        </th>
+                                        <th>
+                                            Delivered Date
+                                        </th>
+                                        <th ng-show="showPickDate">
+                                            Pick Date
+                                        </th>
+                                        <th>
+                                            Shipment Date
+                                        </th>
+
+                                        <th>
+                                            Cdd Date
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='hours'; reverseSort = !reverseSort">
+                                                Days
+                                            </a>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="o in PackageToDelivery | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                        <td>
+                                            {{$index +1}}
+                                        </td>
+                                        <td ng-click="orderDetails(o.courierOrdersId, o.deliveryType, o.district,o.courierName, o.expectedDeliveryDate)" style="cursor:pointer;" data-toggle="modal" data-target="#myModal">
+                                            {{o.courierOrdersId}} <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                        </td>
+                                        <td>
+                                            {{o.deliveryType}}
+                                        </td>
+                                        <td>
+                                            {{o.district}}
+                                        </td>
+                                        <td>
+                                            {{o.thana}}
+                                        </td>
+                                        <td>
+                                            {{o.courierName}}
+                                        </td>
+                                        <td>
+                                            {{o.podNumber}}
+                                        </td>
+                                        <td>
+                                            {{o.deliveredDate | date:"MM/dd/yyyy 'at' h:mma"}}
+                                        </td>
+                                        <td ng-show="showPickDate">
+                                            {{o.pickDate | date:"MM/dd/yyyy 'at' h:mma"}}
+                                        </td>
+                                        <td>
+                                            {{o.shipmentDate | date:"MM/dd/yyyy 'at' h:mma"}}
+                                        </td>
+                                        <td>
+                                            {{o.expectedDeliveryDate | date:"MM/dd/yyyy 'at' h:mma"}}
+                                        </td>
+                                        <td>
+                                            {{o.hours}}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+<script type="text/javascript">
+    var app = angular.module('reportModule', ['multipleSelect']);
+    app.controller('reportController', function ($scope, $http) {
+        let userId = +sessionStorage.getItem('userId');
+        let adminType = +sessionStorage.getItem('adminType');
+        $scope.courier = '0';
+        $scope.district = '0';
+        //$scope.deliveryRangeId = '0';
+        $scope.dateFlag = '0';
+        $scope.statusFlagId = '7';
+        $scope.tigerStatusId = '-1';
+        //$scope.getDeliveryRangeList();
+
+        $scope.init = function () {
+            $scope.getDeliveryRangeList();
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistricts', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allDistricts = response.data.model.filter(d => d.parentId === 0 && d.isActive === true);
+
+                }, function error(response) {
+                    console.log(response);
+                });
+
+            if (userId == 132 || adminType == 11) {
+                $scope.showPickDate = true;
+            }
+        };
+
+        //get all delivery typelist
+        $scope.getDeliveryRangeList = () => {
+            $scope.showLoader = true;
+            $http.get(apiBaseURL + 'Fetch/GetDeliveryRange', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.getDeliveryRangeTypeList = response.data.model;
+
+                    $scope.statusMultiSelect = response.data.model;
+
+                    $scope.statusMultiSelect.forEach(ele => {
+                        ele.name = ele.name + ' ' + ele.day + ' ' + ele.dayType
+                    })
+                    //console.log(response);
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    //console.log(response.data.model);
+                    $scope.showLoader = false;
+                });
+        }
+        
+        $scope.reportDate = (dateFlag, fromDate, toDate, courierId, deliveryRangeIds, districtId, statusFlagId, tigerStatusId) => {
+
+            if (dateFlag == '0') {
+                alert("Please select date flag...!!!");
+                return false;
+            }
+            if (userId == 132 || adminType == 11) {
+                $scope.showDiv = true;
+            }
+
+            var deliveryRangeIdsArray = [];
+            for (var i = 0; i < deliveryRangeIds.length; i++) {
+                deliveryRangeIdsArray.push(deliveryRangeIds[i].id)
+            }
+            var orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": parseInt(courierId),
+                "DeliveryRangeIds": deliveryRangeIdsArray.toString(),
+                "DistrictId": +districtId,
+                "StatusFlag": +statusFlagId,
+                "DateFlag": +dateFlag,
+                "TigerStatusId": +tigerStatusId
+            };
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/PackageDateDeliveryDateReport', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.PackageToDelivery = response.data.model;
+                    console.log(response.data.model);
+                    $scope.allDelivery = response.data.model;
+                    $scope.timeDelivery = response.data.model.filter(d => d.deliveredCourierOrdersId != null);
+                    $scope.inTimeDelivery = response.data.model.filter(d => (d.hours > 0 || d.hours == 0) && d.deliveredCourierOrdersId != null);
+                    $scope.outTimeDelivery = response.data.model.filter(d => d.hours < 0 && d.deliveredCourierOrdersId != null);
+                    $scope.customerRejectStatus = response.data.model.filter(d => d.customerRejectStatus > 0);
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+                    $scope.showExcelButton = true;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+
+        }
+
+        $scope.orderDetails = (courierOrdersId, deliveryType, district, courierName, expectedDeliveryDate) => {
+            $scope.orderId = courierOrdersId;
+            $scope.deliveryType = deliveryType;
+            $scope.districts = district;
+            $scope.courierName = courierName;
+            $scope.expectedDeliveryDate = expectedDeliveryDate;
+
+            $http.get(apiBaseURL + "Fetch/OrderUpdateHistory/" + courierOrdersId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.orderDetailsData = response.data.model;
+                    //console.log($scope.orderDetailsData);
+                    $scope.receivedDate = response.data.model.filter(d => d.status == 7)[0].postedOn;
+                    $scope.deliveredDate = response.data.model.filter(d => d.status == 15)[0].postedOn;
+                    //$scope.receivedDate = new Date(response.data.model.filter(d => d.status == 7)[0].postedOn);
+                    //$scope.deliveredDate = new Date(response.data.model.filter(d => d.status == 15)[0].postedOn);
+                    //console.log($scope.receivedDate);
+                    //console.log($scope.deliveredDate);
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+
+        $scope.createExcelSheet = (tableName, event) => {
+            var element = encodeURIComponent($('#' + tableName).html());
+            //window.open('data:application/vnd.ms-excel,' + encodeURIComponent(element));
+            var a = document.createElement('a');
+            var data_type = 'data:application/vnd.ms-excel';
+            a.href = data_type + ', ' + element;
+            a.download = 'CDD_DateRange.xls';
+            a.click();
+            event.preventDefault();
+        }
+
+        $scope.timeChange = function (time) {
+            $scope.showLoader = true;
+
+            if (time == 'inTime') {
+                $scope.PackageToDelivery = $scope.allDelivery.filter(d => (d.hours > 0 || d.hours == 0) && d.deliveredCourierOrdersId != null);
+                $scope.showLoader = false;
+            }
+            else if (time == 'outTime') {
+                $scope.PackageToDelivery = $scope.allDelivery.filter(d => d.hours < 0 && d.deliveredCourierOrdersId != null);
+                $scope.showLoader = false;
+            }
+            else if (time == 'allTime') {
+                $scope.PackageToDelivery = $scope.allDelivery.filter(d => d.deliveredCourierOrdersId != null);
+                //$scope.allDelivery;
+                $scope.showLoader = false;
+            }
+            else if (time == 'packageTime') {
+                $scope.PackageToDelivery = $scope.allDelivery;
+                //$scope.allDelivery;
+                $scope.showLoader = false;
+            }
+            else if (time == 'customerRejectStatus') {
+                $scope.PackageToDelivery = $scope.allDelivery.filter(d => d.customerRejectStatus > 0);
+                $scope.showLoader = false;
+            }
+            else if (time == 'pendingStatus') {
+                $scope.PackageToDelivery = $scope.allDelivery.filter(d => d.pendingStatus > 0);
+                $scope.showLoader = false;
+            }
+        }
+
+    });
+</script>

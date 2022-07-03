@@ -1,0 +1,218 @@
+﻿
+@{
+    ViewBag.Title = "Dt Order Source Wise Order Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+
+<div ng-app="DtOrderSourceWiseOrderReportModule">
+    <div ng-controller="DtOrderSourceWiseOrderDetailsController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">Dt Order Source Wise Order Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                    <button style="margin-left: 2px;" class="btn btn-w-m btn-success" type="button" ng-click="orderSourceReports(fromDate, toDate)">show</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Order Source</th>
+                                            <th>Total Order</th>
+                                            <th>Order (%)</th>
+                                            <th>Total Merchant</th>
+                                            <th>Merchant (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="o in merchantOrderSourceModel | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index + 1}}</td>
+                                            <td>{{o.orderFrom}}</td>
+                                            <td style="cursor: pointer;" ng-click="detailsOrderSource(fromDate, toDate, o.orderFrom)" data-toggle='modal' data-target='#orderSourceDetailsModal'>
+                                                {{o.totalOrder}}
+                                                <i ng-if="o.totalOrder > 0" class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                            <td>
+                                                {{o.totalOrder / allSourceTotalOrder * 100 | number:2}}
+                                            </td>
+                                            <td>{{o.totalMerchant}}</td>
+                                            <td>{{o.totalMerchant / allSourceTotalMerchant * 100 | number:2}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+
+                @*Order Source Details Modal*@
+                <div id="orderSourceDetailsModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Order Source ({{orderSource}}) Details Modal</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+
+                            </div>
+                            <div class="spiner-example" ng-show="showLoaderModal">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1"></div>
+                                    <div class="sk-rect2"></div>
+                                    <div class="sk-rect3"></div>
+                                    <div class="sk-rect4"></div>
+                                    <div class="sk-rect5"></div>
+                                </div>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                                        Company Name
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in OrderFromDetailsModel | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{a.companyName}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Order Source Details Modal End*@
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('DtOrderSourceWiseOrderReportModule', []);
+    app.controller('DtOrderSourceWiseOrderDetailsController', function ($scope, $http) {
+        //URL
+        var OnlineUrl = "https://adm.ajkerdeal.com/api/deliverytiger/";
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+
+        $scope.orderSource = "";
+
+        $scope.orderSourceReports = function (fromDate, toDate) {
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            $scope.showLoader = true;
+
+            $http.post(CoreOnlineUrl + 'Report/GetOrderFromWiseOrderCount', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.merchantOrderSourceModel = response.data.model;
+                    $scope.allSourceTotalOrder = $scope.merchantOrderSourceModel.reduce((accum, item) => parseInt(accum) + parseInt(item.totalOrder), 0);
+                    $scope.allSourceTotalMerchant = $scope.merchantOrderSourceModel.reduce((accum, item) => parseInt(accum) + parseInt(item.totalMerchant), 0);
+                    $scope.showLoader = false;
+                }, function error(error) {
+                    console.log(error);
+                    $scope.showLoader = false;
+                })
+        }
+
+        $scope.detailsOrderSource = function (fromDate, toDate, orderFrom) {
+            let orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "orderFrom": orderFrom
+            };
+
+            $scope.showLoaderModal = true;
+            $scope.orderSource = orderFrom;
+
+            $http.post(CoreOnlineUrl + 'Report/GetMerchantOrderFromDetails', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.OrderFromDetailsModel = response.data.model;
+                    $scope.showLoaderModal = false;
+                }, function error(error) {
+                    console.log(error);
+                    $scope.showLoaderModal = false;
+                })
+        }
+        
+    })
+</script>

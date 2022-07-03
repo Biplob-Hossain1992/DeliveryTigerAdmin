@@ -1,0 +1,900 @@
+﻿
+@{
+    ViewBag.Title = "MerchantWiseAssignCourier";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.min.js" integrity="sha512-IO99nu6TitXdydITTnjerPUo0HffdgLC9yIfv5gwglcsSR7nN008a7QDynI5Ih0mGLlnNnt8tGIuBCFRZaNjqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-sanitize.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.css" integrity="sha512-3MNyrZTIbIT7sGASBSy4HeOwFNhRephd5RfnYcyr7Nbs0CX3/KaNcpPivPOAkOfrKBLL2VtyNzXgphX1i71nEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+<style>
+    .activetoggle, .inactivetoggle {
+        font-size: 40px;
+        cursor: pointer;
+    }
+
+    .activetoggle, .inactivetoggle {
+        font-size: 40px;
+        cursor: pointer;
+    }
+
+    i.activetoggle {
+        color: #5cb85c
+    }
+
+    i.inactivetoggle {
+        color: #d9534f
+    }
+
+    #spinner-front {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        top: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        z-index: 998;
+    }
+
+    .greenBackground {
+        background-color: lightgreen;
+        color: black;
+    }
+
+    .redBackground {
+        background-color: lightcoral;
+        color: black;
+    }
+</style>
+
+
+<h2>Merchant Wise Assign Courier</h2>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<div class="row" ng-app="manageModule">
+    <div class="col-lg-12" ng-controller="manageController" data-ng-init="init()">
+        <div id="spinner-front" ng-show="showFullPageLoader">
+            <img src="~/Content/loading-spinner.gif" />
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                                <select ng-model="district" class="form-control" ng-change="changeThana(district);">
+                                    <option value="0" selected>Select District</option>
+                                    <option ng-repeat="d in allDistricts" value="{{d.districtId}}">{{d.district}}</option>
+                                </select>
+
+                                <select ng-model="thana" class="form-control" ng-change="changeArea(thana);">
+                                    <option value="0" selected>Select Thana</option>
+                                    <option ng-repeat="d in allThanas" value="{{d.districtId}}">{{d.district}}</option>
+                                </select>
+
+                                <ui-select ng-model="merchant" theme="select2"style="min-width:200px; margin-left:20px" ng-click="getMerchantId($select.selected.courierUserId)">
+                                    <ui-select-match>
+                                        <span ng-bind="$select.selected.companyName"></span>
+                                    </ui-select-match>
+                                    <ui-select-choices repeat="item in (AllMerchantInfo | filter: $select.search)" refresh="loadMerchantData($select.search)" refresh-delay="100"  minimum-input-length="1">
+                                        <span ng-bind="item.companyName +' => '+item.courierUserId"></span>
+                                    </ui-select-choices>
+                                </ui-select>
+                                <button type="button" style="margin-left:20px" class="btn btn-w-m btn-success" ng-click="getData(district, thana)">Search</button>
+                                @*<button type="button" class="btn btn-w-m btn-danger" style="margin-left: 5px;" ng-click="inactiveAllServices(district)">Inactive All Services</button>*@
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="col-lg-12">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Service Type</th>
+                                    <th>Service && Courier</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in assignCouirerAndService | filter:mainSearch">
+                                    <td>
+                                        {{o.districtEng}}
+                                    </td>
+                                    <td>
+                                        <p ng-if="(o.deliveryInfo | filter: {serviceType:'alltoall'}).length > 0">
+                                            <b>All To All Service</b>
+                                        </p>
+                                        <ul>
+                                            <li ng-repeat="r in o.deliveryInfo | filter: { serviceType: 'alltoall'}" ng-if="r.thanaId > 0" style="margin-top: 10px" ng-init="getMerchantName(r.courierUserId)">
+                                                <div class="row">
+                                                    <div class="col-sm-8">
+                                                        <span ng-if="r.thanaId > 0">
+                                                            {{r.name}}-{{r.day}}-{{r.dayType}}-
+                                                            <span ng-class="{'badge bg-success': r.courierId == 34,'badge bg-primary': r.courierId == 32,'badge bg-info': r.courierId == 28}">{{r.courierName}}</span><br />
+                                                            <span>{{r.courierDeliveryCharge}} ৳</span>
+                                                        </span>
+                                                        <div>
+                                                            <select style="font-size: 12px;font-weight: 600;" class="form-control" ng-model="r.courierId" ng-options="c.id as c.name for c in couriers"></select>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="col-sm-2">
+                                                        <i data-toggle="tooltip" data-placement="top" title="Active" class="fa fa-toggle-on activetoggle"
+                                                           ng-if="r.isActive == true"
+                                                           ng-click="disableAssign(false,r.thanaId,r.areaId,r.deliveryRangeId,r.serviceType,r.courierId,r.courierUserId)">
+                                                        </i>
+                                                        <i data-toggle="tooltip" data-placement="top" title="Inactive" class="fa fa-toggle-on fa-rotate-180 inactivetoggle"
+                                                           ng-if="r.isActive == false"
+                                                           ng-click="disableAssign(true,r.thanaId,r.areaId,r.deliveryRangeId,r.serviceType,r.courierId,r.courierUserId)">
+                                                        </i>
+                                                        <div>
+                                                            <button data-toggle="tooltip" data-placement="top" title="Change courier" ng-click="changeCourierAssign(r.thanaId,r.areaId,r.deliveryRangeId,r.serviceType,r.isActive,r.courierId,r.courierUserId)" type="button" class="btn btn-warning"><i class="fa fa-pencil fa-lg"></i></button>
+                                                        </div>
+                                                        @*<button  data-toggle="tooltip" data-placement="top" title="Remove" ng-click="removeAssign(r.thanaId,r.areaId,r.deliveryRangeId,r.serviceType)" type="button" class="btn btn-danger"><i class="fa fa-trash-o fa-lg"></i></button>*@
+                                                    </div>
+                                                    <div class="col-sm-8">
+                                                        <strong>Merchant Name: {{r.companyName}} </strong>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <strong>IsSpecial: {{r.isSpecial}} </strong>
+                                                    </div>
+                                                </div>
+                                             
+
+                                            </li>
+                                           
+                                                
+
+                                        </ul>
+                                       
+                                           
+
+                                        <p ng-if="(o.deliveryInfo | filter: {serviceType:'citytocity'}).length > 0">
+                                            <b>City To City Service</b>
+                                        </p>
+
+                                        <ul>
+                                            <li ng-repeat="r in o.deliveryInfo | filter: { serviceType: 'citytocity'}" ng-if="r.thanaId > 0" style="margin-top: 10px">
+                                                <div class="row">
+                                                    <div class="col-sm-8">
+                                                        <span ng-if="r.thanaId > 0">
+                                                            {{r.name}}-{{r.day}}-{{r.dayType}}-
+                                                            <span ng-class="{'badge bg-success': r.courierId == 34,'badge bg-primary': r.courierId == 32,'badge bg-info': r.courierId == 28}">{{r.courierName}}</span><br />
+                                                            <span>{{r.courierDeliveryCharge}} ৳</span>
+                                                        </span>
+                                                        <div>
+                                                            <select style="font-size: 12px;font-weight: 600;" class="form-control" ng-model="r.courierId" ng-options="c.id as c.name for c in couriers"></select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-2">
+                                                        <i data-toggle="tooltip" data-placement="top" title="Active" class="fa fa-toggle-on activetoggle"
+                                                           ng-if="r.isActive == true"
+                                                           ng-click="disableAssign(false,r.thanaId,r.areaId,r.deliveryRangeId,r.serviceType,r.courierId,r.courierUserId)">
+                                                        </i>
+                                                        <i data-toggle="tooltip" data-placement="top" title="Inactive" class="fa fa-toggle-on fa-rotate-180 inactivetoggle"
+                                                           ng-if="r.isActive == false"
+                                                           ng-click="disableAssign(true,r.thanaId,r.areaId,r.deliveryRangeId,r.serviceType,r.courierId,r.courierUserId)">
+                                                        </i>
+                                                        <div>
+                                                            <button data-toggle="tooltip" data-placement="top" title="Change courier" ng-click="changeCourierAssign(r.thanaId,r.areaId,r.deliveryRangeId,r.serviceType,r.isActive,r.courierId,r.courierUserId)" type="button" class="btn btn-warning"><i class="fa fa-pencil fa-lg"></i></button>
+                                                        </div>
+                                                        @*<button  data-toggle="tooltip" data-placement="top" title="Remove" ng-click="removeAssign(r.thanaId,r.areaId,r.deliveryRangeId,r.serviceType)" type="button" class="btn btn-danger"><i class="fa fa-trash-o fa-lg"></i></button>*@
+                                                    </div>
+                                                    <div class="col-sm-4">
+                                                        <strong>Merchant Name: {{r.companyName}} </strong>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <strong>IsSpecial: {{r.isSpecial}} </strong>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+
+                                    </td>
+                                    <td style="text-align:center;">
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <select class="form-control" ng-model="id" ng-options="c.id as c.name for c in deliveryRanges"></select>
+                                            </div>
+                                        </div>
+
+                                        <div class="row" style="margin-top:10px;">
+                                            <div class="col-sm-12">
+                                                <select class="form-control" ng-model="courierId" ng-options="c.id as c.name for c in couriers"></select>
+                                            </div>
+                                        </div>
+                                        <div class="row" style="margin-top:10px; margin-bottom:10px;">
+                                            <div class="col-sm-12">
+                                                <select class="form-control" ng-model="isSpecial" ng-options="c.id as c.name for c in isSpecials"></select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <ui-select ng-model="merchantid" theme="select2" style="min-width:200px; margin-left:20px" ng-click="getMerchantIdFromTable($select.selected.courierUserId)">
+                                                    <ui-select-match>
+                                                        <span ng-bind="$select.selected.companyName"></span>
+                                                    </ui-select-match>
+                                                    <ui-select-choices repeat="item in (AllMerchantInfo | filter: $select.search)" refresh="loadMerchantData($select.search)" refresh-delay="100" minimum-input-length="1">
+                                                        <span ng-bind="item.companyName +' => '+item.courierUserId"></span>
+                                                    </ui-select-choices>
+                                                </ui-select>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <button data-toggle="tooltip" data-placement="top" title="Add" style="background-color:green;" ng-click="addAssign(district,thana,o.districtId,id,courierId,'alltoall',isSpecial)" type="button" class="btn btn-success"><i class="fa fa-plus-circle fa-lg"></i> Single</button>
+                                                <button data-toggle="tooltip" data-placement="top" title="Add" style="background-color:steelblue;margin-top:6px;" ng-click="addCityAssign(district,thana,o.districtId,id,courierId,'citytocity',isSpecial)" type="button" class="btn btn-primary"><i class="fa fa-plus-circle fa-lg"></i> City Single</button>
+                                            </div>
+                                            <div class="col-sm-6" ng-if="thana == '0' && district != '14' ">
+                                                <button data-toggle="tooltip" data-placement="top" title="Add all areas" style="background-color:green;"
+                                                        ng-click="addAssignList(district,o.districtId,0,id,courierId,'alltoall',isSpecial)" type="button" class="btn btn-info">
+                                                    <i class="fa fa-cart-plus fa-lg"></i> All areas
+                                                </button>
+                                            </div>
+
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Modal Start*@
+        <div class="row">
+            <div id="changeLogDetailsModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                 aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">Change Log</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+
+                        </div>
+                        <div class="spiner-example" ng-show="showLoaderModal">
+                            <div class="sk-spinner sk-spinner-wave">
+                                <div class="sk-rect1"></div>
+                                <div class="sk-rect2"></div>
+                                <div class="sk-rect3"></div>
+                                <div class="sk-rect4"></div>
+                                <div class="sk-rect5"></div>
+                            </div>
+                        </div>
+                        <div class="modal-body" style="overflow: auto;">
+                            <div class="input-group">
+                                <span class="input-group-addon">
+                                    <i class="fa fa-search"></i>
+                                </span>
+                                <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                            </div>
+                            <div>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                #
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='District'; reverseSort = !reverseSort">
+                                                    Service Type
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Thana'; reverseSort = !reverseSort">
+                                                    Old Courier
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Area'; reverseSort = !reverseSort">
+                                                    New Courier
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='PackagePodNumberCount'; reverseSort = !reverseSort">
+                                                    Old Active Status
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='DeliveredPodNumber'; reverseSort = !reverseSort">
+                                                    New Active Status
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                    Changed Date
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                    Changed By
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="c in changeLogDetails | orderBy:orderByField:reverseSort | filter:search">
+                                            <td>{{$index +1}}</td>
+                                            <td>{{c.deliveryServiceType}}</td>
+                                            <td>{{c.oldCourierName}}</td>
+                                            <td>{{c.newCourierName}}</td>
+                                            <td ng-class="{'redBackground': c.oldIsActive == false, 'greenBackground': c.oldIsActive == true}">
+                                                <span ng-if="c.oldIsActive == true">
+                                                    Active
+                                                </span>
+                                                <span ng-if="c.oldIsActive == false">
+                                                    Deactive
+                                                </span>
+                                            </td>
+                                            <td ng-class="{'redBackground': c.newIsActive == false, 'greenBackground': c.newIsActive == true}">
+                                                <span ng-if="c.newIsActive == true">
+                                                    Active
+                                                </span>
+                                                <span ng-if="c.newIsActive == false">
+                                                    Deactive
+                                                </span>
+                                            </td>
+                                            <td>{{c.changedDate | date:'medium'}}</td>
+                                            <td>{{c.userName}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    /* var app = angular.module('manageModule', []);*/
+    var app = angular.module('manageModule', ['ui.select', 'ngSanitize']);
+   
+        app.controller('manageController', function ($scope, $http, $timeout) {
+            //$scope.itemArray = [
+            //    { id: -1, name: 'Select Merchant' },
+
+            //];
+
+            //$scope.selected = { value: $scope.itemArray[0]};
+            /* uiSelectConfig.theme = 'select2';*/
+            $scope.merchant = {};
+            $scope.couriers = [
+                {
+                    "id": 0,
+                    "name": "Select Courier"
+                },
+                {
+                    "id": 34,
+                    "name": "Redx"
+                },
+                {
+                    "id": 32,
+                    "name": "E-Desh"
+                },
+                {
+                    "id": 30,
+                    "name": "Paperfly"
+                },
+                {
+                    "id": 49,
+                    "name": "Steadfast"
+                },
+                {
+                    "id": 28,
+                    "name": "Postal"
+                },
+                {
+                    "id": 50,
+                    "name": "Chittagong Tiger"
+                },
+                {
+                    "id": 51,
+                    "name": "Sylhet Tiger"
+                },
+                {
+                    "id": 52,
+                    "name": "Khulna Tiger"
+                },
+                {
+                    "id": 53,
+                    "name": "Narayangonj Tiger"
+                },
+                {
+                    "id": 54,
+                    "name": "Gazipur Tiger"
+                },
+                {
+                    "id": 55,
+                    "name": "Dhaka Tiger"
+                },
+                {
+                    "id": 56,
+                    "name": "Coxsbazar Tiger"
+                },
+                {
+                    "id": 57,
+                    "name": "Jatrabari Tiger"
+                },
+                {
+                    "id": 58,
+                    "name": "Uttara Tiger"
+                },
+                {
+                    "id": 59,
+                    "name": "Mirpur10 Tiger"
+                },
+                {
+                    "id": 60,
+                    "name": "Mirpur01 Tiger"
+                },
+                {
+                    "id": 61,
+                    "name": "Lalmatia Tiger"
+                },
+                {
+                    "id": 62,
+                    "name": "NewMarket Tiger"
+                },
+                {
+                    "id": 63,
+                    "name": "Islampur Tiger"
+                },
+                {
+                    "id": 64,
+                    "name": "Santinagar Tiger"
+                },
+                {
+                    "id": 65,
+                    "name": "Gulisthan Tiger"
+                },
+                {
+                    "id": 66,
+                    "name": "Rampura Tiger"
+                },
+                {
+                    "id": 67,
+                    "name": "Badda Tiger"
+                },
+                {
+                    "id": 69,
+                    "name": "KawranBazar Tiger"
+                }
+            ]
+
+            $scope.isSpecials = [
+                {
+                    "id": false,
+                    "name": "False"
+                },
+                {
+                    "id": true,
+                    "name": "True"
+                }
+            ]
+
+            $scope.courierId = 0;
+            $scope.isSpecial = false;
+            $scope.id = 0;
+            $scope.district = '0';
+            $scope.thana = '0';
+            $scope.area = '0';
+            let merhcantinfoList;
+            $scope.init = function () {
+                $scope.getDeliveryRangeList();
+                $scope.loadDistrictData(0, 0);
+            };
+
+            $scope.loadMerchantData = (valsearch) => {
+                if (valsearch.length > 3) {
+                    let url = apiBaseURL + "Fetch/GetAllCourierUsersList/"+ valsearch;
+                    $http.get(url, { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                        .then(function (response) {
+                            $scope.AllMerchantInfo = response.data.model;
+
+                        })
+                }
+
+            }
+
+
+            $scope.getMerchantId = (merchantid) => {
+                $scope.courierUserId = merchantid;
+            }
+            $scope.getMerchantIdFromTable = (merchantid) => {
+
+                $scope.merchantIdFromService = merchantid;
+            }
+
+            $scope.loadDistrictData = (id, value) => {
+                $scope.districtId = id;
+                let url = apiBaseURL + 'Fetch/LoadAllDistrictsById/' + id;
+                $http.get(url, { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+
+                        if (value == 0) {
+
+                            $scope.allDistricts = response.data.model.filter(d => d.parentId === 0 && d.isActive === true);
+                        }
+                        else if (value == 1) {
+
+                            $scope.allThanas = response.data.model.filter(d => d.parentId === parseInt($scope.districtId) && d.isActive === true);
+                            $scope.thana = '0';
+                            $scope.area = '0';
+                        }
+
+                    }, function error(response) {
+                        console.log(response);
+                    });
+
+
+            }
+            $scope.loadDataFromQueryString = function () {
+                var queryStringParam = window.location.search;
+                if (queryStringParam != '') {
+                    //var splitQueryParam = queryStringParam.split("?")[1].split("&");
+                    var queryString = queryStringParam.split("?")[1];
+                    if (queryString.includes("&")) {
+                        var splitQueryString = queryString.split("&");
+                        var districtId = splitQueryString[0].split("=")[1];
+                        var thanaId = splitQueryString[1].split("=")[1];
+                        $scope.district = districtId;
+                        $scope.changeThana(districtId);
+                        $scope.thana = thanaId;
+                        $scope.getData(districtId, thanaId);
+                    }
+                    else {
+                        var districtId = queryString.split("=")[1];
+                        $scope.district = districtId;
+                        $scope.changeThana(districtId);
+                        $scope.getData(districtId, "0");
+                    }
+                }
+            }
+
+            //get all delivery typelist
+            $scope.getDeliveryRangeList = () => {
+                $scope.showLoader = true;
+                $http.get(apiBaseURL + 'Fetch/GetDeliveryRange', { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+
+                        let empty = {
+                            'id': 0,
+                            'name': "Select Service Type"
+                        };
+
+                        $scope.deliveryRanges = response.data.model;
+                        $scope.deliveryRanges.forEach(element => {
+                            element.name = element.name + "-" + element.day + "-" + element.dayType + "-" + element.courierDeliveryCharge + " ৳"
+                        });
+                        $scope.deliveryRanges.push(empty);
+                        $scope.deliveryRanges.sort((a, b) => a.id - b.id);
+
+                        $scope.showLoader = false;
+
+                    }, function error(response) {
+                        console.log(response.data.model);
+                        $scope.showLoader = false;
+                    });
+            }
+
+            $scope.changeThana = (districtId) => {
+                $scope.districtId = districtId;
+                $scope.loadDistrictData(districtId, 1,);
+
+            }
+            $scope.changeArea = (thanaId) => {
+                loadData($scope.districtId, thanaId, $scope.courierUserId);
+
+            }
+
+            $scope.districtId;
+            $scope.thanaId;
+            $scope.courierUserId;
+
+
+            $scope.getData = (districtId, thanaId) => {
+                $scope.districtId = districtId;
+                $scope.thanaId = thanaId;
+                courierUserId = $scope.courierUserId;
+                $scope.showLoader = true;
+                loadData(districtId, thanaId,courierUserId);
+            }
+
+            function loadData(districtId, thanaId, courierUserId) {
+
+                if (courierUserId == undefined) {
+                    courierUserId = 0;
+                }
+                if (districtId == undefined) {
+                    districtId = 0;
+                }
+                if (thanaId == undefined) {
+                    thanaId = 0;
+                }
+
+                $http.get(apiBaseURL + 'Fetch/GetMerchantAssignCouirerAndService/' + districtId + '/' + thanaId + '/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+
+                        $scope.assignCouirerAndService = response.data.model;
+
+                        $scope.showLoader = false;
+
+                    }, function error(response) {
+                        console.log(response.data);
+                        $scope.showLoader = false;
+                    });
+            }
+
+            $scope.changeCourierAssign = (thanaId, areaId, deliveryRangeId, serviceType, isActive, courierId, courierUserId) => {
+
+                var userId = sessionStorage.getItem('userId');
+
+                let assignCouirerAndServiceBodyModel = {
+                    thanaId: thanaId,
+                    areaId: areaId,
+                    deliveryRangeId: deliveryRangeId,
+                    serviceType: serviceType,
+                    isActive: isActive,
+                    courierId: courierId,
+                    userId: userId,
+                    courierUserId: courierUserId
+                }
+
+                $scope.showFullPageLoader = true;
+                $http.put(apiBaseURL + 'Update/UpdateMerchantServiceTypeCourier', assignCouirerAndServiceBodyModel,
+                    { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                    .then(function (response) {
+                        if (response.data) {
+
+                            loadData($scope.districtId, $scope.thanaId, $scope.courierUserId);
+                            $timeout(function () {
+                                $scope.showFullPageLoader = false;
+                            }, 1000);
+                        }
+                    }, function error(response) {
+                        console.log(response.data);
+                    });
+            }
+
+      
+
+            $scope.addAssignList = async (districtId, thanaId, areaId, deliveryRangeId, courierId, serviceType, isSpecial) => {
+
+              
+                let url = apiBaseURL + 'Fetch/LoadAllDistrictsById/' + thanaId;
+                $http.get(url, { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+                        $scope.allAreaData = response.data.model;
+                        $scope.assignModelBuilding(districtId, thanaId, areaId, deliveryRangeId, courierId, serviceType, isSpecial);
+                    })
+
+               
+            }
+
+            $scope.assignModelBuilding = (districtId, thanaId, areaId, deliveryRangeId, courierId, serviceType, isSpecial) => {
+
+                if (deliveryRangeId < 1) {
+                    alert("Please Select Service Type");
+                    return false;
+                }
+                else if (courierId < 1) {
+                    alert("Please Select courier");
+                    return false;
+                }
+
+                let deliveryChargeDetailsList = [];
+                $scope.allAreas = $scope.allAreaData.filter(d => d.parentId === parseInt(thanaId) && d.isActive === true);
+                $scope.allAreas.forEach(element => {
+                    let deliveryChargeDetails = {
+                        districtId: parseInt(districtId),
+                        thanaId: thanaId,
+                        areaId: element.districtId,
+                        deliveryRangeId: deliveryRangeId,
+                        courierId: courierId,
+                        serviceType: serviceType,
+                        courierUserId: $scope.merchantIdFromService,
+                        isSpecial: isSpecial
+                    };
+                    deliveryChargeDetailsList.push(deliveryChargeDetails);
+                });
+
+                if (deliveryChargeDetailsList.length == 0) {
+                    return false;
+                }
+                AddAssignCouirerAndServiceData(deliveryChargeDetailsList, 'area');
+            }
+
+            function insertData(districtId, thanaId, areaId, deliveryRangeId, courierId, serviceType, isSpecial) {
+            if (deliveryRangeId < 1) {
+                alert("Please Select Service Type");
+                return false;
+            }
+            else if (courierId < 1) {
+                alert("Please Select courier");
+                return false;
+            }
+
+            if (parseInt(thanaId) == 0) {
+                let deliveryChargeDetails = [{
+                    districtId: districtId,
+                    thanaId: areaId,
+                    areaId: 0,
+                    deliveryRangeId: deliveryRangeId,
+                    courierId: courierId,
+                    serviceType: serviceType,
+                    courierUserId: $scope.merchantIdFromService,
+                    isSpecial: isSpecial
+                }];
+
+
+                let resModel = $scope.assignCouirerAndService.filter(a => a.districtId == deliveryChargeDetails[0].thanaId);
+                let subResModel = resModel[0].deliveryInfo.filter(m => m.thanaId == deliveryChargeDetails[0].thanaId
+                    && m.deliveryRangeId == deliveryChargeDetails[0].deliveryRangeId
+                    && m.courierId == deliveryChargeDetails[0].courierId
+                    && m.serviceType == deliveryChargeDetails[0].serviceType)
+
+                if (subResModel.length > 0) {
+                    alert("Already exists service and courier");
+                    return false;
+                }
+
+                AddAssignCouirerAndServiceData(deliveryChargeDetails);
+            }
+            else if (parseInt(thanaId) > 0) {
+                let deliveryChargeDetails = [{
+                    districtId: districtId,
+                    thanaId: thanaId,
+                    areaId: areaId,
+                    deliveryRangeId: deliveryRangeId,
+                    courierId: courierId,
+                    serviceType: serviceType,
+                    courierUserId: $scope.merchantIdFromService,
+                    isSpecial: isSpecial
+
+                }];
+
+
+                let resModel = $scope.assignCouirerAndService.filter(a => a.districtId == deliveryChargeDetails[0].areaId);
+                let subResModel = resModel[0].deliveryInfo.filter(m => m.areaId == deliveryChargeDetails[0].areaId
+                    && m.deliveryRangeId == deliveryChargeDetails[0].deliveryRangeId
+                    && m.courierId == deliveryChargeDetails[0].courierId
+                    && m.serviceType == deliveryChargeDetails[0].serviceType)
+
+                if (subResModel.length > 0) {
+                    alert("Already exists service and courier");
+                    return false;
+                }
+
+                AddAssignCouirerAndServiceData(deliveryChargeDetails);
+            }
+        }
+
+            $scope.addCityAssign = (districtId, thanaId, areaId, deliveryRangeId, courierId, serviceType, isSpecial) => {
+                insertData(districtId, thanaId, areaId, deliveryRangeId, courierId, serviceType, isSpecial);
+        }
+
+        $scope.addAssign = (districtId, thanaId, areaId, deliveryRangeId, courierId, serviceType, isSpecial) => {
+
+            insertData(districtId, thanaId, areaId, deliveryRangeId, courierId, serviceType, isSpecial);
+        }
+
+            function AddAssignCouirerAndServiceData(deliveryChargeDetails, flag) {
+
+                $http.post(apiBaseURL + 'Entry/AddMerchantWiseAssignCouirerAndService', deliveryChargeDetails,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    
+                    alert("Service Assigned!");
+
+                    loadData($scope.districtId, $scope.thanaId, $scope.courierUserId);
+                   
+                }, function error(response) {
+                    alert("Something Went Wrong");
+                });
+        }
+
+            $scope.disableAssign = (isActive, thanaId, areaId, deliveryRangeId, serviceType, courierId,courierUserId) => {
+            var userId = sessionStorage.getItem('userId');
+
+            let assignCouirerAndServiceBodyModel = {
+                thanaId: thanaId,
+                areaId: areaId,
+                deliveryRangeId: deliveryRangeId,
+                serviceType: serviceType,
+                isActive: isActive,
+                courierId: courierId,
+                courierUserId: courierUserId
+            }
+
+            $scope.showFullPageLoader = true;
+            $http.put(apiBaseURL + 'Update/UpdateDeliveryChargeMerchantDetails', assignCouirerAndServiceBodyModel,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    if (response.data) {
+                        loadData($scope.districtId, $scope.thanaId, $scope.courierUserId);
+                        $timeout(function () {
+                            $scope.showFullPageLoader = false;
+                        }, 2000);
+                    }
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showFullPageLoader = false;
+                });
+
+        }
+
+        $scope.removeAssign = (thanaId, areaId, deliveryRangeId, serviceType) => {
+            let assignCouirerAndServiceBodyModel = {
+                thanaId: thanaId,
+                areaId: areaId,
+                deliveryRangeId: deliveryRangeId,
+                serviceType: serviceType
+            }
+
+            var result = confirm("Are you sure to delete?");
+            if (result) {
+                $http.delete(apiBaseURL + 'Delete/DeleteDeliveryChargeDetails', {
+                    data: assignCouirerAndServiceBodyModel,
+                    headers: { 'Content-Type': 'application/json;charset=utf-8', 'Authorization': 'Bearer ' + sessionStorage.getItem("token").trim() }
+                }).then(function (response) {
+                    if (response.data) {
+                        loadData($scope.districtId, $scope.thanaId, $scope.courierUserId);
+                    }
+                }, function (response) {
+                    console.log(response);
+                })
+            }
+        }
+    });
+
+</script>

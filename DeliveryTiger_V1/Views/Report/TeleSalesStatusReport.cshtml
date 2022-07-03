@@ -1,0 +1,333 @@
+﻿
+@{
+    ViewBag.Title = "TeleSalesStatusReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    })
+</script>
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div class="row" style="display:flex; margin-top:10px;">
+    <div class="col-lg-12" ng-app="teleSalesStatusModule">
+        <div class="ibox" ng-controller="teleSalesStatusController">
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <!--Date Picker-->
+                <div class="col-lg-12" id="" style="display:flex; margin-top:20px;">
+
+                    <div class="col-lg-4">
+                        <div class="form-group">
+
+                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group">
+
+                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <button type="button" class="btn btn-success" ng-click="getReport(fromDate,toDate)"><strong> Submit </strong></button>
+                        </div>
+                    </div>
+
+                </div>
+                <!--Date Picker End-->
+                <!--Report Table-->
+
+
+
+            </div>
+
+
+            <!--Report Details-->
+            <div class="ibox-content" style="padding:5px;">
+                <div class="col-lg-12" style="padding:0px;">
+
+                    <!--Loader-->
+                    <div id="catloader">
+                        <div class="spiner-example" ng-show="showLoader">
+                            <div class="sk-spinner sk-spinner-wave">
+                                <div class="sk-rect1">
+                                </div>
+                                <div class="sk-rect2">
+                                </div>
+                                <div class="sk-rect3">
+                                </div>
+                                <div class="sk-rect4">
+                                </div>
+                                <div class="sk-rect5">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--Report Table-->
+                    <div style="margin: 20px 0px 10px 0px">
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead>
+                                <tr>
+
+                                    <th>Date</th>
+                                    <th>Status and Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                <tr ng-repeat="t in teleSalesStatus">
+
+
+                                    <td>{{ t.teleSalesDate }}</td>
+                                    <td>
+                                        <ul>
+                                            <li ng-repeat="v in t.values">
+                                                <button type="button" class="btn btn-link" ng-click="getDetails(t.teleSalesDate,v.teleSales)" data-toggle="modal" data-target="#detailsModal"> {{v.teleSales}} ({{v.totalCount}}) </button>
+
+                                            </li>
+                                            <li style="font-size:14px;"><strong>Total Called: {{calculateSubTotal(t.values)}}</strong></li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                <tr style="font-size:15px;">
+                                    <td>
+                                        <strong>Total Call ({{fromDate }} - {{ toDate}})</strong>
+                                    </td>
+                                    <td style="text-align:justify">
+                                        <strong>     {{calculateTotal(teleSalesStatus)}}</strong>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!--Report Table End-->
+
+                </div>
+            </div>
+            <!--Report Details End-->
+            <!--Modal-->
+            <div class="modal inmodal fade" id="detailsModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h5 class="modal-title" id="detailsModalHeader">Details</h5>
+                        </div>
+
+                        <div class="modal-body">
+                            <div>
+                                <div class="spiner-example" ng-show="showModalLoader">
+                                    <div class="sk-spinner sk-spinner-wave">
+                                        <div class="sk-rect1">
+                                        </div>
+                                        <div class="sk-rect2">
+                                        </div>
+                                        <div class="sk-rect3">
+                                        </div>
+                                        <div class="sk-rect4">
+                                        </div>
+                                        <div class="sk-rect5">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin: 20px 0px 10px 0px">
+                                <table class="table table-bordered table-striped table-hover" ng-show="showReportDetails">
+                                    <thead>
+                                        <tr>
+
+                                            <th>Company Name</th>
+                                            <th>Mobile</th>
+                                            <th>Bkash Number</th>
+                                            <th>Alternate Mobile</th>
+                                            @*<th>Total Order</th>*@
+                                            <th>Last Order Date</th>
+                                            @*<th>DT-Code</th>*@
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        <tr ng-repeat="d in teleSalesDetails">
+
+
+                                            <td>{{ d.companyName }}</td>
+                                            <td>{{ d.mobile }}</td>
+                                            <td>{{d.bkashNumber}}</td>
+                                            <td>{{d.alterMobile}}</td>
+                                            @*<td>{{ d.totalOrder }}</td>*@
+                                            <td>
+                                                {{ d.lastOrderDate  | date:"MM/dd/yyyy" }}
+                                            </td>
+
+                                            @*<td>{{d.courierOrdersId}}</td>*@
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--Modal End-->
+
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    var app = angular.module('teleSalesStatusModule', []);
+    app.controller('teleSalesStatusController', function ($scope, $http) {
+
+
+
+        //var localUrl = "http://localhost:58676/api/Report/GetTelesalesActiveMerchantList";
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+
+        $scope.getReport = function (fromDate, toDate) {
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate
+            };
+
+            let url = apiBaseURL + 'Report/GetTelesalesActiveMerchantList';
+            $scope.showLoader = true;
+            $http.post(url, orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.teleSalesStatus = response.data.model;
+
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        };
+
+
+        $scope.calculateSubTotal = function (values) {
+            var total = 0;
+            angular.forEach(values, function (item) {
+                total += item.totalCount;
+            });
+            return total;
+        }
+
+        $scope.calculateTotal = function (teleSalesStatus) {
+            var total = 0;
+            angular.forEach(teleSalesStatus, function (item) {
+                angular.forEach(item.values, function (subitem) {
+                    total += subitem.totalCount;
+                });
+            });
+            return total;
+        }
+
+        $scope.getDetails = (date, teleSalesStatus) => {
+            let teleSales;
+
+            if (teleSalesStatus == "Recently Interested") {
+                teleSales = 1;
+            }
+            if (teleSalesStatus == "Not Interested") {
+                teleSales = 2;
+            }
+            if (teleSalesStatus == "Business Closed") {
+                teleSales = 3;
+            }
+            if (teleSalesStatus == "Didn't Pick") {
+                teleSales = 4;
+            }
+            if (teleSalesStatus == "Late Interested") {
+                teleSales = 5;
+            }
+            var requestBodyModel = {
+                "fromDate": date,
+                "statusId": teleSales,
+                "retentionUserId": 0
+            }
+            //let urlForDetails = "http://localhost:58676/api/Report/StatusWiseTelesalesDetails";
+            let onlineUrl = apiBaseURL + 'Report/StatusWiseTelesalesDetails';
+            $scope.showModalLoader = true;
+            $scope.showReportDetails = false;
+            $http.post(onlineUrl, requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.teleSalesDetails = response.data.model;
+
+                    $scope.showModalLoader = false;
+                    $scope.showReportDetails = true;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showModalLoader = false;
+                });
+
+            //console.log(requestBodyModel);
+
+        }
+
+    });
+</script>

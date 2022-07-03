@@ -1,0 +1,251 @@
+﻿
+@{
+    ViewBag.Title = "MerchantBulkOrderProcess";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.9/angular.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/danialfarid-angular-file-upload/12.2.13/ng-file-upload.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/xlsx.full.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/7.29.2/sweetalert2.all.js"></script>
+<link rel="stylesheet" href="http://lipis.github.io/bootstrap-sweetalert/lib/sweet-alert.css">
+<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/Operation/Operation.js"></script>
+<script src="~/Scripts/Operation/BulkOrderProcessNew.js"></script>
+@*<link href="~/Content/plugins/select2/select2.min.css" rel="stylesheet" />*@
+<link href="~/Content/plugins/iCheck/custom.css" rel="stylesheet">
+@*<script src="~/Scripts/plugins/select2/select2.full.min.js"></script>*@
+<script type="text/javascript" src="~/Scripts/plugins/iCheck/icheck.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('.i-checks').iCheck({
+            checkboxClass: 'icheckbox_square-green',
+            radioClass: 'iradio_square-green',
+        });
+    });</script>
+<script>
+    var allOrderData = [];
+    var allDistrictData = [];
+    var AllMerchantInfo = [];
+    var CurrentMerchant;
+    $(document).ready(function () {
+         if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+             LoadAllDistricts();
+             //loadMerchantInfo("Merchant");
+             loadMerchantInfoListList("Merchant");
+             //$("#Merchant").select2();
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+    });
+</script>
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<div ng-app="login" ng-controller="bulkOrder">
+    <div class="row" style="margin-top:10px;">
+        <div class="col-lg-12">
+            <div class="ibox">
+                @*<div class="ibox-title">
+                        <h5>Bulk Order Process</h5>
+                    </div>*@
+                <div class="ibox-title">
+                    <div class="col-12" style="display:flex;">
+                        <div class="col-lg-2">
+                            <h5>Bulk Order Process</h5>
+                        </div>
+                        <div class="col-lg-2">
+                            <input id="phnnumber" type="tel" placeholder="মোবাইল নম্বর" ng-model="phnnumber" maxlength="11" autocomplete="off" class="form-control form-input-user" />
+                        </div>
+                        <div class="col-lg-2">
+                            <input id="password" type="password" placeholder="পাসওয়ার্ড" ng-model="password" autocomplete="off" class="form-control form-input-user" />
+                        </div>
+                        <div class="col-lg-2">
+                            <input type="button" value="submit" ng-click="login(phnnumber,password)" class="btn btn-outline-info" />
+                        </div>
+                        <div class="col-lg-6" ng-show="IsShow">
+                            <label>Company Name  :</label>
+                            <span id="companyName" style="color:green">{{companyName}}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="col-12" style="display:flex;">
+                        <div class="col-lg-3">
+                            <div class="custom-file">
+                                <input id="excelInput" class="custom-file-input" type="file" ngf-select="SelectFile($file)" />
+                                <label for="excelInput" class="custom-file-label">Choose file...</label>
+                            </div>
+                        </div>
+                        @*<div class="col-lg-3">
+                                <input class="btn btn-outline-info" type="button" value="Upload" ng-click="Upload()" />
+                            </div>*@
+                        <div class="col-lg-2">
+                            <div class="i-checks"><label> <input type="checkbox" checked="" id="isAutoProcess"> <i></i> Auto Process </label></div>
+                        </div>
+                        <div class="col-lg-4">
+                            <button type="button" class="btn btn-outline-primary pull-right" data-target="#bulkOrderHintModal" data-toggle="modal">Help <i class="fa fa-question-circle"></i></button>
+                            <a class="btn btn-info pull-right" style="margin-right:10px;" href="~/Content/Assets/Merchant_Bulk_Order.xls" download="">Download Excel File</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row" id="bulkOrderListTableDiv" style="margin-top:10px;display:{{IsShow}}">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>Successful Orders </h5>
+                    <button class="btn btn-success btn-sm pull-right" id="placeOrderBtn" ng-click="placeBulkOrder()">Place Order</button>
+                </div>
+                <div class="ibox-content">
+                    <table class="table table-bordered" id="bulkOrderListTable">
+                        <thead>
+                            <tr>
+
+                                <th>
+                                    Customer Info
+                                </th>
+                                <th>
+                                    Order Detail
+                                </th>
+                                <th>
+                                    Charges
+                                </th>
+                                <th>
+                                    Merchant Info
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody ng-repeat="bulk in excelData">
+                            <tr>
+                                <td>
+                                    <b>Name: </b>{{bulk.customerName}}<br>
+                                    <b>Mobile: </b>{{bulk.mobile}}<br>
+                                    <b>Address: </b>{{bulk.address}}<br>
+                                    <b>DistrictId: </b>{{bulk.districtId}}-{{bulk.district == "" || bulk.district == undefined ? "" : " - " + bulk.district}}<br>
+                                    <b>Thana: </b>{{bulk.thanaId}}{{bulk.thana == "" || bulk.thana == undefined ? "" : " - " + bulk.thana}}<br>
+                                </td>
+                                <td>
+                                    <b>Product Type: </b>{{bulk.productType}}<br>
+                                    <b>Payment Type: </b>{{bulk.paymentType}}<br>
+                                    <b>Order Type: </b>{{bulk.orderType}}<br>
+                                    <b>Weight: </b>{{bulk.weightRangeId}}-{{bulk.weight}}<br>
+                                </td>
+                                <td>
+                                    <b>Collection Amount: </b>{{bulk.collectionAmount}}<br>
+                                    <b>Actual Package Price: </b>{{bulk.actualPackagePrice}}<br>
+                                </td>
+                                <td>
+                                    <b>Packaging Name: </b>{{bulk.packagingName}}<br>
+                                    <b>Collect Address: </b>{{bulk.collectAddress}}<br>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row" id="failedBulkOrderListTableDiv" style="margin-top:10px;display:none;">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>Failed Orders </h5>
+                    <button class="btn btn-success btn-sm pull-right" id="failedBuldOrderExcelBtn" onclick="CreateExcelSheet('failedBulkOrderListDiv')">Excel</button>
+                </div>
+                <div class="ibox-content" id="failedBulkOrderListDiv">
+                    <table class="table table-bordered" id="bulkFailedOrderListTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    OrderId
+                                </th>
+                                <th>
+                                    Payable
+                                </th>
+                                <th>
+                                    Weight
+                                </th>
+                                <th>
+                                    DeliveryCharge
+                                </th>
+                                <th>
+                                    CodCharge
+                                </th>
+                                <th>
+                                    CustomerName
+                                </th>
+                                <th>
+                                    CustomerMobile
+                                </th>
+                                <th>
+                                    CustomerAlternateMobile
+                                </th>
+                                <th>
+                                    CustomerAddress
+                                </th>
+                                <th>
+                                    PostCode
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="failedBulkOrderListTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal inmodal" id="bulkOrderHintModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Bulk Order Insert Hint</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="col-lg-12 " style="display:flex;justify-content:center;padding:2px 20px 2px 20px;">
+                        <div class="alert alert-info" style="justify-content:center;width:100%;">
+                            <i class="fa fa-chevron-right"></i>
+                            <strong>Do Not Change Any Column Name Of The Excel File</strong> <br><br>
+                            <i class="fa fa-chevron-right"></i>
+                            CustomerAlternateMobile : Not Mandatory, Keep blank if not needed<br><br>
+                            <i class="fa fa-chevron-right"></i>
+                            CustomerAddress : Try To Insert Union / Thana Name In English<br><br>
+                            <i class="fa fa-chevron-right"></i>
+                            Weight : Must Be In Kg. eg: 1.5 / .65 <br><br>
+                            <i class="fa fa-chevron-right"></i>
+                            PostCode : Must Be In English Numeric<br>
+                            <div class="col-lg-12 " style="display:flex;justify-content:center;margin-top:15px;">
+                                ** Success Rate Depends On Accuracy and Details In Provided Data **
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

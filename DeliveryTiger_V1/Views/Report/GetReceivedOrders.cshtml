@@ -1,0 +1,369 @@
+﻿
+@{
+    ViewBag.Title = "GetMerchantOrders";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    .footer {
+        padding: 0px 0px;
+    }
+    
+</style>
+<script src="//cdn.rawgit.com/rainabba/jquery-table2excel/1.1.0/dist/jquery.table2excel.min.js"></script>
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<script>
+    $(document).ready(function () {
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+</script>
+
+<script type="text/javascript">
+
+    var app = angular.module('orderModule', []);
+    app.controller('receivedOrderController', function ($scope, $http) {
+
+        $scope.Export = function () {
+            $("#tblReceived").table2excel({
+                filename: "ReceivedTable.xls"
+            });
+        }
+
+        //var localUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+        var d = new Date();
+
+        //var month = d.getMonth() + 1;
+        //var month = 0;
+
+        var year = d.getFullYear();
+
+        $scope.month = d.getMonth() + 1;
+        $scope.year = year;
+
+        $scope.months = [
+
+            {
+                'id': 0,
+                'name': 'Selected'
+            },
+
+            {
+                'id': 1,
+                'name': 'January'
+            },
+            {
+                'id': 2,
+                'name': 'February'
+            },
+            {
+                'id': 3,
+                'name': 'March'
+            },
+            {
+                'id': 4,
+                'name': 'April'
+            },
+            {
+                'id': 5,
+                'name': 'May'
+            },
+            {
+                'id': 6,
+                'name': 'June'
+            },
+            {
+                'id': 7,
+                'name': 'July'
+            },
+            {
+                'id': 8,
+                'name': 'August'
+            },
+            {
+                'id': 9,
+                'name': 'September'
+            },
+            {
+                'id': 10,
+                'name': 'October'
+            },
+            {
+                'id': 11,
+                'name': 'November'
+            },
+            {
+                'id': 12,
+                'name': 'December'
+            }
+
+        ]
+
+        $scope.years = [
+            
+            {
+                'id': 2019,
+                'name': '2019'
+            },
+            {
+                'id': 2020,
+                'name': '2020'
+            },
+            {
+                'id': 2021,
+                'name': '2021'
+            },
+            {
+                'id': 2022,
+                'name': '2022'
+            }
+        ]
+
+        $scope.getReceivedOrders = function (month, year) {
+
+            const orderBodyModel = {
+                "month": month,
+                "year": year
+            };
+
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/GetReceivedOrders', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(response.data.model);
+                    $scope.receivedOrders = response.data.model;
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        };
+    });
+</script>
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<div class="row" ng-app="orderModule">
+    <div class="col-lg-12" ng-controller="receivedOrderController">
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+
+
+                                <select style="border:1px solid #46b8da;margin-right: 5px" class="btn btn-default" ng-model="month" ng-options="month.id as month.name for month in months"></select>
+
+                                <select style="border:1px solid #46b8da;margin-right: 5px" class="btn btn-default" ng-model="year" ng-options="year.id as year.name for year in years"></select>
+
+                                <button style="margin-right: 5px" type="button" class="btn btn-w-m btn-success" ng-click="getReceivedOrders(month, year)">Search</button>
+                                
+                                <button type="button" class="btn btn-w-m btn-success" ng-click="Export()">Export Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="height:600px; overflow:auto;">
+                        <div class="ibox-content">
+                            <table id="tblReceived" class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            #
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='courierOrdersId'; reverseSort = !reverseSort">
+                                                OrderId
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='podNumber'; reverseSort = !reverseSort">
+                                                PodNumber
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='deliveryCharge'; reverseSort = !reverseSort">
+                                                Shipment Charge
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='codCharge'; reverseSort = !reverseSort">
+                                                CodCharge
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='breakableCharge'; reverseSort = !reverseSort">
+                                                BreakableCharge
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='returnCharge'; reverseSort = !reverseSort">
+                                                ReturnCharge
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='packagingCharge'; reverseSort = !reverseSort">
+                                                PackagingCharge
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='(deliveryCharge + breakableCharge + codCharge + returnCharge + packagingCharge)'; reverseSort = !reverseSort">
+                                                Total Service Charge
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='collectionAmount'; reverseSort = !reverseSort">
+                                                CollectionAmount
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='(deliveryCharge + breakableCharge + codCharge + returnCharge + packagingCharge + collectionAmount)'; reverseSort = !reverseSort">
+                                                Total Collected Amount
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='statusNameEng'; reverseSort = !reverseSort">
+                                                StatusNameEng
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='courierOrderStatus.statusType'; reverseSort = !reverseSort">
+                                                Status Type
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='orderType'; reverseSort = !reverseSort">
+                                                Order Type
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='courierUsers.companyName'; reverseSort = !reverseSort">
+                                                Company Name
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='courierName'; reverseSort = !reverseSort">
+                                                Courier Name
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='orderDate'; reverseSort = !reverseSort">
+                                                Order Date
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" ng-click="orderByField='confirmationDate'; reverseSort = !reverseSort">
+                                                Confirmation Date
+                                            </a>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="o in receivedOrders | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                        <td>
+                                            {{$index +1}}
+                                        </td>
+                                        <td>
+                                            {{ o.courierOrdersId}}
+                                        </td>
+                                        <td>
+                                            {{o.podNumber}}
+                                        </td>
+                                        <td>
+                                            {{o.deliveryCharge}}
+                                        </td>
+                                        <td>
+                                            {{o.codCharge}}
+                                        </td>
+                                        <td>
+                                            {{o.breakableCharge}}
+                                        </td>
+                                        <td>
+                                            {{o.returnCharge}}
+                                        </td>
+                                        <td>
+                                            {{o.packagingCharge}}
+                                        </td>
+                                        <td>
+                                            {{o.deliveryCharge + o.breakableCharge + o.codCharge + o.returnCharge + o.packagingCharge}}
+                                        </td>
+                                        <td>
+                                            {{o.collectionAmount}}
+                                        </td>
+                                        <td>
+                                            {{o.deliveryCharge + o.breakableCharge + o.codCharge + o.returnCharge + o.packagingCharge + o.collectionAmount}}
+                                        </td>
+                                        <td>
+                                            {{o.courierOrderStatus.statusNameEng}}
+                                        </td>
+                                        <td>
+                                            {{o.courierOrderStatus.statusType}}
+                                        </td>
+                                        <td>
+                                            {{o.orderType}}
+                                        </td>
+                                        <td>
+                                            {{o.courierUsers.companyName}}
+                                        </td>
+                                        <td>
+                                            {{o.couriers.courierName}}
+                                        </td>
+                                        <td>
+                                            {{o.orderDate | date}}
+                                        </td>
+
+                                        <td>
+                                            {{o.confirmationDate | date}}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+

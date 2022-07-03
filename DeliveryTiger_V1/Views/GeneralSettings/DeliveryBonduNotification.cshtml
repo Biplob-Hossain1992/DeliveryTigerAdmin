@@ -1,0 +1,204 @@
+﻿
+@{
+    ViewBag.Title = "DeliveryBonduNotification";
+}
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<script type="text/javascript">
+
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http) {
+
+        //var OnlineUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+        $scope.isTrue = true;
+        $scope.status = -1;
+
+        getAllStatus();
+
+        function getAllStatus() {
+            $http.get(apiBaseURL + 'Fetch/LoadCourierOrderStatus', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.statusList = response.data.model.filter(d => d.fulfillmentStatusGroup == 'DeliveryBondu' || d.fulfillmentStatusGroup == '');
+                    $scope.statusList.forEach(element => {
+                        element.notificationType = element.notificationType.toString();
+                        element.isActiveNotification = element.isActiveNotification == true ? '1' : '0';
+                    });
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        $scope.changeStatus = function (statusId) {
+            if (statusId != -1) {
+                $scope.isTrue = false;
+                $scope.statusObj = $scope.statusList.filter(d => d.statusId == statusId)[0];
+            }
+            else {
+                $scope.isTrue = true;
+                $scope.statusObj = {};
+            }
+        };
+
+        $scope.update = function (obj) {
+            if (obj == null || Object.keys(obj).length == 0) {
+                alert("Please select status and fill up form.");
+            }
+            else {
+                let notificationBodyModel = {
+                    statusId: obj.statusId,
+                    notificationType: parseInt(obj.notificationType),
+                    title: obj.title,
+                    description: obj.description,
+                    imageLink: obj.imageLink,
+                    bigText: obj.bigText,
+                    serviceType: obj.serviceType,
+                    isActiveNotification: obj.isActiveNotification == '1' ? true : false
+                }
+                //console.log(notificationBodyModel);
+                $http.put(apiBaseURL + 'Permission/UpdateDeliveryBonduNotification/' + obj.statusId, notificationBodyModel,
+                    { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                    .then(function (response) {
+                        alert("Update");
+                        RedisSingleRemoveAsync('LoadCourierStatus');
+                    }, function error(response) {
+                        console.log(response.data);
+                    });
+            }
+        }
+
+        function RedisSingleRemoveAsync(key) {
+            $http.delete(apiBaseURL + 'Redis/SingleRemoveAsync/' + key, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    console.log(response.data.model);
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+    });
+
+</script>
+
+<div ng-app="myModule">
+    <div ng-controller="myController">
+        <h2 style="text-align:center;">Delivery Bondu Notification</h2>
+        <br />
+
+        <div class="col-lg-12">
+            <div class="row">
+                <div class="col-lg-2">
+                </div>
+                <div class="col-lg-6">
+                    <div class="form-group">
+                        <select ng-change="changeStatus(status)" class="form-control" ng-model="status" ng-options="status.statusId as status.statusNameEng for status in statusList"></select>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <button type="button" ng-click="update(statusObj)" class="btn btn-primary">Update</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-12 " style="display:none;justify-content:center;padding:2px 20px 2px 20px;">
+            <div class="alert alert-info" style="justify-content:center;width:100%;">
+                <i class="fa fa-circle-o"></i>
+                Order Id = dt-orderid &emsp;
+                <i class="fa fa-circle-o"></i>
+                Merchant Name = dt-merchantname &emsp;
+                <i class="fa fa-circle-o"></i>
+                Company Name = dt-companyname &emsp;
+                <i class="fa fa-circle-o"></i>
+                Pod Number = dt-podnumber &emsp;<br />
+                <i class="fa fa-circle-o"></i>
+                Courier Name = dt-couriername &emsp;
+                <i class="fa fa-circle-o"></i>
+                Customer Name = dt-customername &emsp;
+                <i class="fa fa-circle-o"></i>
+                BkashNumber = dt-bkashnumber &emsp;<br />
+                <i class="fa fa-circle-o"></i>
+                MerchantPaymentAmount = dt-merchantpaymentamount &emsp;
+                <i class="fa fa-circle-o"></i>
+                District Name = dt-districtname &emsp;
+                <i class="fa fa-circle-o"></i>
+                Thana Name = dt-thananame &emsp;
+                <i class="fa fa-circle-o"></i>
+                Area Name = dt-areaname &emsp;<br />
+                <i class="fa fa-circle-o"></i>
+                Rider Mobile = dt-ridermobile &emsp;
+            </div>
+        </div>
+
+        <div class="col-lg-12" ng-style="isTrue && {'display':'none'}">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="form-group">
+                        <label>Title:</label>
+                        <input type="text" ng-model="statusObj.title" class="form-control" placeholder="Ex: Notification Title Here" />
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="form-group">
+                        <label>Notification Type:</label>
+                        <select class="form-control" ng-model="statusObj.notificationType">
+                            <option value="0">Default</option>
+                            <option value="1">Big text</option>
+                            <option value="2">Banner</option>
+                            <option value="3">BigText With SideImage</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="form-group">
+                        <label>Big Text:</label>
+                        <input type="text" ng-model="statusObj.bigText" class="form-control" placeholder="Ex: Notification Title Here" />
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="form-group">
+                        <label>Service Type:</label>
+                        <select class="form-control" ng-model="statusObj.serviceType">
+                            <option value="">Select</option>
+                            <option value="collection">Collection</option>
+                            <option value="collectionanddelivery">Collection And Delivery</option>
+                            <option value="delivery">Delivery</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <textarea placeholder="Ex: Description here" ng-model="statusObj.description" style="height:100px;" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-10">
+                    <div class="form-group">
+                        <label>Image Link:</label>
+                        <input type="text" ng-model="statusObj.imageLink" class="form-control" placeholder="Ex: https://deliverybondhu.com/bondhu.jpg" />
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <div class="form-group">
+                        <label>Notification (ON/OFF):</label>
+                        <select class="form-control" ng-model="statusObj.isActiveNotification">
+                            <option value="1">ON</option>
+                            <option value="0">OFF</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+        <br />
+        <br />
+    </div>
+</div>
+
+

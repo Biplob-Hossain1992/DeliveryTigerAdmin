@@ -1,0 +1,158 @@
+﻿
+@{
+    ViewBag.Title = "Add Lender User";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+<style>
+    #spinner-front {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        top: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        z-index: 998;
+    }
+</style>
+
+
+<div class="row" ng-app="AddLenderUserModule">
+    <div class="col-lg-12" ng-controller="AddLenderUserController">
+        <div id="spinner-front" ng-show="showFullPageLoader">
+            <img src="~/Content/loading-spinner.gif" />
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <h4 class="text-center">Add Lender User</h4>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="userName">User Name:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="userName" name="userName" id="userName" maxlength="100" placeholder="User Name" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="lenderName">Lender Name:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="lenderName" name="lenderName" id="lenderName" maxlength="100" placeholder="Lender Name" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="password">Password:</label>
+                                    <input type="password" class="form-control form-control-sm" ng-model="password" name="password" id="password" maxlength="100" placeholder="Password" autocomplete="new-password" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="mobile">Mobile:</label>
+                                    <input type="text" class="form-control form-control-sm" ng-model="mobile" name="mobile" id="mobile" maxlength="11" placeholder="Mobile" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="roleName">Role Name:</label>
+                                    <select class="form-control" ng-model="roleName" name="roleName" id="roleName">
+                                        <option value="0">Select Role</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="User">User</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <div class="form-group">
+                                    <button class="btn btn-w-m btn-success" type="button" ng-click="addLenderUser()">Submit</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    var app = angular.module('AddLenderUserModule', []);
+    app.controller('AddLenderUserController', function ($scope, $http) {
+        $scope.roleName = 0;
+
+        $scope.ResetFields = function() {
+            $scope.userName = "";
+            $scope.lenderName = "";
+            $scope.password = "";
+            $scope.mobile = "";
+            $scope.roleName = 0;
+        }
+
+        $scope.addLenderUser = function () {
+            var userName = $scope.userName;
+            var lenderName = $scope.lenderName;
+            var password = $scope.password;
+            var mobile = $scope.mobile;
+            var roleName = $scope.roleName;
+
+            var mobileNumberRegx = /^[0-9]+$/;
+
+            if (typeof userName === 'undefined' || userName == "") {
+                alert('User name field is empty');
+            }
+            else if (typeof lenderName === 'undefined' || lenderName == "") {
+                alert('Lender name field is empty');
+            }
+            else if (typeof password === 'undefined' || password == "") {
+                alert('Password field is empty');
+            }
+            else if (typeof mobile === 'undefined' || mobile == "") {
+                alert('Mobile field is empty');
+            }
+            else if (!mobile.match(mobileNumberRegx)) {
+                alert('Please enter numbers only');
+            }
+            else if (mobile.length < 11) {
+                alert('Please enter 11 digit mobile number');
+            }
+            else if (roleName == 0) {
+                alert('Please select a role');
+            }
+            else {
+                var usersModel = {
+                    'UserName': userName,
+                    'LenderName': lenderName,
+                    'Password': password,
+                    'Mobile': mobile,
+                    'RoleName': roleName
+                };
+
+                var userToken = sessionStorage.getItem('token');
+
+                $scope.showFullPageLoader = true;
+                $http.post(apiBaseURL + 'Entry/AddLenderUser', usersModel,
+                    {
+                        headers: { 'Content-Type': 'application/json', 'Authorization': "Bearer " + userToken }
+                    })
+                    .then(function (response) {
+                        if (response.data.model == 1) {
+                            alert('Successfull...!!');
+                            $scope.ResetFields();
+                            $scope.showFullPageLoader = false;
+                        }
+                    }, function (error) {
+                        console.log(error);
+                    });
+
+            }
+        }
+    });
+</script>

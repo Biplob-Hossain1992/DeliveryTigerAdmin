@@ -1,0 +1,259 @@
+﻿
+@{
+    ViewBag.Title = "Delivered Order Details Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+
+<div ng-app="DeliveredOrderDetailsReportModule">
+    <div ng-controller="DeliveredOrderDetailsReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">Delivered Order Details Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input type="text" class="form-control-sm form-control" placeholder="search" ng-model="mainSearch" />
+                                <div class="input-daterange input-group">
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                    <select style="border: 1px solid #46b8da" class="btn btn-default" ng-model="courier" ng-options="courier.id as courier.name for courier in couriers"></select>
+                                    <button style="margin-left: 2px;" class="btn btn-w-m btn-success" type="button" ng-click="DeliveredOrderDetailsReport(fromDate,toDate,courier)">Show</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='courierOrdersId'; reverseSort = !reverseSort">
+                                                    Order Id
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                                    Company Name
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='collectionAmount'; reverseSort = !reverseSort">
+                                                    Collection Amount
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='packagingCharge'; reverseSort = !reverseSort">
+                                                    Packaging Charge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='deliveryCharge'; reverseSort = !reverseSort">
+                                                    Delivery Charge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='codCharge'; reverseSort = !reverseSort">
+                                                    COD Charge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='breakableCharge'; reverseSort = !reverseSort">
+                                                    Breakable Charge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='collectionCharge'; reverseSort = !reverseSort">
+                                                    Collection Charge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='returnCharge'; reverseSort = !reverseSort">
+                                                    Return Charge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='totalCharge'; reverseSort = !reverseSort">
+                                                    Total Charge
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='deliveredDate'; reverseSort = !reverseSort">
+                                                    Delivered Date
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='courierName'; reverseSort = !reverseSort">
+                                                    Courier Name
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='podNumber'; reverseSort = !reverseSort">
+                                                    POD
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='downloadedDate'; reverseSort = !reverseSort">
+                                                    Downloaded Date
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="o in OrderInformations | orderBy:orderByField:reverseSort | filter: mainSearch">
+                                            <td>{{$index+1}}</td>
+                                            <td>{{o.courierOrdersId}}</td>
+                                            <td>{{o.courierUsers.companyName}}</td>
+                                            <td>{{o.collectionAmount}}</td>
+                                            <td>{{o.packagingCharge}}</td>
+                                            <td>{{o.deliveryCharge}}</td>
+                                            <td>{{o.codCharge}}</td>
+                                            <td>{{o.breakableCharge}}</td>
+                                            <td>{{o.collectionCharge}}</td>
+                                            <td>{{o.returnCharge}}</td>
+                                            <td>{{o.totalCharge}}</td>
+                                            <td>{{o.deliveredDate | date:'medium'}}</td>
+                                            <td>{{o.couriers.courierName}}</td>
+                                            <td>{{o.podNumber}}</td>
+                                            <td>{{o.downloadedDate | date:'medium'}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('DeliveredOrderDetailsReportModule', []);
+    app.controller('DeliveredOrderDetailsReportController', function ($scope, $http) {
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+        //var LocalCoreUrl = "http://localhost:58676/api/";
+
+        $scope.courier = 0;
+        $scope.couriers = [
+            {
+                'id': 0,
+                'name': 'Select Courier Name'
+            },
+            {
+                'id': 28,
+                'name': 'Bangladesh Postal Service'
+            },
+            {
+                'id': 30,
+                'name': 'Paperfly'
+            },
+            {
+                'id': 32,
+                'name': 'E-Desh'
+            },
+            {
+                'id': 34,
+                'name': 'Redx'
+            },
+            {
+                'id': 49,
+                'name': 'Steadfast'
+            },
+            {
+                'id': 50,
+                'name': 'Chittagong Tiger'
+            },
+            {
+                'id': 51,
+                'name': 'Sylhet Tiger'
+            },
+            {
+                'id': 52,
+                'name': 'Khulna Tiger'
+            },
+            {
+                'id': 53,
+                'name': 'Narayangonj Tiger'
+            },
+            {
+                'id': 54,
+                'name': 'Gazipur Tiger'
+            },
+            {
+                'id': 55,
+                'name': 'Dhaka Tiger'
+            },
+            {
+                'id': 56,
+                'name': 'Coxsbazar Tiger'
+            },
+            {
+                'id': 57,
+                'name': 'Jatrabari Tiger'
+            }
+        ]
+
+        $scope.DeliveredOrderDetailsReport = function (fromDate, toDate, courierId) {
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert('Please must be select From and To Date');
+                return false;
+            }
+            else if (parseInt(courierId) === 0) {
+                alert('Please must be select Courier');
+                return false;
+            }
+
+            let orderBodyModel = {
+                FromDate: fromDate,
+                ToDate: toDate,
+                CourierId: courierId
+            };
+
+            $scope.showLoader = true;
+            $http.post(CoreOnlineUrl + 'Report/DeliveredOrderDetails', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.OrderInformations = response.data.model;
+                    $scope.showLoader = false;
+                }, function error(error) {
+                    console.log(error);
+                });
+        }
+    });
+</script>

@@ -1,0 +1,246 @@
+﻿
+@{
+    ViewBag.Title = "UpdatePriceWithOrderType";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+     }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('updatePriceWithOrderTypeModule', []);
+    app.controller('updatePriceWithOrderTypeController', function ($scope, $http) {
+        //var localUrl = "http://localhost:58676/api/";
+        let userId = +sessionStorage.getItem("userId");
+
+        let userAdminType = +sessionStorage.getItem("adminType");
+
+        $scope.pageLoad = () => {
+            if (userId != 652 && userAdminType != 11 && userId != 642 && userId != 162 && userId != 132) {
+                //alert("You are not authorised here!!");
+                //window.location.href = "/ControlPanel/ControlPanel";
+                $scope.showPanel = false;
+            }
+            else {
+                $scope.showPanel = true;
+            }
+
+            if (userAdminType == 11) {
+                $scope.showServiceType = true;
+            }
+        }
+        let updateBodyModel;
+        $scope.orderType = "-1";
+        $scope.serviceType = "-1";
+        $scope.showCollectionAmount = false;
+        $scope.toGetCollectionAmount = (orderType) => {
+            if (orderType == "Delivery Taka Collection") {
+                $scope.showCollectionAmount = true;
+            }
+            else {
+                $scope.showCollectionAmount = false;
+            }
+
+        }
+
+        $scope.updatePrice = (orderId, orderTypeValue, collectableAmount) => {
+            if (orderId == undefined || orderId == "") {
+                alert("Please Type Order Code");
+                return false
+            }
+            if (orderTypeValue == "-1") {
+                alert("Please Select Order Type");
+                return false
+            }
+            if (orderTypeValue == "Delivery Taka Collection" && collectableAmount == undefined || collectableAmount == "") {
+                alert("Please Type Collection Amount");
+                return false
+            }
+            if (orderTypeValue == "Delivery Taka Collection") {
+
+
+                updateBodyModel = {
+                    "collectionAmount": collectableAmount,
+                    "courierOrdersId": orderId,
+                    "orderType": orderTypeValue,
+                    "updatedBy": userId
+                }
+            }
+            else if (orderTypeValue == "Only Delivery") {
+                updateBodyModel = {
+                    "collectionAmount": 0,
+                    "codCharge": 0,
+                    "courierOrdersId": orderId,
+                    "orderType": orderTypeValue,
+                    "updatedBy": userId
+                }
+            }
+
+            //console.log(updateBodyModel);
+
+            $http.put(apiBaseURL + 'Update/UpdatePriceWithOrderType', updateBodyModel, { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    if (response.status == 200) {
+                        alert("Price and OrderType Updated Successfully");
+                        $scope.orderCode = "";
+                        $scope.collectionAmount = undefined;
+                    }
+                    else {
+                        alert("Something Went Wrong!!");
+                        return false;
+                    }
+                }, function error(response) {
+                    if (response.status == 500) {
+                        alert("Server Error");
+                        console.log(response.message);
+                    }
+                });
+        }
+
+        $scope.updateServiceType = (orderId, serviceType) => {
+            if (orderId == undefined || orderId == "") {
+                alert("Please Type Order Code");
+                return false
+            }
+            if (serviceType == "-1") {
+                alert("Please Select Service Type");
+                return false
+            }
+            let updateModel = {
+                "serviceType": serviceType,
+                "courierOrdersId": orderId
+            }
+
+            $http.put(apiBaseURL + 'Update/UpdateServiceType', updateModel, { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+
+                    alert("Service Type Updated Successfully...!!!");
+                    $scope.orderId = "";
+                }, function error(response) {
+                    if (response.status == 500) {
+                        alert("Server Error");
+                        console.log(response.message);
+                    }
+                });
+        }
+
+    });
+
+</script>
+
+
+
+
+<!--Page Header-->
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<!--Page Header End-->
+<!--Page Start-->
+<div class="row" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-app="updatePriceWithOrderTypeModule">
+        <div class="ibox" ng-controller="updatePriceWithOrderTypeController" ng-init="pageLoad()">
+            <div class="ibox-content" style="text-align:center;display:flex;" ng-show="showPanel">
+                <div class="col-lg-12">
+                    <div class="row form-group">
+                        <div class="col-lg-2">
+                            <label class="col-form-label"><strong>Order Code</strong></label>
+                        </div>
+                        <div class="col-lg-3">
+                            <input type="text" class="form-control" placeholder="EX: DT-1" ng-model="orderCode" />
+                        </div>
+                        <div class="col-lg-2">
+                            <label class="col-form-label"><strong>Order Type</strong></label>
+                        </div>
+                        <div class="col-lg-3">
+                            <select class="form-control" ng-model="orderType" ng-change="toGetCollectionAmount(orderType)">
+                                <option value="-1">Select Order Type</option>
+                                <option value="Delivery Taka Collection">Delivery Taka Collection</option>
+                                <option value="Only Delivery">Only Delivery</option>
+
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row form-group" ng-show="showCollectionAmount">
+                        <div class="col-lg-2">
+                            <label class="col-form-label"><strong>Collection Amount</strong></label>
+                        </div>
+                        <div class="col-lg-3">
+                            <input type="number" class="form-control" ng-model="collectionAmount" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-lg-12" style="text-align:center;margin-top:20px;">
+                            <button type="button"
+                                    class="btn btn-info"
+                                    style="width: 120px;height: 40px;"
+                                    ng-click="updatePrice(orderCode,orderType,collectionAmount)">
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ibox-content" style="text-align:center;display:flex;" ng-show="showServiceType">
+                <div class="col-lg-12">
+                    <div class="row form-group">
+                        <div class="col-lg-2">
+                            <label class="col-form-label"><strong>Order Code</strong></label>
+                        </div>
+                        <div class="col-lg-3">
+                            <input type="text" class="form-control" placeholder="EX: DT-1" ng-model="orderId" />
+                        </div>
+                        <div class="col-lg-2">
+                            <label class="col-form-label"><strong>Service Type</strong></label>
+                        </div>
+                        <div class="col-lg-3">
+                            <select class="form-control" ng-model="serviceType">
+                                <option value="-1">Select Service Type</option>
+                                <option value="alltoall">All to All</option>
+                                <option value="citytocity">City to City</option>
+
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-lg-12" style="text-align:center;margin-top:20px;">
+                            <button type="button"
+                                    class="btn btn-info"
+                                    style="width: 120px;height: 40px;"
+                                    ng-click="updateServiceType(orderId,serviceType)">
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,381 @@
+﻿
+@{
+    ViewBag.Title = "ECT Analysis Over Collection Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+    .redBackground {
+        background-color: red;
+        color: white;
+    }
+</style>
+
+<div ng-app="EctAnalysisOverCollectionReportModule">
+    <div ng-controller="EctAnalysisOverCollectionReportCtrl">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">ECT Analysis Over Pick Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="margin-right: 2px;" type="text" class="form-control-sm form-control" placeholder="search" ng-model="mainSearch" />
+                                <div class="input-group input-daterange">
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                </div>
+                                <button style="margin-left: 2px;" class="btn btn-w-m btn-success" type="button" ng-click="getReportData(fromDate,toDate)">Show</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a>
+                                                    Total Picked Order
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a>
+                                                    Total InTime Picked Order
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a>
+                                                    Total OutTime Picked Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="cursor: pointer;" ng-click="getReportDataDetails('1')">
+                                                {{ totalCollectedOrderCount }}
+                                                <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                            <td style="cursor: pointer;" ng-click="getReportDataDetails('2')">
+                                                <span ng-if="totalInTimeCollectedOrderCount != null">
+                                                    {{ totalInTimeCollectedOrderCount }} ({{ (totalInTimeCollectedOrderCount * 100) / totalCollectedOrderCount | number: 2}}%)
+                                                </span>
+                                                <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                            <td style="cursor: pointer;" ng-click="getReportDataDetails('3')">
+                                                <span ng-if="totalOutTimeCollectedOrderCount != null">
+                                                    {{ totalOutTimeCollectedOrderCount }} ({{ (totalOutTimeCollectedOrderCount * 100) / totalCollectedOrderCount | number: 2}}%)
+                                                </span>
+                                                <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                @*Table Total Collected Order*@
+                                <table class="table table-bordered table-responsive" ng-show="showCollectedOrder">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                #
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CourierOrderId'; reverseSort = !reverseSort">
+                                                    Courier Order Id
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='PlacedDate'; reverseSort = !reverseSort">
+                                                    Placed Date
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='ActualExpectedArrivalTime'; reverseSort = !reverseSort">
+                                                    Expected Collection Time(ECT)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CollectedDate'; reverseSort = !reverseSort">
+                                                    Picked Date
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Hours1'; reverseSort = !reverseSort">
+                                                    Hours (Placed - Picked Date)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Hours2'; reverseSort = !reverseSort">
+                                                    Hours (ECT - Picked Date)
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="d in reportDataDetails | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>
+                                                {{$index +1}}
+                                            </td>
+                                            <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3;" ng-click="getOrderHistoryInformation(d.CourierOrderId)">
+                                                {{d.CourierOrderId}}
+                                                <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>
+                                            </td>
+                                            <td>
+                                                {{d.PlacedDate | date: 'medium'}}
+                                            </td>
+                                            <td>
+                                                {{ d.ActualExpectedArrivalTime | date: 'medium' }}
+                                            </td>
+                                            <td>
+                                                {{ d.CollectedDate | date: 'medium' }}
+                                            </td>
+                                            <td ng-class="{'redBackground': d.Hours1 < 0}">
+                                                {{ d.Hours1 }}
+                                            </td>
+                                            <td ng-class="{'redBackground': d.Hours2 < 0}">
+                                                {{ d.Hours2 }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                @*Table Total Collected Order End*@
+
+                                @*Table Total Collected Order InTime & OutTime*@
+                                <table class="table table-bordered table-responsive" ng-show="showCollectedOrderDetails">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                #
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CourierOrderId'; reverseSort = !reverseSort">
+                                                    Courier Order Id
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='PlacedDate'; reverseSort = !reverseSort">
+                                                    Placed Date
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='ActualExpectedArrivalTime'; reverseSort = !reverseSort">
+                                                    Expected Collection Time(EAT)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CollectedDate'; reverseSort = !reverseSort">
+                                                    Picked Date
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Hours1'; reverseSort = !reverseSort">
+                                                    Hours (Placed - Picked Date)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Hours2'; reverseSort = !reverseSort">
+                                                    Hours (ECT - Picked Date)
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="d in reportDataDetails | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>
+                                                {{$index +1}}
+                                            </td>
+                                            <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3;" ng-click="getOrderHistoryInformation(d.CourierOrderId)">
+                                                {{d.CourierOrderId}}
+                                                <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>
+                                            </td>
+                                            <td>
+                                                {{ d.PlacedDate | date: 'medium' }}
+                                            </td>
+                                            <td>
+                                                {{ d.ActualExpectedArrivalTime | date: 'medium' }}
+                                            </td>
+                                            <td>
+                                                {{ d.CollectedDate | date: 'medium' }}
+                                            </td>
+                                            <td ng-class="{'redBackground': d.Hours1 < 0}">
+                                                {{ d.Hours1 }}
+                                            </td>
+                                            <td ng-class="{'redBackground': d.Hours2 < 0}">
+                                                {{ d.Hours2 }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                @*Table Total Collected Order InTime & OutTime End*@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+
+                @*Order Information Modal*@
+                <div id="orderInformationModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Order Informations</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <table class="table table-hover" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>OrderId</th>
+                                            <th>Confirmed By</th>
+                                            <th>Order Date</th>
+                                            <th>Confirmation Date</th>
+                                            <th>Status</th>
+                                            <th>Comment</th>
+                                            <th>Hub Name</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="o in OrderInformations">
+                                            <td>{{$index +1}}</td>
+                                            <td>
+                                                @*<a ng-href="https://admin.deliverytiger.com.bd/Operation/Operation?orderId={{o.courierOrderId}}"> {{o.courierOrderId}}</a>*@
+                                                {{o.courierOrderId}}
+                                            </td>
+                                            <td>{{o.isConfirmedBy}}({{o.namePostedBy}})</td>
+                                            <td>{{o.orderDate | date:'medium'}}</td>
+                                            <td>{{o.postedOn | date:'medium'}}</td>
+                                            <td>{{o.statusNameEng}}-{{o.status}}</td>
+                                            <td>{{o.comment}}</td>
+                                            <td>{{o.hubName}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Order Information Modal End*@
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('EctAnalysisOverCollectionReportModule', []);
+    app.controller('EctAnalysisOverCollectionReportCtrl', function ($scope,$http) {
+        var OnlineUrl = "https://adm.ajkerdeal.com/api/deliverytiger/";
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+
+        function hoursCalculation(data) {
+            const placedDate = new Date(data["PlacedDate"]);
+            const pickedDate = new Date(data["CollectedDate"]);
+            const ectDate = new Date(data["ActualExpectedArrivalTime"]);
+
+            const diffTime1 = placedDate - pickedDate;
+            const diffHours1 = Math.ceil(diffTime1 / (1000 * 60));
+            const diffTime2 = ectDate - pickedDate;
+            const diffHours2 = Math.ceil(diffTime2 / (1000 * 60));
+            data["Hours1"] = diffHours1;
+            data["Hours2"] = diffHours2;
+        }
+
+        $scope.getReportData = function (fromDate, toDate) {
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let dtOrderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            $scope.showLoader = true;
+
+            $http.post(CoreOnlineUrl + 'Report/EatAnalysisOverCollectionReport', dtOrderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.reportData = response.data.model;
+                    $scope.reportData.forEach(hoursCalculation);
+                    $scope.reportDataDetails = $scope.reportData;
+                    $scope.totalCollectedOrderCount = $scope.reportData.length;
+                    $scope.totalInTimeCollectedOrderCount = $scope.reportData.filter(x => x.CollectionFlag === 1).length;
+                    $scope.totalOutTimeCollectedOrderCount = $scope.reportData.filter(x => x.CollectionFlag === 0).length;
+                    $scope.showLoader = false;
+                    $scope.showCollectedOrder = true;
+                    $scope.showCollectedOrderDetails = false;
+                }, function error(response) {
+                    console.log(response);
+                    $scope.showLoader = false;
+                })
+        }
+
+        $scope.getReportDataDetails = function (detailsFlag) {
+            if (detailsFlag == "1") {
+                $scope.reportDataDetails = $scope.reportData;
+                $scope.showCollectedOrder = true;
+                $scope.showCollectedOrderDetails = false;
+            }
+            else if (detailsFlag == "2") {
+                $scope.reportDataDetails = $scope.reportData.filter(x => x.CollectionFlag === 1);
+                $scope.showCollectedOrder = false;
+                $scope.showCollectedOrderDetails = true;
+            }
+            else if (detailsFlag == "3") {
+                $scope.reportDataDetails = $scope.reportData.filter(x => x.CollectionFlag === 0);
+                $scope.showCollectedOrder = false;
+                $scope.showCollectedOrderDetails = true;
+            }
+        }
+
+        $scope.getOrderHistoryInformation = function (orderId) {
+            $http.get(CoreOnlineUrl + 'Fetch/OrderUpdateHistory/' + orderId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.OrderInformations = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+    })
+</script>

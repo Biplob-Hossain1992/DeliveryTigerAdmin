@@ -1,0 +1,222 @@
+﻿
+@{
+    ViewBag.Title = "RiderCommissionEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    })
+</script>
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+<div ng-app="riderCommissionModule">
+    <div ng-controller="riderCommissionController" ng-init="init()">
+        <div class="row wrapper border-bottom white-bg page-heading">
+            <div class="col-lg-9">
+                <h2 id="title"></h2>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <strong>@ViewBag.Title</strong>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>Rider Commission Entry</h5>
+                    <div class="ibox-tools">
+                        <a class="collapse-link">
+                            <i class="fa fa-chevron-up"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="container" style="display:flex">
+                        <div class="col-lg-12 col-md-12 col-sm-12">
+                            <div class="row col-lg-12">
+                                <div class="col-lg-4">
+                                    <div class="form-group row">
+                                        <div class="col-lg-8">
+                                            <select class="form-control" style="margin-top: 10px;" ng-model="riderId" data-live-search="true" ng-click="getRiderCommisionInfo(riderId);">
+                                                <option value="0" selected>Select Rider </option>
+                                                <option ng-repeat="data in allRiderData" value="{{data.id}}">{{data.name}}</option>
+
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="form-group row">
+                                        <label class="col-lg-4 col-form-label">Commission</label>
+                                        <div class="col-lg-8">
+                                            <input type="number" ng-model="comissionAmount" class="form-control" style="width: 80%;margin-top: 10px;" placeholder="Comission">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="form-group row">
+                                        <label class="col-lg-4 col-form-label">Standard Target</label>
+                                        <div class="col-lg-8">
+                                            <input type="number" ng-model="standarTargetAmount" class="form-control" style="width: 80%;margin-top: 10px;" placeholder="Standard Target">
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="row col-lg-12">
+                                <div class="col-lg-4">
+                                    <div class="form-group row">
+                                        <div class="col-lg-8">
+                                            <select class="form-control" style="margin-top: 10px;" ng-model="isParmanent" data-live-search="true" disabled>
+                                                <option value=true selected>Full Time </option>
+                                                <option value=false selected>Freelancer </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="form-group row">
+                                        <label class="col-lg-4 col-form-label">Daily Allowence</label>
+                                        <div class="col-lg-8">
+                                            <input type="number" ng-model="dailAllowenceAmount" class="form-control" style="width: 80%;margin-top: 10px;" placeholder="Daily Allowence">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="form-group row">
+                                        <label class="col-lg-4 col-form-label">Assigned Date</label>
+                                        <div class="col-lg-8">
+                                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;margin-top:10px;" ng-model="asignedDate" name="fromDateSent" class="btn flatpickr" placeholder="YYYY/MM/DD"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row col-lg-12">
+                                <div class="col-lg-12" style="text-align:center">
+
+                                    <button type="button" class="btn btn-primary" ng-click="assignTargetToRider(riderId,standarTargetAmount,comissionAmount,dailAllowenceAmount,asignedDate)"><strong>Submit</strong></button>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+</div>
+<script>
+    var app = angular.module('riderCommissionModule', []);
+    app.controller('riderCommissionController', function ($scope, $http) {
+        let userId = sessionStorage.getItem("userId");
+
+        $scope.riderId = "0";
+        $scope.isParmanent = "true";
+
+        $scope.init = () => {
+            $scope.getRiderInfo();
+        }
+
+        $scope.dateFormat = (date) => {
+            let formatDate = new Date(date);
+            formatDate.setDate(formatDate.getDate());
+            let monthFrom = '' + (formatDate.getMonth() + 1);
+            let dayFrom = '' + formatDate.getDate();
+            let yearFrom = formatDate.getFullYear();
+            if (monthFrom.length < 2)
+                monthFrom = '0' + monthFrom;
+            if (dayFrom.length < 2)
+                dayFrom = '0' + dayFrom;
+            formatDate = yearFrom + "-" + monthFrom + "-" + dayFrom;
+            return formatDate;
+        }
+        $scope.getRiderCommisionInfo = (riderId) => {
+            let riderCommissionUrl = admBaseUrl + "account/reports/GetRiderCommisionInfo/" + riderId;
+            $http.get(riderCommissionUrl, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.isParmanent = "" + response.data.IsPermanentRider
+                    $scope.dailAllowenceAmount = response.data.DailyAllowance
+                    $scope.standarTargetAmount = response.data.STarget
+                    $scope.comissionAmount = response.data.ComissionPerMerchant
+                    var newDate = $scope.dateFormat(response.data.PostedOn); 
+                    $scope.asignedDate = newDate;
+                })
+        }
+
+        $scope.getRiderInfo = () => {
+            $http.get(apiBaseURL + 'Fetch/GetAllDeliveryMan', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allRiderData = response.data.model;
+                    $scope.allRiderData.sort((a, b) => parseFloat(a.id) - parseFloat(b.id));
+                })
+        }
+
+
+        $scope.assignTargetToRider = (riderId, standardTarget, commissionAmount, dailyAllowance,pickedDate) => {
+            if (riderId == 0 || riderId == null) {
+                alert("Please Select a Rider");
+                return false;
+            }
+            if (standardTarget == null || standardTarget === "") {
+                standardTarget = 0;
+            }
+             if (commissionAmount == null || commissionAmount === "") {
+                commissionAmount = 0;
+            }
+             if (dailyAllowance == null || dailyAllowance === "") {
+                dailyAllowance = 0;
+            }
+            if (pickedDate == null || pickedDate==="") {
+                alert("Please Select a Date");
+                return false;
+            }
+            let riderCommissionModal = {
+                "RiderId": parseInt(riderId),
+                "PostedBy": parseInt(userId),
+                "STarget": parseInt(standardTarget),
+                "ComissionPerMerchant": parseInt(commissionAmount),
+                "DailyAllowance": parseInt(dailyAllowance),
+                "PostedOn": pickedDate
+            }
+            $http.post(admBaseUrl + "account/reports/AddRiderTargetAssign", riderCommissionModal, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Insert Successful!");
+                }),
+                function error(response) {
+                    alert("Something Went Wrong!");
+                }
+
+        }
+    })
+</script>

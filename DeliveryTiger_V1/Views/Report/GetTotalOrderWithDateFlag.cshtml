@@ -1,0 +1,348 @@
+﻿
+@{
+    ViewBag.Title = "GetTotalOrderWithDateFlag";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('getTotalOrdersModule', ['multipleSelect']);
+    app.controller('getTotalOrdersController', function ($scope, $http) {
+
+        //Load Table Data
+        $scope.getTotalOrders = (fromDate, toDate, dateFlag, districtId, courierId, deliveryRangeId, statusId, statusIds) => {
+
+            if (dateFlag == '-1') {
+                alert("Please must be select Date Type");
+                return false;
+            }
+            else if (fromDate == '' || toDate == '') {
+                alert("Please must be select Date Range");
+                return false;
+            }
+
+            var statusIdsArray = [];
+            for (var i = 0; i < statusIds.length; i++) {
+                statusIdsArray.push(statusIds[i].statusId)
+            }
+
+
+            var requestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "DateFlag": dateFlag,
+                "DistrictId": districtId,
+                "CourierId": courierId,
+                "DeliveryRangeId": deliveryRangeId,
+                "StatusId": statusId,
+                "StatusIds": statusIdsArray.toString()
+            };
+            $scope.showLoader = true;
+
+            $http.post(apiBaseURL + 'Report/GetTotalOrdersWithDateFlag', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.getTotalOrdersData = response.data.model;
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+        //get all delivery typelist
+        $scope.getDeliveryRangeList = () => {
+
+            $http.get(apiBaseURL + 'Fetch/GetDeliveryRange', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.getDeliveryRangeTypeList = response.data.model;
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data.model);
+                    $scope.showLoader = false;
+                });
+        }
+
+        //LoadAll Districts
+        $scope.init = function () {
+
+            let userId = +sessionStorage.getItem('userId');
+            let adminType = +sessionStorage.getItem('adminType');
+
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById' + "/" + 0, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.districts = response.data.model;
+                    $scope.district = '-1';
+                    $scope.courier = '-1';
+                    $scope.deliveryRangeId = '-1';
+                    $scope.dateFlag = '-1';
+                    $scope.status = '-1';
+
+                    if (userId == 132 || userId == 358 || userId == 463 || adminType == 11 || adminType == 1) {
+                        $scope.showReport = true;
+                    }
+
+                }, function error(response) {
+                })
+            $scope.getDeliveryRangeList();
+            $scope.getALlStatus();
+        };
+
+        //get all Status List
+        $scope.getALlStatus = () => {
+
+            $http.get(apiBaseURL + 'Fetch/LoadCourierOrderStatus', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.getALlStatusData = response.data.model;
+
+                    $scope.statusMultiSelect = response.data.model;
+
+                    $scope.statusMultiSelect.forEach(element => {
+                        element.statusNameEng = element.statusNameEng;
+                    });
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data.model);
+                    $scope.showLoader = false;
+                });
+        }
+
+        //ExportToExcel
+        $scope.createExcelSheet = (tableName) => {
+
+            window.open('data:application/vnd.ms-excel,' + encodeURIComponent($('#' + tableName).html()));
+            e.preventDefault();
+        }
+
+    });
+</script>
+
+<div class="row" ng-app="getTotalOrdersModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="getTotalOrdersController" data-ng-init="init()">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12" ng-show="showReport">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" style="width:300px;" class="form-control-lg form-control col-lg-6" placeholder="Search" ng-model="mainSearch" />
+                                    <select style="margin-left:2px;" class="form-control" ng-model="dateFlag">
+                                        <option value="-1" selected>Select Date</option>
+                                        <option value="1">Order</option>
+                                        <option value="2">Commented On</option>
+                                        <option value="3">Shipment</option>
+                                    </select>
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+
+                                </div>
+                                <div style="margin-top:5px;">
+                                    <select ng-model="district" class="form-control">
+                                        <option value="-1" selected>Select District</option>
+                                        <option ng-repeat="d in districts" value="{{d.districtId}}">{{d.district}}</option>
+                                    </select>
+                                    <select ng-model="deliveryRangeId" class="form-control">
+                                        <option value="-1" selected>Select-Delivery-Type</option>
+                                        <option ng-repeat="d in getDeliveryRangeTypeList" value="{{d.id}}">{{d.name}} {{d.day}} {{d.dayType}}</option>
+                                    </select>
+                                    <select class="form-control" ng-model="courier">
+                                        <option value="-1" selected>Select Courier</option>
+                                        <option value="28">Bangladesh Postal Service</option>
+                                        <option value="30">Paperfly</option>
+                                        <option value="32">E-Desh</option>
+                                        <option value="34">Redx</option>
+                                        <option value="49">Steadfast</option>
+                                        <option value="50">Chittagong Tiger</option>
+                                        <option value="51">Sylhet Tiger</option>
+                                        <option value="52">Khulna Tiger</option>
+                                        <option value="53">Narayangonj Tiger</option>
+                                        <option value="54">Gazipur Tiger</option>
+                                        <option value="55">Dhaka Tiger</option>
+                                        <option value="56">Coxsbazar Tiger</option>
+                                        <option value="57">Jatrabari Tiger</option>
+                                        <option value="58">Uttara Tiger</option>
+                                        <option value="59">Mirpur10 Tiger</option>
+                                        <option value="60">Mirpur01 Tiger</option>
+                                        <option value="61">Lalmatia Tiger</option>
+                                        <option value="62">NewMarket Tiger</option>
+                                        <option value="63">Islampur Tiger</option>
+                                        <option value="64">Santinagar Tiger</option>
+                                        <option value="65">Gulisthan Tiger</option>
+                                        <option value="66">Rampura Tiger</option>
+                                        <option value="67">Badda Tiger</option>
+                                    </select>
+                                </div>
+                                <div style="margin-top:5px;" class="row">
+                                    <select ng-model="status" class="form-control">
+                                        <option ng-repeat="d in getALlStatusData" value="{{d.statusId}}">{{d.statusNameEng}}</option>
+                                    </select>
+
+                                    <div class="form-group" style="margin-left:5px;width:450px;">
+                                        <multiple-autocomplete ng-model="statusIds"
+                                                               object-property="statusNameEng"
+                                                               suggestions-arr="statusMultiSelect">
+                                        </multiple-autocomplete>
+                                    </div>
+
+                                    <button style="margin-left:5px;" type="button" class="btn btn-w-m btn-success" ng-click="getTotalOrders(fromDate, toDate, dateFlag, district, courier, deliveryRangeId, status,statusIds)">Search</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="row">
+                                    <div class="col-lg-10">
+                                        <span>Total Count: <b style="color:orangered;">{{getTotalOrdersData.length}}</b></span><br />
+                                    </div>
+                                    <div class="col-lg-2" style="margin-bottom:10px;">
+                                        <button type="button" class="btn btn-w-m btn-success" ng-click="createExcelSheet('showDetails')">ExportToExcel</button>
+                                    </div>
+                                </div>
+
+                                <div id="showDetails">
+                                    <table class="table table-bordered topDiv">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                                        Company Name
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='id'; reverseSort = !reverseSort">
+                                                        Order Id
+                                                    </a>
+                                                </th>
+                                                <th>Courier</th>
+                                                <th>Customer Name</th>
+                                                <th>Mobile</th>
+                                                <th>Other Mobile</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='orderDate'; reverseSort = !reverseSort">
+                                                        Order Date
+                                                    </a>
+                                                </th>
+                                                <th>Status</th>
+                                                <th>PodNumber</th>
+                                                <th>Shipment Date</th>
+                                                <th>District</th>
+                                                <th>Thana</th>
+                                                <th>Area</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="r in getTotalOrdersData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                                <td>
+                                                    <span>{{$index+1}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.companyName}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>DT-{{r.id}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.courierName}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.customerName}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.mobile}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.otherMobile}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.orderDate}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.statusNameEng}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.podNumber}}</span>
+                                                </td>
+                                                <td>
+                                                    <span>{{r.updatedOn}}</span>
+                                                </td>
+                                                <td>
+                                                    <span ng-if="r.district == null">NA</span>
+                                                    <span ng-if="r.district != null">{{r.district}}</span>
+                                                </td>
+                                                <td>
+                                                    <span ng-if="r.thana == null">NA</span>
+                                                    <span ng-if="r.thana != null"> {{r.thana}}</span>
+                                                </td>
+                                                <td>
+                                                    <span ng-if="r.area == null">NA</span>
+                                                    <span ng-if="r.area != null">{{r.area}}</span>
+                                                </td>
+
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>

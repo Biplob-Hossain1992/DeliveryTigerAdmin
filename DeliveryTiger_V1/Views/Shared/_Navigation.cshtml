@@ -1,0 +1,337 @@
+﻿<script>
+    $(document).ready(function () {
+        if (window.location.href == 'https://admin.deliverytiger.com.bd/Report/GetDeliveryBondhuShowOrderAutomatic'
+            || window.location.href == 'https://admin.deliverytiger.com.bd/Report/GetUpdateTimeSlotAutomatic') {
+
+        }
+        else {
+            if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+                $("#userFullname").html(sessionStorage.getItem("fullName"));
+                $("#userPicId").html(sessionStorage.getItem("userId"));
+
+                let pic = "https://static.ajkerdeal.com/images/admin_users/" + sessionStorage.getItem("userId") + ".jpg";
+
+                $("#userPicId").attr({ "src": pic });
+                let allowAccess = [1, 2, 258, 11];
+                if (parseInt(sessionStorage.getItem("adminType")) == 11 || allowAccess.includes(parseInt(sessionStorage.getItem("userId")))) {
+                    $("#statusLink").show();
+                    $("#DashboardControlLink").show();
+                    $("#deliveryBondhu").show();
+
+                }
+                else {
+                    $("#statusLink").hide();
+                    $("#DashboardControlLink").hide();
+                    $("#deliveryBondhu").hide();
+                }
+            }
+            else {
+                window.location.href = "/Account/Login";
+            }
+        }
+
+    });
+</script>
+<nav class="navbar-default navbar-static-side" role="navigation">
+    <div class="sidebar-collapse">
+        <ul class="nav metismenu" id="side-menu">
+            <li class="nav-header">
+                <div class="dropdown profile-element">
+                    <img id="userPicId" alt="image" height="100" class="rounded-circle" src="" />
+                    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                        <span class="block m-t-xs font-bold">Welcome <br><strong id="userFullname"></strong></span>
+                        @*<span class="m-r-sm text-muted welcome-message" data-i18n="topnav.welcometext">Welcome <br><strong id="userFullname"></strong></span>*@
+                    </a>
+                </div>
+                @*<div class="logo-element">
+                Delivery Tiger
+            </div>*@
+            </li>
+            <li class="@Html.IsSelected(controller: "ControlPanel")">
+                <a href="@Url.Action("ControlPanel", "ControlPanel")">
+                    <i class="fa fa-cogs"></i>
+                    <span class="nav-label">Control Panel</span>
+                </a>
+            </li>
+            <li class="@Html.IsSelected(controller: "Admin")">
+                <a href="@Url.Action("Index", "Admin")">
+                    <i class="fa fa-home"></i>
+                    <span class="nav-label">Home</span>
+                    <span class="label label-primary float-right">NEW</span>
+                </a>
+            </li>
+            <li class="@Html.IsSelected(controller: "Operation")">
+                <a href="#">
+                    <i class="fa fa-diamond"></i>
+                    <span class="nav-label">Operation</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse @Html.IsSelected(controller: "Operation", cssClass: "in")">
+                    <li class="@Html.IsSelected(action: "Operation")"><a href="@Url.Action("Operation", "Operation")">Order Process</a></li>
+                    <li class="@Html.IsSelected(action: "PoHOperation")"><a href="@Url.Action("PoHOperation", "Operation")">PoH Order Process</a></li>
+                    <li class="@Html.IsSelected(action: "Operation")"><a href="@Url.Action("Operation", "Operation", new { priority = "priority" })">Priority Orders</a></li>
+                    <li class="@Html.IsSelected(action: "ReturnProcess")"><a href="@Url.Action("ReturnProcess", "Operation")">Return Process</a></li>
+                    <li class="@Html.IsSelected(action: "SendToCourier")"><a href="@Url.Action("SendToCourier", "Operation")">Send To Courier</a></li>
+                    @*<li class="@Html.IsSelected(action: "BulkOrderProcess")"><a href="@Url.Action("BulkOrderProcess", "Operation")">Bulk Order</a></li>*@
+                    @*<li class="@Html.IsSelected(action: "SingleOrderProcess")"><a href="@Url.Action("SingleOrderProcess", "Operation")">Single Order</a></li>*@
+                    <li class="@Html.IsSelected(action: "MerchantBulkOrderProcess")"><a href="@Url.Action("MerchantBulkOrderProcess", "Operation")">Bulk Order</a></li>
+                    <li class="@Html.IsSelected(action: "BulkUpdate")"><a href="@Url.Action("BulkUpdate", "Operation")">Bulk Update</a></li>
+                    <li class="@Html.IsSelected(action: "BulkUpdateForCourier")"><a href="@Url.Action("BulkUpdateForCourier", "Operation")">Bulk Update For Steadfast Courier</a></li>
+                    <li class="@Html.IsSelected(action: "QuickOfficeRecieve")"><a href="@Url.Action("QuickOfficeRecieve", "Operation")">Quick Office Recieve</a></li>
+                    <li class="@Html.IsSelected(action: "QuickUpdateStatus")"><a href="@Url.Action("QuickUpdateStatus", "Operation")">Quick Update Status</a></li>
+                    <li class="@Html.IsSelected(action: "BulkStatusUpdate")"><a href="@Url.Action("BulkStatusUpdate", "Operation")">Bulk Status Update</a></li>
+                </ul>
+            </li>
+            <li class="@Html.IsSelected(controller: "Report")">
+                <a href="#">
+                    <i class="fa fa-bar-chart-o"></i>
+                    <span class="nav-label">Report</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse @Html.IsSelected(controller: "Report", cssClass: "in")">
+                    <li class="@Html.IsSelected(action: "DailyOrderShipment")"><a href="@Url.Action("DailyOrderShipment", "Report")">Daily Order Shipment</a></li>
+                    <li class="@Html.IsSelected(action: "GetOrders")"><a href="@Url.Action("GetOrders", "Report")">Dt Order Report</a></li>
+                    <li class="@Html.IsSelected(action: "GetMerchantOrders")"><a href="@Url.Action("GetMerchantOrders", "Report")">Merchant Order Report</a></li>
+                    <li class="@Html.IsSelected(action: "GetReceivedOrders")"><a href="@Url.Action("GetReceivedOrders", "Report")">Received Order Report</a></li>
+                    <li class="@Html.IsSelected(action: "CollectorReceivedReport")"><a href="@Url.Action("CollectorReceivedReport", "Report")">Collector Report</a></li>
+                    <li class="@Html.IsSelected(action: "OrderAgeingReport")"><a href="@Url.Action("OrderAgeingReport", "Report")">Order Ageing Report</a></li>
+                    <li class="@Html.IsSelected(action: "CollectorReceivedReport")"><a href="https://ajkerdeal.com/admin/reports/deliverytiger/speeddt.aspx" target="_blank">Dt District Wise</a></li>
+                    <li class="@Html.IsSelected(action: "CollectorReceivedReport")"><a href="https://ajkerdeal.com/admin/reports/deliverytiger/dtorderdetailsreport.aspx" target="_blank">Dt Order Details Report</a></li>
+                    <li class="@Html.IsSelected(action: "GetPreferredPaymentCycle")"><a href="@Url.Action("GetPreferredPaymentCycle", "Report")">PaymentCycle Report</a></li>
+                    <li class="@Html.IsSelected(action: "GetLastMileInformation")"><a href="@Url.Action("GetLastMileInformation", "Report")">LastMileInformation</a></li>
+                    <li class="@Html.IsSelected(action: "GetReferrerRefereeList")"><a href="@Url.Action("GetReferrerRefereeList", "Report")">Referrer-Referee Report</a></li>
+                    <li class="@Html.IsSelected(action: "GetDeliveryRangeTypeList")"><a href="@Url.Action("GetDeliveryRangeTypeList", "Report")">CDD till date Report</a></li>
+                    <li class="@Html.IsSelected(action: "DeliveryExpectedDeliveryDateReport")"><a href="@Url.Action("DeliveryExpectedDeliveryDateReport", "Report")">CDD date range Report</a></li>
+                    <li class="@Html.IsSelected(action: "AcquisitionReport")"><a href="@Url.Action("AcquisitionReport", "Report")">Acquisition Report</a></li>
+                    <li class="@Html.IsSelected(action: "RetentionAcquisitionUsers")"><a href="@Url.Action("RetentionAcquisitionUsers", "Report")">Retention Acquisition Users</a></li>
+                    <li class="@Html.IsSelected(action: "BondhuAppMismatchData")"><a href="@Url.Action("BondhuAppMismatchData", "Report")">BondhuApp Mismatch Order</a></li>
+                    <li class="@Html.IsSelected(action: "GetTotalOrderWithDateFlag")"><a href="@Url.Action("GetTotalOrderWithDateFlag", "Report")">Total Order With DateFlag</a></li>
+                    <li class="@Html.IsSelected(action: "RetentionUsersPerformance")"><a href="@Url.Action("RetentionUsersPerformance", "Report")">Retention Users Performance</a></li>
+                    <li class="@Html.IsSelected(action: "MerchantFollowUpReport")"><a href="@Url.Action("MerchantFollowUpReport", "Report")">Merchant Follow Up</a></li>
+                    <li class="@Html.IsSelected(action: "StatusWiseOrderDetailsReport")"><a href="@Url.Action("StatusWiseOrderDetailsReport", "Report")">Status Wise Order Details Report</a></li>
+                    <li class="@Html.IsSelected(action: "CourierWiseReturnReport")"><a href="@Url.Action("CourierWiseReturnReport", "Report")">Courier Wise Return Orders</a></li>
+                    <li class="@Html.IsSelected(action: "PendingShipmentReconciliation")"><a href="@Url.Action("PendingShipmentReconciliation", "Report")">Pending Shipment Reconciliation</a></li>
+                    <li class="@Html.IsSelected(action: "HoursCalculationReportForCollection")"><a href="@Url.Action("HoursCalculationReportForCollection", "Report")">Hours Calculation for Collection</a></li>
+                    <li class="@Html.IsSelected(action: "HoursCalculationReportForDelivery")"><a href="@Url.Action("HoursCalculationReportForDelivery", "Report")">Hours Calculation for Delivery</a></li>
+                    <li class="@Html.IsSelected(action: "DtDistrictSpeedByServiceReport")"><a href="@Url.Action("DtDistrictSpeedByServiceReport", "Report")">Dt District Speed By Service</a></li>
+                    <li class="@Html.IsSelected(action: "RetentionPerformanceMonitoringReport")"><a href="@Url.Action("RetentionPerformanceMonitoringReport", "Report")">Retention Performance Monitoring</a></li>
+                    <li class="@Html.IsSelected(action: "EctAnalysisOverPickReport")"><a href="@Url.Action("EctAnalysisOverPickReport", "Report")">ECT Analysis Over Pick Report</a></li>
+                    <li class="@Html.IsSelected(action: "CourierBillReport")"><a href="@Url.Action("CourierBillReport", "Report")">Courier Bill</a></li>
+                    <li class="@Html.IsSelected(action: "LoanSurvey")"><a href="@Url.Action("LoanSurvey", "Report")">Loan Survey Report</a></li>
+                    <li class="@Html.IsSelected(action: "TeleSalesStatusReport")"><a href="@Url.Action("TeleSalesStatusReport", "Report")">Telesales Status Report</a></li>
+                    <li class="@Html.IsSelected(action: "GetAllMerchantInformation")"><a href="@Url.Action("GetAllMerchantInformation", "Report")">Get All Merchant Information</a></li>
+                    <li class="@Html.IsSelected(action: "FirstTimeOrderedMerchantReport")"><a href="@Url.Action("FirstTimeOrderedMerchantReport", "Report")">First Time Ordered Merchant Report</a></li>
+                    <li class="@Html.IsSelected(action: "LeadManagementReport")"><a href="@Url.Action("LeadManagementReport", "Report")">Lead Management Report</a></li>
+                    <li class="@Html.IsSelected(action: "ReAttemptChargeVisibilityReport")"><a href="@Url.Action("ReAttemptChargeVisibilityReport", "Report")">ReAttempt Charge Visibility</a></li>
+                    <li class="@Html.IsSelected(action: "ReRouteReport")"><a href="@Url.Action("ReRouteReport", "Report")">Re Route</a></li>
+                    <li class="@Html.IsSelected(action: "TigerReport")"><a href="@Url.Action("TigerReport", "Report")">Tiger Report</a></li>
+                    <li class="@Html.IsSelected(controller: "Report")">
+                        <a href="#">
+                            <span class="nav-label">SA</span>
+                            <span class="fa arrow"></span>
+                        </a>
+                        <ul class="nav nav-second-level collapse">
+                            <li class="@Html.IsSelected(action: "SABookingReport")"><a href="@Url.Action("SABookingReport", "Report")">SA Booking Report</a></li>
+                            <li class="@Html.IsSelected(action: "SADetailedReport")"><a href="@Url.Action("SADetailedReport", "Report")">SA Districtwise Report</a></li>
+
+                        </ul>
+                    </li>
+                    <li class="@Html.IsSelected(controller: "Report")">
+                        <a href="#">
+                            <span class="nav-label">Complain</span>
+                            <span class="fa arrow"></span>
+                        </a>
+                        <ul class="nav nav-second-level collapse">
+                            <li class="@Html.IsSelected(action: "RedxEdeshComplainCount")" id="report"><a href="@Url.Action("RedxEdeshComplainCount", "Report")">Complain Report</a></li>
+                        </ul>
+                    </li>
+                    <li class="@Html.IsSelected(controller: "Report")">
+                        <a href="#">
+                            <span class="nav-label">District Wise</span>
+                            <span class="fa arrow"></span>
+                        </a>
+                        <ul class="nav nav-second-level collapse">
+                            <li class="@Html.IsSelected(action: "MonthWiseRedxEdeshReport")" id="RedexEdeshReport"><a href="@Url.Action("MonthWiseRedxEdeshReport", "Report")">Redx Edesh Speed Report</a></li>
+                            <li class="@Html.IsSelected(action: "DtDistrictWiseReport")" id="DtDistrictWiseReport"><a href="@Url.Action("DtDistrictWiseReport", "Report")">Dt District Wise Report</a></li>
+                            <li class="@Html.IsSelected(action: "DtOrderSourceWiseOrderReport")" id="DtOrderSourceWiseOrderReport"><a href="@Url.Action("DtOrderSourceWiseOrderReport", "Report")">Dt Order Source Wise Order Report</a></li>
+                            <li class="@Html.IsSelected(action: "DtThanaWiseReport")" id="DtThanaWiseReport"><a href="@Url.Action("DtThanaWiseReport", "Report")">Dt Thana Wise Report</a></li>
+                            <li class="@Html.IsSelected(action: "DeliveredOrderDetailsReport")" id="DeliveredOrderDetailsReport"><a href="@Url.Action("DeliveredOrderDetailsReport", "Report")">Delivered Order Details Report</a></li>
+                        </ul>
+                    </li>
+                    <li class="@Html.IsSelected(action: "RiderWiseCollectionReport")"><a href="@Url.Action("RiderWiseCollectionReport", "Report")">Rider wise Collection Report</a></li>
+                    <li class="@Html.IsSelected(action: "PackagedWiseReport")"><a href="@Url.Action("PackagedWiseReport", "Report")">Packaged Wise Report</a></li>
+                    <li class="@Html.IsSelected(action: "RiderMerchantWiseCollectionReport")"><a href="@Url.Action("RiderMerchantWiseCollectionReport", "Report")">Rider Collection / Return / Delelivery Report For Payment</a></li>
+                    <li class="@Html.IsSelected(action: "StatusWiseHistoryCountDetails")"><a href="@Url.Action("StatusWiseHistoryCountDetails", "Report")">StatusWise History Count Details</a></li>
+                    <li class="@Html.IsSelected(action: "SlotBasedMerchantRiderCountReport")"><a href="@Url.Action("SlotBasedMerchantRiderCountReport", "Report")">Slot Based Merchant & Rider Count</a></li>
+                    <li class="@Html.IsSelected(action: "ReturnCourierPendingStatusReport")"><a href="@Url.Action("ReturnCourierPendingStatusReport", "Report")">Return Courier Pending Status Report</a></li>
+                    <li class="@Html.IsSelected(action: "StatusWisePoHOrders")"><a href="@Url.Action("StatusWisePoHOrders", "Report")">PoH Orders Statuswise(10)</a></li>
+                    <li class="@Html.IsSelected(action: "PohOrderwiseReport")"><a href="@Url.Action("PohOrderwiseReport", "Report")">Poh Orderwise Report</a></li>
+                </ul>
+
+            </li>
+            <li class="@Html.IsSelected(controller: "Entry")">
+                <a href="#">
+                    <i class="fa fa-edit"></i>
+                    <span class="nav-label">Entry</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "WeightAndDeliveryTypeEntry")"><a href="@Url.Action("WeightAndDeliveryTypeEntry", "Entry")">Weight & Type Entry</a></li>
+                    <li class="@Html.IsSelected(action: "DeliveryChargeEntry")"><a href="@Url.Action("DeliveryChargeEntry", "Entry")">Delivery Charge Entry</a></li>
+                    <li class="@Html.IsSelected(action: "PackagingChargeEntry")"><a href="@Url.Action("PackagingChargeEntry", "Entry")">Packaging Charge Entry</a></li>
+                    <li class="@Html.IsSelected(action: "StatusEntry")" id="statusLink"><a href="@Url.Action("StatusEntry", "Entry")">Status Entry</a></li>
+                    <li class="@Html.IsSelected(action: "StatusGroupEntry")" id="statusLink"><a href="@Url.Action("StatusGroupEntry", "Entry")">Status Group Entry</a></li>
+                    <li class="@Html.IsSelected(action: "TimeSlotEntry")"><a href="@Url.Action("TimeSlotEntry", "Entry")">TimeSlot Entry</a></li>
+                    <li class="@Html.IsSelected(action: "HubNameEntry")"><a href="@Url.Action("HubNameEntry", "Entry")">Hub Entry</a></li>
+                    <li class="@Html.IsSelected(action: "DistrictEntry")"><a href="@Url.Action("DistrictEntry", "Entry")">District Entry</a></li>
+                    <li class="@Html.IsSelected(action: "UpdateDistrict")"><a href="@Url.Action("UpdateDistrict", "Entry")">District Update</a></li>
+                    <li class="@Html.IsSelected(action: "AddCategorySubCategoryInfo")"><a href="@Url.Action("AddCategorySubCategoryInfo", "Entry")">Category SubCategory Entry</a></li>
+                    <li class="@Html.IsSelected(action: "LeadManagement")"><a href="@Url.Action("LeadManagement", "Entry")">Lead Management</a></li>
+                    <li class="@Html.IsSelected(action: "UpdatePriceWithOrderType")"><a href="@Url.Action("UpdatePriceWithOrderType", "Entry")">Update Price With Order Type</a></li>
+                    <li class="@Html.IsSelected(action: "CourierEntry")"><a href="@Url.Action("CourierEntry", "Entry")">Courier Entry</a></li>
+                    <li class="@Html.IsSelected(action: "RedxPickUpStoresEntry")"><a href="@Url.Action("RedxPickUpStoresEntry", "Entry")">Redx PickUp Stores Entry</a></li>
+                </ul>
+            </li>
+
+            <li class="@Html.IsSelected(controller: "Loan")">
+                <a href="#">
+                    <i class="fa fa-money"></i>
+                    <span class="nav-label">Loan</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "LoanApplication")" id="loan"><a href="@Url.Action("LoanApplication", "Loan")">Loan Application</a></li>
+                    <li class="@Html.IsSelected(action: "AddLoanApplicantsBusinessInformation")" id="loan"><a href="@Url.Action("AddLoanApplicantsBusinessInformation", "Loan")">Loan Applicant Business Information</a></li>
+                    <li class="@Html.IsSelected(action: "AddLenderUser")" id="loan"><a href="@Url.Action("AddLenderUser", "Loan")">Add Lender User</a></li>
+                    <li class="@Html.IsSelected(action: "AssignCourierUserToLender")" id="loan"><a href="@Url.Action("AssignCourierUserToLender", "Loan")">Assign Courier User To Lender</a></li>
+                    <li class="@Html.IsSelected(action: "DisbursedLoanUsers")" id="loan"><a href="@Url.Action("DisbursedLoanUsers", "Loan")">Loan Disbursement Info</a></li>
+                </ul>
+            </li>
+
+            <li class="@Html.IsSelected(controller: "DeliveryBondhu")">
+                <a href="#">
+                    <i class="fa fa-edit"></i>
+                    <span class="nav-label">Delivery Bondhu</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "AssignDeliveryZoneLocation")" id="deliveryBondhu"><a href="@Url.Action("AssignDeliveryZoneLocation", "DeliveryBondhu")">Assign Delivery Zone</a></li>
+                    <li class="@Html.IsSelected(action: "LocationAssign")" id="deliveryBondhu"><a href="@Url.Action("LocationAssign", "DeliveryBondhu")">Location Assign</a></li>
+                    <li class="@Html.IsSelected(action: "OrderStatusHistory")" id="deliveryBondhu"><a href="@Url.Action("OrderStatusHistory", "DeliveryBondhu")">Order Status History</a></li>
+                    <li class="@Html.IsSelected(action: "RiderWiseOrderCollectionDetails")" id="deliveryBondhu"><a href="@Url.Action("RiderWiseOrderCollectionDetails", "DeliveryBondhu")">Rider Wise Order Collection Details</a></li>
+                    <li class="@Html.IsSelected(action: "ZoneEntry")" id="deliveryBondhu"><a href="@Url.Action("ZoneEntry", "DeliveryBondhu")">Zone Entry</a></li>
+                    <li class="@Html.IsSelected(action: "RiderPaymentAdjustment")" id="deliveryBondhu"><a href="@Url.Action("RiderPaymentAdjustment", "DeliveryBondhu")">Rider Payment Adjustment</a></li>
+                    <li class="@Html.IsSelected(action: "RiderCommissionEntry")" id="deliveryBondhu"><a href="@Url.Action("RiderCommissionEntry", "DeliveryBondhu")">Rider Commission Entry</a></li>
+                    <li class="@Html.IsSelected(action: "GetZoneWiseOrdersCount")" id="deliveryBondhu"><a href="@Url.Action("GetZoneWiseOrdersCount", "DeliveryBondhu")">Zone Wise Orders Count</a></li>
+                    <li class="@Html.IsSelected(action: "CustomComment")" id="deliveryBondhu"><a href="@Url.Action("CustomComment", "DeliveryBondhu")">Custom Comment Report</a></li>
+                    <li class="@Html.IsSelected(action: "RiderPaymentReport")" id="deliveryBondhu"><a href="@Url.Action("RiderPaymentReport", "DeliveryBondhu")">Rider Payment Report</a></li>
+                    <li class="@Html.IsSelected(action: "BondhuEntryPanel")" id="deliveryBondhu"><a href="@Url.Action("BondhuEntryPanel", "DeliveryBondhu")">Bondhu Entry Panel</a></li>
+                    <li class="@Html.IsSelected(action: "RiderCountWithDetails")" id="deliveryBondhu"><a href="@Url.Action("RiderCountWithDetails", "DeliveryBondhu")">Multiple Rider Count</a></li>
+                    <li class="@Html.IsSelected(action: "SameDayCollectedPendingOrdersCount")"><a href="@Url.Action("SameDayCollectedPendingOrdersCount", "DeliveryBondhu")">SameDay CollectedPending Orders Count</a></li>
+
+                </ul>
+            </li>
+
+            <li class="@Html.IsSelected(controller: "Voucher")">
+                <a href="#">
+                    <i class="fa fa-edit"></i>
+                    <span class="nav-label">Voucher</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "AddVoucher")"><a href="@Url.Action("AddVoucher", "Voucher")">Voucher Entry</a></li>
+                    <li class="@Html.IsSelected(action: "ManageVoucher")"><a href="@Url.Action("ManageVoucher", "Voucher")">Manage Voucher</a></li>
+                    <li class="@Html.IsSelected(action: "AppliedVourcherInfo")"><a href="@Url.Action("AppliedVourcherInfo", "Voucher")">Applied Vourcher Report</a></li>
+                </ul>
+            </li>
+            <li class="@Html.IsSelected(controller: "Dashboard")" id="DashboardControlLink">
+                <a href="#">
+                    <i class="fa fa-th-large"></i>
+                    <span class="nav-label">Dashboard</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "DashboardSummary")"><a href="@Url.Action("DashboardSummary", "Dashboard")">Dashboard Summary</a></li>
+                </ul>
+            </li>
+            <li class="@Html.IsSelected(controller: "Manage")">
+                <a href="#">
+                    <i class="fa fa-key"></i>
+                    <span class="nav-label">Manage</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "MerchantInformation")" id="manage"><a href="@Url.Action("AssignCouirerAndService", "Manage")">Assign Couirer && Service</a></li>
+                    <li class="@Html.IsSelected(action: "MerchantInformation")" id="manage"><a href="@Url.Action("MerchantInformation", "Manage")">Merchant Information</a></li>
+                    <li class="@Html.IsSelected(action: "MerchantMailAndSmsPermission")" id="manage"><a href="@Url.Action("MerchantMailAndSmsPermission", "Manage")">Merchant Mail & SMS</a></li>
+                    <li class="@Html.IsSelected(action: "DeliveryManAssign")" id="manage"><a href="@Url.Action("DeliveryManAssign", "Manage")">DeliveryMan Assign</a></li>
+                    <li class="@Html.IsSelected(action: "OrderAssign")" id="manage"><a href="@Url.Action("OrderAssign", "Manage")">Order Assign</a></li>
+                    <li class="@Html.IsSelected(action: "LocationAssign")" id="manage"><a href="@Url.Action("LocationAssign", "Manage")">Location Assign</a></li>
+                    <li class="@Html.IsSelected(action: "UpdateTeleSalesStatus")" id="manage"><a href="@Url.Action("UpdateTeleSalesStatus", "Manage")">Update Tele Sales Status</a></li>
+
+                    <li class="@Html.IsSelected(controller: "Manage")">
+                        <a href="#">
+                            <span class="nav-label">Collectors</span>
+                            <span class="fa arrow"></span>
+                        </a>
+                        <ul class="nav nav-second-level collapse">
+                            <li class="@Html.IsSelected(action: "CollectorAssign")" id="manage"><a href="@Url.Action("CollectorAssign", "Manage")">Collector Merchant Assign</a></li>
+
+                            @*<li class="@Html.IsSelected(action: "CollectorLocationAssignAngular")" id="manage"><a href="@Url.Action("CollectorLocationAssignAngular", "Manage")">Collector Location Assign</a></li>*@
+                            <li class="@Html.IsSelected(action: "GetAllCollectors")" id="manage"><a href="@Url.Action("GetAllCollectors", "Manage")">All Collectors</a></li>
+                            <li class="@Html.IsSelected(action: "GetAllRiders")" id="manage"><a href="@Url.Action("GetAllRiders", "Manage")">All Riders</a></li>
+
+                        </ul>
+                    </li>
+                    <li class="@Html.IsSelected(action: "RegistrationForm")" id="manage"><a href="@Url.Action("RegistrationForm", "Manage")">Merchant Registration</a></li>
+                    <li class="@Html.IsSelected(action: "DuplicatesCourierUsers")" id="manage"><a href="@Url.Action("DuplicatesCourierUsers", "Manage")">Duplicates Users</a></li>
+                    <li class="@Html.IsSelected(action: "MerchantWiseAssignCourier")" id="manage"><a href="@Url.Action("MerchantWiseAssignCourier", "Manage")">Merchant Wise Assign Courier</a></li>
+                    <li class="@Html.IsSelected(action: "UserLocationAssign")" id="manage"><a href="@Url.Action("UserLocationAssign", "Manage")">User Location Assign</a></li>
+                </ul>
+            </li>
+
+            <li class="@Html.IsSelected(controller: "GeneralSettings")">
+                <a href="#">
+                    <i class="fa fa-globe"></i>
+                    <span class="nav-label">General Settings</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "TermsAndConditionsEntry")" id="termsAndConditions"><a href="@Url.Action("TermsAndConditionsEntry", "GeneralSettings")">Terms & Conditions</a></li>
+                    <li class="@Html.IsSelected(action: "RegisterTermsConditions")" id="termsAndConditions"><a href="@Url.Action("RegisterTermsConditions", "GeneralSettings")">Register Terms & Conditions</a></li>
+                    <li class="@Html.IsSelected(action: "VoucherTermsConditions")" id="voucherTermsAndConditions"><a href="@Url.Action("VoucherTermsConditions", "GeneralSettings")">Voucher Terms & Conditions</a></li>
+                    <li class="@Html.IsSelected(action: "MailAndSmsEntry")" id="mailAndSms"><a href="@Url.Action("MailAndSmsEntry", "GeneralSettings")">Mail & SMS Config</a></li>
+                    <li class="@Html.IsSelected(action: "SendSms")" id="mailAndSms"><a href="@Url.Action("SendSms", "GeneralSettings")">Send SMS</a></li>
+                    <li class="@Html.IsSelected(action: "DeliveryBonduNotification")" id="deliveryBonduNotification"><a href="@Url.Action("DeliveryBonduNotification", "GeneralSettings")">Delivery Bondu Notification</a></li>
+                </ul>
+            </li>
+
+            <li class="@Html.IsSelected(controller: "Quick")">
+                <a href="#">
+                    <i class="fa fa-globe"></i>
+                    <span class="nav-label">Quick Order</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "QuickOrderGenerate")"><a href="@Url.Action("QuickOrderGenerate", "Quick")">Bar Code Generate</a></li>
+                    <li class="@Html.IsSelected(action: "QuickOrderProcess")"><a href="@Url.Action("QuickOrderProcess", "Quick")">Quick Order Process</a></li>
+                    <li class="@Html.IsSelected(action: "RequestAndCollectedOrderReport")"><a href="@Url.Action("RequestAndCollectedOrderReport", "Quick")">Requested Collected Orders</a></li>
+                    <li class="@Html.IsSelected(action: "HubWiseBarCode")"><a href="@Url.Action("HubWiseBarCode", "Quick")">Hub Wise Bar Code</a></li>
+                    <li class="@Html.IsSelected(action: "GetCollectionSlotWiseOrders")"><a href="@Url.Action("GetCollectionSlotWiseOrders", "Quick")">CollectionSlot Wise Orders</a></li>
+                </ul>
+            </li>
+            <li class="@Html.IsSelected(controller: "InstaCOD")">
+                <a href="#">
+                    <i class="fa fa-handshake-o"></i>
+                    <span class="nav-label">InstaCOD</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <li class="@Html.IsSelected(action: "InstantOrder")"><a href="@Url.Action("InstantOrder", "InstaCOD")">Instant Orders Process</a></li>
+                    <li class="@Html.IsSelected(action: "InstaCodCourierLocationEntry")"><a href="@Url.Action("InstaCodCourierLocationEntry", "InstaCOD")">InstaCod Courier LocationEntry</a></li>
+                </ul>
+            </li>
+
+        </ul>
+    </div>
+</nav>

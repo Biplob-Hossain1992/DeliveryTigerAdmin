@@ -1,0 +1,536 @@
+﻿
+@{
+    ViewBag.Title = "Retention Users Performance";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+
+</script>
+
+<div ng-app="RetentionUsersPerformanceReportModule">
+    <div ng-controller="RetentionUsersPerformanceReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12" ng-init="getRetentionUserList()">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align:center;">Retention Users Performance</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                @*<button style="margin-right: 2px;" type="button" class="btn btn-w-m btn-primary" ng-click="LoadRetentionUsersList()">Retention Merchant List</button>*@
+
+                                <div class="input-group">
+                                    <select style="border: 1px solid #46b8da;margin-left: 2px;" class="btn btn-default" ng-model="retentionUser">
+                                        <option value="0">Select Retention Manager</option>
+                                        <option ng-repeat="user in retentionUsers" value="{{user.userId}}">{{user.fullName}}</option>
+                                    </select>
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left: 2px;" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left: 2px;" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                    <button style="margin-left: 2px;" class="btn btn-w-m btn-success" type="button" ng-click="retentionUserPerformanceReport(fromDate,toDate,retentionUser)">Retention User Portfolio</button>
+                                    <button style="margin-left: 2px;" class="btn btn-w-m btn-success" type="button" ng-click="inactiveMerchantsReport(retentionUser, 30)">Inactive Merchants</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="retentionUserPerformanceDetails" ng-show="showRetentionUserPerformance">
+                                    <div class="from-group" style="margin-bottom: 10px;">
+                                        <label style="font-size: 16px;">Total Merchant: </label>
+                                        <span style="font-size: 16px;"><b>{{retentionUserPerformanceData[0].totalMerchant}}</b></span>
+                                    </div>
+                                    <table class="table table-bordered table-responsive">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                                        Company Name
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='totalOrder'; reverseSort = !reverseSort">
+                                                        Total Order
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='lastOrderDate'; reverseSort = !reverseSort">
+                                                        Last Order Date
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='totalUnsolvedComplain'; reverseSort = !reverseSort">
+                                                        Total Complain
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in retentionUserPerformanceData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{d.companyName}}</td>
+                                                <td>{{d.totalOrder}}</td>
+                                                <td>{{d.lastOrderDate | date:'medium'}}</td>
+                                                <td>
+                                                    <span ng-if="d.totalUnsolvedComplain != 0" style="cursor: pointer;" ng-click="merchantWiseComplainDetails(d.courierUserId)" data-toggle="modal" data-target="#merchantWiseComplainDetailsModal">
+                                                        {{d.totalUnsolvedComplain}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                    </span>
+                                                    <span ng-if="d.totalUnsolvedComplain == 0">
+                                                        {{d.totalUnsolvedComplain}}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-lg-12">
+                                <div class="srAssignedInactiveMerchantDetails" ng-show="showSRAssignedInactiveMerchant">
+                                    <div class="form-group">
+                                        <div class="form-inline">
+                                            <button type="button" class="btn btn-sm btn-w-m btn-success" ng-click="inactiveMerchantsReport(retentionUser, 7)">7 days</button>
+                                            <button style="margin-left: 5px;" type="button" class="btn btn-sm btn-w-m btn-success" ng-click="inactiveMerchantsReport(retentionUser, 15)">15 days</button>
+                                            <button style="margin-left: 5px;" type="button" class="btn btn-sm btn-w-m btn-success" ng-click="inactiveMerchantsReport(retentionUser, 30)">30 days</button>
+                                        </div>
+                                    </div>
+                                    <div class="from-group" style="margin-bottom: 10px;">
+                                        <h3><b>Inactive merchants for last {{merchantInactiveDuration}} days</b></h3>
+                                    </div>
+                                    <table class="table table-bordered table-responsive">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                                        Company Name
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='mobile'; reverseSort = !reverseSort">
+                                                        Mobile
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='bkashNumber'; reverseSort = !reverseSort">
+                                                        Bkash Number
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='alterMobile'; reverseSort = !reverseSort">
+                                                        Alternate Number
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    Action
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in srAssignedInactiveMerchantData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{d.companyName}}</td>
+                                                <td>{{d.mobile}}</td>
+                                                <td>{{d.bkashNumber}}</td>
+                                                <td>{{d.alterMobile}}</td>
+                                                <td>
+                                                    <select ng-model="d.teleSales">
+                                                        <option value="0" >Select Telesales</option>
+                                                        <option value="1">Interested</option>
+                                                        <option value="2">Not Interested</option>
+                                                        <option value="3">Business Closed</option>
+                                                        <option value="4">Didn't Pick</option>
+                                                    </select>
+                                                    <input type="button" value="Update" class="btn btn-primary" ng-click="UpdateTeleSales(d)"/>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Modal Section Start*@
+        <div class="container">
+            <div class="row">
+                @*Merchant Wise Complain Details Modal Start*@
+                <div id="merchantWiseComplainDetailsModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Merchant Wise Complain Details</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='dateOfCall'; reverseSort = !reverseSort">
+                                                        Complain Date
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='comments'; reverseSort = !reverseSort">
+                                                        Complain
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in merchantWiseComplainData | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{a.dateOfCall | date:'medium'}}</td>
+                                                <td>{{a.comments}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Merchant Wise Complain Details Modal End*@
+            </div>
+        </div>
+        @*Modal Section End*@
+
+    </div>
+</div>
+
+<script type="text/javascript">
+    var app = angular.module('RetentionUsersPerformanceReportModule', []);
+    app.controller('RetentionUsersPerformanceReportController', function ($scope, $http) {
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+        //var CoreLocalUrl = "http://localhost:58676/api/";
+
+        $scope.retentionUser = 0;
+        //$scope.retentionusers = [
+        //    {
+        //        'id': 30,
+        //        'name': 'Ali Azhar Khan (shohag)'
+        //    },
+        //    {
+        //        'id': 83,
+        //        'name': 'rezu'
+        //    },
+        //    {
+        //        'id': 712,
+        //        'name': 'Tanvir Alom'
+        //    },
+        //    {
+        //        'id': 747,
+        //        'name': 'Md. Raiyan'
+        //    },
+        //    {
+        //        'id': 755,
+        //        'name': 'SaifulSR'
+        //    },
+        //    {
+        //        'id': 756,
+        //        'name': 'ShamimSR'
+        //    },
+        //    {
+        //        'id': 765,
+        //        'name': 'Himel_SR'
+        //    },
+        //    {
+        //        'id': 766,
+        //        'name': 'Raju_SR'
+        //    },
+        //    {
+        //        'id': 767,
+        //        'name': 'Rasel_SR'
+        //    },
+        //    {
+        //        'id': 768,
+        //        'name': 'Sojib_SR'
+        //    },
+        //    {
+        //        'id': 796,
+        //        'name': 'Ashraf_SR'
+        //    },
+        //    {
+        //        'id': 797,
+        //        'name': 'Akram_SR'
+        //    },
+        //    {
+        //        'id': 799,
+        //        'name': 'Avijit_SR'
+        //    },
+        //    {
+        //        'id': 800,
+        //        'name': 'Masum_SR'
+        //    },
+        //    {
+        //        'id': 808,
+        //        'name': 'Arif'
+        //    },
+        //    {
+        //        'id': 809,
+        //        'name': 'Masbah'
+        //    },
+        //    {
+        //        'id': 810,
+        //        'name': 'Pikul'
+        //    },
+        //    {
+        //        'id': 814,
+        //        'name': 'Rekha Akter'
+        //    },
+        //    {
+        //        'id': 818,
+        //        'name': 'Nawaz'
+        //    },
+        //    {
+        //        'id': 820,
+        //        'name': 'Tanvir Ahmed SR'
+        //    },
+        //    {
+        //        'id': 821,
+        //        'name': 'Nafiz Ali'
+        //    },
+        //    {
+        //        'id': 822,
+        //        'name': 'Fahim'
+        //    },
+        //    {
+        //        'id': 823,
+        //        'name': 'Abir Yusuf'
+        //    },
+        //    {
+        //        'id': 824,
+        //        'name': 'Ahmed Rajib'
+        //    },
+        //    {
+        //        'id': 827,
+        //        'name': 'Shakil_SR'
+        //    },
+        //    {
+        //        'id': 829,
+        //        'name': 'Dipa'
+        //    },
+        //    {
+        //        'id': 845,
+        //        'name': 'Sheikh Minhal Ullah Chowdhury'
+        //    },
+        //    {
+        //        'id': 846,
+        //        'name': 'Farhadul Alam'
+        //    },
+        //    {
+        //        'id': 847,
+        //        'name': 'Syed Golam Jubayer'
+        //    },
+        //    {
+        //        'id': 848,
+        //        'name': 'Sabbir Ahamed Shawon'
+        //    },
+        //    {
+        //        'id': 849,
+        //        'name': 'Anam Shahnur'
+        //    },
+        //    {
+        //        'id': 850,
+        //        'name': 'Md.Arif Podder'
+        //    },
+        //    {
+        //        'id': 851,
+        //        'name': 'Firoz Ahammad'
+        //    },
+        //    {
+        //        'id': 852,
+        //        'name': 'Shahriar Hassan'
+        //    },
+        //    {
+        //        'id': 853,
+        //        'name': 'MD.Anik'
+        //    },
+        //    {
+        //        'id': 854,
+        //        'name': 'Mehedi'
+        //    },
+        //    {
+        //        'id': 855,
+        //        'name': 'Sadia'
+        //    },
+        //    {
+        //        'id': 856,
+        //        'name': 'Tiove'
+        //    },
+        //    {
+        //        'id': 905,
+        //        'name': 'Tofaelsr'
+        //    },
+        //    {
+        //        'id': 906,
+        //        'name': 'mamunsr'
+        //    },
+        //    {
+        //        'id': 908,
+        //        'name': 'Arabisr'
+        //    },
+        //    {
+        //        'id': 944,
+        //        'name': 'Bipasha Sarkar'
+        //    },
+        //    {
+        //        'id': 945,
+        //        'name': 'Lumia'
+        //    }
+        //];
+
+        $scope.getRetentionUserList = function () {
+            $http.get(apiBaseURL + 'Fetch/GetAdUsers', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.retentionUsers = response.data.model.filter(r => r.isRetention == true);
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.retentionUserPerformanceReport = function (fromDate, toDate, retentionUserId) {
+            if (parseInt(retentionUserId) === 0) {
+                alert('Please must be select retention manager');
+                return false;
+            }
+            else if (typeof fromDate === 'undefined' || fromDate === "" || typeof toDate === 'undefined' || toDate === "") {
+                alert('Please must be select From and To Date');
+                return false;
+            }
+
+            let orderBodyModel = {
+                'FromDate': fromDate,
+                'ToDate': toDate,
+                'RetentionUserId': retentionUserId
+            };
+
+            $scope.showLoader = true;
+            $http.post(CoreOnlineUrl + 'Report/RetentionUsersPerformance', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showRetentionUserPerformance = true;
+                    $scope.showSRAssignedInactiveMerchant = false;
+                    $scope.retentionUserPerformanceData = response.data.model;
+                    $scope.showLoader = false;
+                }, function error(error) {
+                    console.log(error);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.inactiveMerchantsReport = function (retentionUserId, inactiveDuration) {
+            if (retentionUserId === '0') {
+                alert('Please must be select retention manager');
+                return false;
+            }
+
+            $scope.showLoader = true;
+            $http.get(CoreOnlineUrl  + 'Report/SRAssignedInactiveMerchantList/' + retentionUserId + '/' + inactiveDuration, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showRetentionUserPerformance = false;
+                    $scope.showSRAssignedInactiveMerchant = true;
+                    $scope.merchantInactiveDuration = inactiveDuration;
+                    $scope.srAssignedInactiveMerchantData = response.data.model;
+                    $scope.showLoader = false;
+                }, function error(error) {
+                    console.log(error);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.merchantWiseComplainDetails = function (courierUserId) {
+            $http.get(CoreOnlineUrl + 'Report/RetentionUserWiseComplainDetails/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.merchantWiseComplainData = response.data.model;
+                }, function error(error) {
+                    console.log(error);
+                });
+        }
+
+        $scope.UpdateTeleSales = (Obj) => {
+
+            if (Obj.courierUserId == 0 || Obj.courierUserId == null || Obj.teleSales == null) {
+                alert('Select TeleSales');
+                return false;
+            }
+
+            var requestBody = {
+                "teleSales": Obj.teleSales
+            }
+
+            let url = apiBaseURL + 'Update/UpdateTelesalesStatus/' + Obj.courierUserId;
+
+
+            $http.put(url, requestBody, { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token').trim() } })
+                .then(function (response) {
+                    if (response.data.didError) {
+                        alert('Update unsuccessful');
+                    }
+
+                    alert('Update Successful');
+                    $scope.inactiveMerchantsReport($scope.retentionUser, 30)
+
+                }, function error(response) {
+                    alert('Something went Wrong');
+                });
+        }
+    });
+</script>

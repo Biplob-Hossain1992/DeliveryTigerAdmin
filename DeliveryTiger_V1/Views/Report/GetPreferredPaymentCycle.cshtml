@@ -1,0 +1,164 @@
+﻿
+@{
+    ViewBag.Title = "GetPreferredPaymentCycle";
+}
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+<script type="text/javascript">
+    var app = angular.module('orderModule', []);
+    app.controller('merchantOrderController', function ($scope, $http) {
+
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+        $scope.paymentCycle = 'instant';
+
+        $scope.paymentCycles = [
+            {
+                'id': 'instant',
+                'name': 'Instant'
+            },
+            {
+                'id': 'week',
+                'name': 'Week'
+            }
+        ]
+
+        $scope.getPreferredPaymentCycle = function (fromDate, toDate, paymentCycle) {
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let orderBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "preferredPaymentCycle": paymentCycle
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/GetPreferredPaymentCycle', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(response.data.model);
+                    $scope.merchantPaymentCycle = response.data.model;
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        };
+
+    });
+</script>
+
+<div ng-app="orderModule">
+    <div ng-controller="merchantOrderController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                                <div class="input-daterange input-group" id="datepickerOrders">
+
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+                                    <select style="border: 1px solid #46b8da" class="btn btn-default" ng-model="paymentCycle" ng-options="paymentCycle.id as paymentCycle.name for paymentCycle in paymentCycles"></select>
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="getPreferredPaymentCycle(fromDate, toDate, paymentCycle)">Search</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        #
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                            Company
+                                        </a>
+                                    </th>
+
+                                    <th>
+                                        <a href="#" ng-click="orderByField='mobile'; reverseSort = !reverseSort">
+                                            Mobile
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='emailAddress'; reverseSort = !reverseSort">
+                                            Email
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='bkashNumber'; reverseSort = !reverseSort">
+                                            Bkash Number
+                                        </a>
+                                    </th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in merchantPaymentCycle | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>
+                                        {{ o.companyName}}
+                                    </td>
+                                    <td>
+                                        {{o.mobile}}
+                                    </td>
+                                    <td>
+                                        {{o.emailAddress}}
+                                    </td>
+                                    <td>
+                                        {{o.bkashNumber}}
+                                    </td>
+                                    
+
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+

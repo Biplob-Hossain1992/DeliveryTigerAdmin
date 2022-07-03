@@ -1,0 +1,700 @@
+﻿
+@{
+    ViewBag.Title = "AddCategorySubCategoryInfo";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+     }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+
+
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div class="row" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-app="addCategoryModule">
+        <div class="ibox" ng-controller="addCategoryController" data-ng-init="init()">
+
+
+            <!--Update Category Modal-->
+            <div class="modal inmodal fade" id="updateCategoryModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content" ng-repeat="d in getCategoryData">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h5 class="modal-title" id="updateCategoryModalHeader">Update Category</h5>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="form-group row">
+                                <label class="col-lg-2 col-form-label">English Name</label>
+                                <div class="col-lg-4">
+                                    <input type="text" ng-model="d.categoryNameEng" class="form-control" />
+                                </div>
+                                <label class="col-lg-2 col-form-label">Bangla Name</label>
+                                <div class="col-lg-4">
+                                    <input type="text" ng-model="d.categoryNameBng" class="form-control" />
+                                </div>
+                            </div>
+
+
+                            <div class="form-group row">
+
+                                <label class="col-lg-2 col-form-label">Is Active</label>
+                                <div class="col-lg-4">
+                                    <select ng-model="isActive" class="form-control">
+
+                                        <option value=1>True</option>
+                                        <option value=0>False</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" ng-click="updateCategory(d.categoryId,d.categoryNameEng,d.categoryNameBng,isActive)" data-dismiss="modal">Update</button>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!--Modal End-->
+            <!--Update Sub-Category Modal-->
+            <div class="modal inmodal fade" id="updateSubCategoryModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content" ng-repeat="d in getSubCategoryData">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h5 class="modal-title" id="updateSubCategoryModalHeader">Update Sub-Category</h5>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="form-group row">
+                                <label class="col-lg-2 col-form-label">English Name</label>
+                                <div class="col-lg-4">
+                                    <input type="text" ng-model="d.subCategoryNameEng" class="form-control" />
+                                </div>
+                                <label class="col-lg-2 col-form-label">Bangla Name</label>
+                                <div class="col-lg-4">
+                                    <input type="text" ng-model="d.subCategoryNameBng" class="form-control" />
+                                </div>
+
+                            </div>
+
+
+                            <div class="form-group row">
+
+                                <label class="col-lg-2 col-form-label">Category</label>
+                                <div class="col-lg-4">
+                                    <select id="mainCategory" class="form-control" ng-model="categoryChange">
+                                        @*<option value="{{ d.categoryId }}" ng-selected="true">{{d.MainCatName}} </option>*@
+                                        @*<option value="-1" >Change Category</option>*@
+                                        <option ng-repeat="c in categories" ng-selected="{{c.categoryId==d.categoryId}}" value="{{c.categoryId }}"> {{ c.categoryNameEng }}</option>
+                                    </select>
+
+                                    @*<input type="text" ng-model="d.MainCatName" class="form-control" disabled />*@
+                                </div>
+
+                                <label class="col-lg-2 col-form-label">Is Active</label>
+                                <div class="col-lg-4">
+                                    <select ng-model="isActive" class="form-control">
+
+                                        <option value=1 ng-selected="true">True</option>
+                                        <option value=0>False</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" ng-click="updateSubCategory(d.subCategoryId,d.subCategoryNameEng,d.subCategoryNameBng,isActive,categoryChange)" data-dismiss="modal">Update</button>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!--Modal End-->
+            @*<div class="ibox-title">
+                    <h3>Add New Category and Sub-Category</h3>
+                </div>*@
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <div class="col-lg-12" id="" style="display:flex">
+                    <!--Add New Category-->
+                    <div class="col-lg-2">
+                        <label class="col-form-label-sm">New Category</label>
+                    </div>
+
+
+
+                    <div class="col-lg-3 form-group">
+                        <input type="text" ng-model="category.englishName" id="categoryEngName" class="form-control" placeholder="Name In English" />
+                    </div>
+
+                    <div class="col-lg-3 form-group">
+                        <input type="text" ng-model="category.banglaName" id="categoryBanglaName" class="form-control" placeholder="Name In Bangla" />
+                    </div>
+
+                    <div class="col-lg-2 form-group">
+                        <select id="isActive" class="form-control" ng-model="categoryIsActive">
+                            <option value="-1" ng-selected="true">Is Active</option>
+                            <option value=true>True</option>
+                            <option value=false>False</option>
+
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2">
+                        <button type="submit" class="btn btn-info" ng-click="addCategory(category.englishName,category.banglaName,categoryIsActive)"><strong>Save</strong></button>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!--Add Sub Category-->
+
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <div class="col-lg-12" id="" style="display:flex">
+
+                    <div class="col-lg-2">
+                        <label class="col-form-label-sm">New Sub-Category</label>
+                    </div>
+
+                    <div class="col-lg-2">
+                        <select id="mainCategory" class="form-control" ng-model="subCatUnderMainCat">
+                            <option value="-1" ng-selected="true">Select category </option>
+                            <option ng-repeat="c in categories" value="{{ c.categoryId }}"> {{ c.categoryNameEng }}</option>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2">
+                        <input type="text" ng-model="subCategory.englishName" id="SubCategoryEngName" class="form-control" placeholder="In English" />
+                    </div>
+
+                    <div class="col-lg-2">
+                        <input type="text" ng-model="subCategory.banglaName" id="SubCategoryBanglaName" class="form-control" placeholder="In Bangla" />
+                    </div>
+
+                    <div class="col-lg-2">
+                        <div class="form-group row">
+                            <select ng-model="subCategoryIsActive" id="isActive" class="form-control">
+                                <option value="-1" ng-selected="true">Is Active</option>
+                                <option value=true>True</option>
+                                <option value=false>False</option>
+
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-2">
+                        <button type="submit" class="btn btn-info" ng-click="addSubCategory(subCatUnderMainCat,subCategory.englishName,subCategory.banglaName,subCategoryIsActive)"><strong>Save</strong></button>
+                    </div>
+
+                </div>
+            </div>
+            <!--Load All Category Button-->
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="ibox ">
+                        <div class="ibox-title">
+                            <h5>Category List <small>Load All Category</small></h5>
+                            <button class="btn btn-info offset-1" type="button" ng-click="loadCategoryTable()">Load</button>
+                            <div class="ibox-tools">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="ibox-content" style="padding:5px;">
+                            <div class="col-lg-12" style="padding:0px;">
+
+                                <!--Loader-->
+                                <div id="catloader">
+                                    <div class="spiner-example" ng-show="showCatLoader">
+                                        <div class="sk-spinner sk-spinner-wave">
+                                            <div class="sk-rect1">
+                                            </div>
+                                            <div class="sk-rect2">
+                                            </div>
+                                            <div class="sk-rect3">
+                                            </div>
+                                            <div class="sk-rect4">
+                                            </div>
+                                            <div class="sk-rect5">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!--Category Table-->
+                                <div style="margin: 20px 0px 10px 0px" id="categoryDetails">
+                                    <table class="table table-bordered table-striped table-hover" ng-show="showCatTable">
+                                        <thead>
+                                            <tr>
+
+                                                <th>Name</th>
+                                                <th>Bangla Name</th>
+                                                <th>Active</th>
+                                                <th>Action</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            <tr ng-repeat="c in categoryDetails">
+
+
+                                                <td>{{ c.categoryNameEng }}</td>
+                                                <td>{{ c.categoryNameBng }}</td>
+                                                <td>
+                                                    <span ng-if="c.isActive == true">Yes</span>
+                                                    <span ng-if="c.isActive != true">No</span>
+                                                </td>
+
+                                                <td>
+                                                    <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="getCategoryModal(c.categoryId)" data-toggle="modal" data-target="#updateCategoryModal"><strong><i class='fa fa-pencil'></i></strong></button>
+                                                </td>
+
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!--Category Table End-->
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!--Load All Sub-Category Button-->
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="ibox ">
+                        <div class="ibox-title">
+                            <h5>Sub-Category List <small>Load All Sub-Category</small></h5>
+                            <button class="btn btn-info offset-1" type="button" ng-click="loadSubCategoryTable()">Load</button>
+                            <div class="ibox-tools">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="ibox-content" style="padding:5px;">
+
+                            <div class="col-lg-12" style="padding:0px;">
+                                <!--Loader-->
+                                <div id="loader">
+                                    <div class="spiner-example" ng-show="showLoader">
+                                        <div class="sk-spinner sk-spinner-wave">
+                                            <div class="sk-rect1">
+                                            </div>
+                                            <div class="sk-rect2">
+                                            </div>
+                                            <div class="sk-rect3">
+                                            </div>
+                                            <div class="sk-rect4">
+                                            </div>
+                                            <div class="sk-rect5">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--Sub category Table-->
+
+                                <div style="margin: 20px 0px 10px 0px" id="categoryDetails">
+                                    <table class="table table-bordered table-striped table-hover" ng-show="showSubCatTable">
+                                        <thead>
+                                            <tr>
+
+                                                <th>Name</th>
+                                                <th>Bangla Name</th>
+                                                <th>Category</th>
+                                                <th>Active</th>
+                                                <th>Action</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+
+                                            <tr ng-repeat="sc in subCategories">
+
+
+                                                <td>{{ sc.subCategoryNameEng }}</td>
+                                                <td>{{ sc.subCategoryNameBng }}</td>
+                                                <td>{{ sc.MainCatName }}</td>
+                                                <td>
+                                                    <span ng-if="sc.isActive == true">Yes</span>
+                                                    <span ng-if="sc.isActive != true">No</span>
+                                                </td>
+
+                                                <td>
+                                                    <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="getSubCategoryModal(sc.subCategoryId)" data-toggle="modal" data-target="#updateSubCategoryModal"><strong><i class='fa fa-pencil'></i></strong></button>
+                                                </td>
+
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!--Sub Category Table End-->
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+
+    </div>
+</div>
+
+<script type="text/javascript">
+    var app = angular.module('addCategoryModule', []);
+
+    app.controller('addCategoryController', function ($scope, $http) {
+
+
+        $scope.init = function () {
+            $scope.getAllCategory();
+            $scope.subCategoryIsActive = "-1";
+            $scope.categoryIsActive = "-1";
+            $scope.subCatUnderMainCat = "-1";
+            //$scope.subCatUnderMainCatUpdate = "-1";
+
+        }
+
+        $scope.addCategory = (engName, banglaName, isActive) => {
+
+
+
+
+            if (engName == undefined || engName == '') {
+                alert("Please set the name...!!!");
+                return false;
+            }
+            if (banglaName == undefined || banglaName == '') {
+                alert("Please set the Bangla name...!!!");
+                return false;
+            }
+            if (isActive == undefined || isActive == '' || isActive == '-1') {
+                alert("Please set Active Status...!!!");
+                return false;
+            }
+            var Category = [{
+
+                "categoryNameEng": engName,
+                "categoryNameBng": banglaName,
+                "isActive": isActive
+            }]
+
+            //console.log(Category);
+
+
+            let url = apiBaseURL + 'Entry/AddDtCategories';
+
+            $http.post(url, Category, { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token').trim() } })
+                .then(function (response) {
+                    if (response.data.didError) {
+                        alert("Something went wrong!!!");
+                        return false;
+                    }
+                    //Load All Category by clicking Save button
+                    $scope.getAllCategory();
+                    //if (confirm("Category added successfully....!!!")) { window.location.reload(); }
+                    alert("Category added successfully....!!!");
+                    $scope.category.englishName = "";
+                    $scope.category.banglaName = "";
+                    $scope.categoryIsActive = "-1";
+                }, function error(response) {
+                    alert("Something went wrong!!");
+                    console.log(response.message);
+                });
+
+        }
+
+        //GetAllCategory
+        let allCategory;
+        $scope.getAllCategory = function () {
+
+            let url = apiBaseURL + 'Fetch/GetCategoriesForAdmin/false';
+
+            $http.get(url, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.categories = response.data.model;
+
+                    allCategory = response.data.model;
+
+                }, function error(response) {
+                })
+
+        }
+
+        //Add Sub Category
+        $scope.addSubCategory = (categoryId, subCatEngName, subCatBngName, isActive) => {
+            if (categoryId == undefined || categoryId == '' || categoryId == '-1') {
+                alert("Please select a category...!!!");
+                return false;
+            }
+            if (subCatEngName == undefined || subCatEngName == '') {
+                alert("Please set the name...!!!");
+                return false;
+            }
+            if (subCatBngName == undefined || subCatBngName == '') {
+                alert("Please set the Bangla name...!!!");
+                return false;
+            }
+            if (isActive == undefined || isActive == '' || isActive == '-1') {
+                alert("Please set Active Status...!!!");
+                return false;
+            }
+
+            var SubCategory = [
+                {
+
+                    "subCategoryNameEng": subCatEngName,
+                    "subCategoryNameBng": subCatBngName,
+                    "isActive": isActive,
+                    "categoryId": categoryId
+                }
+            ]
+
+            //console.log(SubCategory);
+
+
+            let url = apiBaseURL + 'Entry/AddSubCategories';
+
+            $http.post(url, SubCategory, { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token').trim() } })
+                .then(function (response) {
+                    if (response.data.didError) {
+                        alert("Something went wrong!!!");
+                        return false;
+                    }
+
+                    //if (confirm("Sub Category added successfully....!!!")) { window.location.reload(); }
+                    alert("Sub Category added successfully....!!!");
+                    $scope.subCatUnderMainCat = "-1";
+                    $scope.subCategory.englishName = "";
+                    $scope.subCategory.banglaName = "";
+                    $scope.subCategoryIsActive = "-1";
+                }, function error(response) {
+                    alert("Something went wrong!!");
+                    console.log(response.message);
+                });
+
+        }
+
+
+
+        //GetAllSubCategory
+
+        $scope.getAllSubCategory = function () {
+
+            let url = apiBaseURL + 'Fetch/GetSubCategories/true';
+            //$scope.showLoader = true;
+            $http.get(url, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    // $scope.showLoader = false;
+                    $scope.subCategories = response.data.model;
+
+                }, function error(response) {
+                })
+
+        }
+
+        $scope.loadCategoryTable = function () {
+
+            let url = apiBaseURL + 'Fetch/GetCategoriesForAdmin/false';
+            $scope.showCatLoader = true;
+            $scope.showCatTable = false;
+            $http.get(url, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showCatLoader = false;
+                    $scope.showCatTable = true;
+                    $scope.categoryDetails = response.data.model;
+
+                    //allCategory = response.data.model;
+                    //$scope.getAllSubCategory();
+                }, function error(response) {
+                })
+
+        }
+        $scope.loadSubCategoryTable = function () {
+
+            let url = apiBaseURL + 'Fetch/GetSubCategories/true';
+            $scope.showLoader = true;
+            $scope.showSubCatTable = false;
+            $http.get(url, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.showSubCatTable = true;
+                    $scope.subCategories = response.data.model;
+
+
+                    var c = response.data.model;
+
+                    //if ($scope.categories.isActive == true && $scope.categories.filter(d => d.categoryId == c.categoryId) ) {
+                    //    for (var i = 0; i < $scope.subCategories.length; i++) {
+
+                    //        $scope.subCategories[i].MainCatName = $scope.categories.filter(d => d.categoryId == c[i].categoryId)[0].categoryNameEng;
+
+                    //    }
+                    //};
+
+                    //console.log(allCategory);
+                    //$scope.categories = $scope.categories.filter(e => e.isActive == true);
+                    //Code for showing category name instead of ID in sub-category table
+                    for (var i = 0; i < $scope.subCategories.length; i++) {
+
+                        $scope.subCategories[i].MainCatName = $scope.categories.filter(d => d.categoryId == c[i].categoryId)[0].categoryNameEng;
+
+                    }
+
+                    //console.log($scope.subCategories);
+
+                }, function error(response) {
+                })
+
+        }
+
+        //CategoryUpdate Modal
+
+        $scope.getCategoryModal = (id) => {
+
+            $scope.getCategoryData = $scope.categories.filter(c => c.categoryId == id);
+            //$scope.isActive = 1;
+            if ($scope.getCategoryData[0].isActive == false) {
+                $scope.isActive = 0;
+            } else {
+                $scope.isActive = 1;
+            }
+            //$scope.isActive = $scope.getCategoryData[0].isActive;
+        }
+
+        $scope.updateCategory = (id, nameEng, nameBng, isActive) => {
+            let categoryId = id;
+            if (isActive == 1) {
+                isActive = true;
+            } else { isActive = false; }
+            var requestBodyModel = {
+                "categoryId": categoryId,
+                "categoryNameEng": nameEng,
+                "categoryNameBng": nameBng,
+                "isActive": isActive
+
+            };
+            //console.log(requestBodyModel);
+            let url = apiBaseURL + 'Update/UpdateDtCategory/' + categoryId;
+
+            $http.put(url, requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (response.data.didError) {
+                        alert("Something went wrong!!!");
+                        return false;
+                    }
+
+                    alert("Category Updated Sucessfully..!!")
+                    //if (confirm("Category Updated Sucessfully..!!")) { $scope.loadCategoryTable();}
+                    $scope.loadCategoryTable();
+                }, function error(response) {
+                    alert("Something went wrong!!");
+                    console.log(response.message);
+                });
+
+        }
+
+
+        //Update Sub Category
+        $scope.getSubCategoryModal = (id) => {
+            $scope.isActive = 1;
+            $scope.getSubCategoryData = $scope.subCategories.filter(sc => sc.subCategoryId == id);
+            $scope.categoryChange = $scope.getSubCategoryData[0].categoryId;
+        }
+
+        $scope.updateSubCategory = (id, nameEng, nameBng, isActive, categoryId) => {
+            let subCategoryId = id;
+            if (isActive == 1) {
+                isActive = true;
+            } else { isActive = false; }
+            var requestBodyModel = {
+                "subCategoryId": subCategoryId,
+                "subCategoryNameEng": nameEng,
+                "subCategoryNameBng": nameBng,
+                "isActive": isActive,
+                "categoryId": categoryId
+
+            };
+
+            //console.log(requestBodyModel);
+
+            let url = apiBaseURL + 'Update/UpdateSubCategory/' + subCategoryId;
+
+            $http.put(url, requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (response.data.didError) {
+                        alert("Something went wrong!!!");
+                        return false;
+                    }
+
+                    alert("Sub-Category Updated Sucessfully..!!");
+                    
+                }, function error(response) {
+                    alert("Something went wrong!!");
+                    console.log(response.message);
+
+                });
+
+        }
+
+
+    });
+</script>
+
+
+

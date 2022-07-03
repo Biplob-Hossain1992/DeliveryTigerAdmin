@@ -1,0 +1,132 @@
+﻿
+@{
+    ViewBag.Title = "ReRoute Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+
+<div ng-app="ReRouteReportModule">
+    <div ng-controller="ReRouteReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 class="text-center">ReRoute Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="margin-right: 2px;" type="text" class="form-control form-control-sm" placeholder="Search" ng-model="mainSearch" />
+                                <div class="input-group input-daterange">
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="fromDate" name="fromDate" id="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="toDate" name="toDate" id="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                </div>
+                                <button type="button" style="margin-left: 2px;" class="btn btn-w-m btn-success" ng-click="getReRouteData(fromDate,toDate)">Show</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <table class="table table-bordered table-responsive">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>
+                                        <a href="" ng-click="orderByField='courierOrderId'; reverseSort = !reverseSort">
+                                            Courier Order Id
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="" ng-click="orderByField='postedOn'; reverseSort = !reverseSort">
+                                            Order Date
+                                        </a>
+                                    </th>
+                                    <th>
+                                        ReRouted Courier Name <br/>
+                                        (CourierName - Rerouted Date)
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="d in ReRouteData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                    <td>{{$index+1}}</td>
+                                    <td>{{d.courierOrderId}}</td>
+                                    <td>{{d.postedOn | date:'medium'}}</td>
+                                    <td>
+                                        <ul>
+                                            <li ng-repeat="c in d.couriers">
+                                                <div class="row">
+                                                    <div class="col-sm-12">
+                                                        <span>{{c.courierName}} - ({{c.postedOn | date:'medium'}})</span>
+                                                    </div>
+                                                </div>
+                                                
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('ReRouteReportModule', []);
+    app.controller('ReRouteReportController', function ($scope, $http) {
+
+        $scope.getReRouteData = function (fromDate, toDate) {
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/GetReRoutedOrders', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.ReRouteData = response.data.model;
+                }, function (error) {
+                    $scope.showLoader = false;
+                    console.log(error);
+                })
+        }
+    })
+</script>

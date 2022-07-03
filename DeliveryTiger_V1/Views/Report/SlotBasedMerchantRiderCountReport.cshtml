@@ -1,0 +1,170 @@
+﻿
+@{
+    ViewBag.Title = "SlotBasedMerchantRiderCountReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script type="text/javascript">
+    var app = angular.module('slotBasedCountModule', []);
+    app.controller('slotBasedCountController', function ($scope, $http) {
+
+        $scope.getReport = function (fromDate, toDate) {
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var requestBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "flag": 3
+            };
+
+            $scope.showLoader = true;
+            $scope.showTable = false;
+            $http.post(apiBaseURL + 'Report/SlotBasedOrder', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.slotBasedCount = response.data.model;
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        };
+    });
+</script>
+
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    })
+</script>
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div class="row" style="display:flex; margin-top:10px;">
+    <div class="col-lg-12" ng-app="slotBasedCountModule">
+        <div class="ibox" ng-controller="slotBasedCountController">
+            <div class="ibox-content" style="text-align:center;display:flex;">
+                <!--Date Picker-->
+                <div class="col-lg-12" id="" style="display:flex; margin-top:20px;">
+
+                    <div class="col-lg-3">
+                        <div class="form-group">
+
+                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="form-group">
+
+                            <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group row">
+                            <button type="button" class="btn btn-success" ng-click="getReport(fromDate,toDate)"><strong> Submit </strong></button>
+                        </div>
+                    </div>
+
+                </div>
+                <!--Date Picker End-->
+
+
+            </div>
+            <!--Report Table-->
+            <div class="ibox-content" style="padding:5px;">
+                <div class="col-lg-12" style="padding:0px;">
+
+                    <!--Loader-->
+                    <div id="catloader">
+                        <div class="spiner-example" ng-show="showLoader">
+                            <div class="sk-spinner sk-spinner-wave">
+                                <div class="sk-rect1">
+                                </div>
+                                <div class="sk-rect2">
+                                </div>
+                                <div class="sk-rect3">
+                                </div>
+                                <div class="sk-rect4">
+                                </div>
+                                <div class="sk-rect5">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--Report Table-->
+                    <div style="margin: 20px 0px 10px 0px" ng-show="showTable">
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead>
+                                <tr>
+
+                                    <th>Total Merchant Placed Order</th>
+                                    <th>Total Merchant Who Collected </th>
+                                    <th>Total Rider Worked </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                <tr ng-repeat="s in slotBasedCount">
+
+
+                                    <td>{{ s.TotalPlacedMerchant }}</td>
+                                    <td>{{ s.TotalCollectedMerchant }}</td>
+                                    <td>{{ s.TotalAssignedRider }}</td>
+
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!--Report Table End-->
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

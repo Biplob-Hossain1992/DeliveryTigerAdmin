@@ -1,0 +1,124 @@
+﻿
+@{
+    ViewBag.Title = "ReturnProcess";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/Operation/Operation.js"></script>
+<script src="~/Scripts/Operation/ReturnProcess.js"></script>
+<script src="~/Scripts/plugins/iCheck/icheck.min.js"></script>
+<link href="~/Content/plugins/iCheck/custom.css" rel="stylesheet" />
+<link href="css/plugins/awesome-bootstrap-checkbox/awesome-bootstrap-checkbox.css" rel="stylesheet">
+@*<script src="~/Scripts/Common/JsBarcode.all.min.js"></script>*@
+<script src="~/Scripts/Common/JsBarcode.min.js"></script>
+<script>
+    var AllStatusGroupWiseData;
+    $(document).ready(function () {
+         if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+             loadAllReturnMerchants();
+             loadAllStatusGroupWise();
+             loadAllHubName();
+             $('.i-checks').iCheck({
+                 checkboxClass: 'icheckbox_square-green',
+                 radioClass: 'iradio_square-green',
+             });
+         }
+         else {
+             window.location.href = "/Account/Login";
+        }
+    });
+</script>
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-4">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+    <div class="col-lg-3">
+        <select id="Status" class="form-control" style="margin-top:35px;" onchange="loadAllReturnMerchants()">
+            <option value="19" selected>Received To Return-19</option>
+            <option value="16">Rejected from Customer-16</option>
+            <option value="17">Order will be returned-17</option>
+            <option value="18">Return not accepted for damaged-18</option>
+            <option value="59">Return order send to hub-59</option>
+            <option value="60">Return product received by hub-60</option>
+            <option value="20">Return order send to merchant-20</option>
+            <option value="16,17,18,19,59,60">All Return</option>
+            <option value="16,17,18,59">Return Not In Hand</option>
+        </select>
+    </div>
+    <div class="col-lg-2">
+        <div class="widget style1 box-shadow">
+            <div class="col-lg-12">
+                <h5 class="m-b-xs" style="font-weight:400;"><i class="fa fa-users"></i>  Total Merchant</h5>
+                <h2 class="no-margins text-navy" id="totalReturnMerchantCount"></h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2">
+        <div class="widget style1 box-shadow">
+            <div class="col-lg-12">
+                <h5 class="m-b-xs" style="font-weight:400;"><i class="fa fa-dropbox"></i>  Total Products</h5>
+                <h2 class="no-margins text-navy" id="totalReturnProductCount"></h2>
+            </div>
+        </div>
+    </div>
+</div>
+<input id="UserHidden" type="hidden" value="" />
+<div class="row" style="display:flex;margin-top:10px;">
+    <div class="col-lg-4">
+        <div class="ibox">
+            <div class="ibox-title">
+                <h4>Merchants</h4>
+            </div>
+            <div class="ibox-content">
+                <div id="returnMerchantList"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="ibox" id="returnMerchantProductList" style="display:none;">
+            <div class="ibox-title">
+                <h4 id="returnMerchantProductListHeader"></h4>
+            </div>
+            <div class="ibox-content">
+                <div id="returnMerchantProductListDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal inmodal fade" id="returnInvoiceModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="height:auto;width:750px;">
+            <div class="modal-header" style="padding:10px;">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h5 class="modal-title" id="returnInvoiceModalHeader">Return Invoice</h5>
+            </div>
+            <div class="modal-body">
+                <div id="returnInvoiceModalBody" class="col-md-12 table-container" style="padding:0px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white pull-left" data-dismiss="modal">Close</button>
+                <label style="margin-top:10px;margin-right:10px;font-weight:bold;">Print</label>
+                <input type="checkbox" class="i-checks" id="isPrint" value="isPrint" checked>
+                <select class="form-control" style="width: auto;" id="loadHubOptionsId" onchange="hubNameOnChange(this.value)">
+                </select>
+                <button type="button" class="btn btn-info" id="printReturnInvoiceHubBtn">Sent To Hub</button>
+                @*<button type="button" class="btn btn-success" id="printReturnInvoiceMerchantBtn">Send To Merchant</button>*@
+            </div>
+        </div>
+    </div>
+</div>

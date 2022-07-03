@@ -1,0 +1,245 @@
+﻿
+@{
+    ViewBag.Title = "QuickOrderGenerate";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="~/Scripts/Common/JsBarcode.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.9/angular.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+            flatpickr(".flatpickr", {
+                enableTime: false,
+                allowInput: true,
+                maxDate: "today"
+            });
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+
+
+<style>
+    .barcode {
+        width: 144px;
+        height: 96px;
+    }
+</style>
+
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2>Bar Code Generate</h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>Bar Code Generate</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div ng-app="myModule">
+    <div ng-controller="myController" ng-init="init()">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <input type="text" class="form-control" ng-model="barCodeNumber" placeholder="Ex: 100" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-control" ng-model="hub" ng-options="hub.name as hub.name for hub in allHubs">
+                                            <option value="">Select Hub</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="button" class="btn btn-primary" ng-click="generateBarCode(barCodeNumber,hub)">Generate</button>
+                                        <button type="button" class="btn btn-info" ng-click="print('printSection')">Print</button>
+                                        <button type="button" class="btn btn-circle">{{generateIds.length}}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <input type="text" style="border: 1px solid #46b8da" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-control" ng-model="selectedHub" ng-options="hub.name as hub.name for hub in allHubs">
+                                            <option value="">Select Hub</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-primary" ng-click="getGenerateBarCode(fromDate,toDate,selectedHub)">Show Not Used Codes</button>
+                                        <button type="button" class="btn btn-info" ng-click="print('printSection2')">Print</button>
+                                        <button type="button" class="btn btn-circle">{{showGenerateOrders.length}}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6" id="printSection">
+                                <div ng-repeat="x in generateIds">
+                                    <svg class="barcode" jsbarcode-value="{{x.courierOrdersId}}" jsbarcode-textmargin="0" jsbarcode-fontoptions="bold">
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="col-lg-6" id="printSection2">
+                                <div ng-repeat="x in showGenerateOrders">
+                                    <svg class="barcode" jsbarcode-value="{{x.courierOrdersId}}" jsbarcode-textmargin="0" jsbarcode-fontoptions="bold">
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http) {
+
+        $scope.init = () => {
+            $scope.getAllHubs();
+        }
+
+        $scope.showLoader = false;
+
+        $scope.print = function (printSectionId) {
+            var innerContents = document.getElementById(printSectionId).innerHTML;
+            var popupWinindow = window.open('', '_blank', 'width=600,height=700,scrollbars=no,menubar=no,toolbar=no,location=no,status=no,titlebar=no');
+            popupWinindow.document.open();
+            popupWinindow.document.write('<html><head><link rel="stylesheet" type="text/css" href="style.css" /></head><body onload="window.print()">' + innerContents + '</html>');
+            popupWinindow.document.close();
+        }
+
+        $scope.getAllHubs = () => {
+            $http.get(apiBaseURL + 'Fetch/GetAllHubs', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allHubs = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.getGenerateBarCode = (fromDate, toDate, hubName) => {
+
+            if (fromDate == null || toDate == null || hubName == null) {
+                alert("Please fill Date/Select Hub");
+                return false;
+            }
+
+            let requestBodyModel = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "hubName": hubName
+            };
+            $scope.showLoader = true;
+
+            //$http.post('http://localhost:58676/api/QuickOrder/GetGenerateQuickOrders', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+            $http.post( apiBaseURL + 'QuickOrder/GetGenerateQuickOrders/', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.showGenerateOrders = response.data.model;
+                    $scope.showLoader = false;
+
+                    angular.element(document).ready(function () {
+                        JsBarcode(".barcode").init();
+                    });
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.generateBarCode = (barCodeNumber, hub) => {
+            if (barCodeNumber > 500) {
+                alert('Can not generate more than 500');
+                return false;
+            }
+
+            if (hub == '' || hub == null) {
+                alert('Can not hub name empty');
+                return false;
+            }
+
+            $scope.showLoader = true;
+
+            let requestBodyModel = {
+                "quickOrderLimit": barCodeNumber,
+                "quickOrderGenerateForHub": hub,
+                "quickOrderGenerateBy": sessionStorage.getItem("userId")
+            };
+
+            //$http.post('http://localhost:58676/api/QuickOrder/AddQuickOrders', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+            $http.post(apiBaseURL + 'QuickOrder/AddQuickOrders/', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.generateIds = response.data.model;
+                    $scope.showLoader = false;
+
+                    angular.element(document).ready(function () {
+                        JsBarcode(".barcode").init();
+                    });
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+    });
+
+
+</script>
+

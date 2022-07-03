@@ -1,0 +1,368 @@
+﻿
+@{
+    ViewBag.Title = "MerchantFollowUpReport";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+
+<div ng-app="MerchantFollowUpReportModule">
+    <div ng-controller="MerchantFollowUpReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align:center;">Merchant Follow Up Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="margin-right: 2px;" type="text" class="form-control-sm form-control" ng-model="mainSearch" placeholder="search" />
+                                <div class="input-daterange input-group">
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off"/>
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off"/>
+                                    <button type="button" style="margin-right: 2px;" class="btn btn-w-m btn-success" ng-click="merchantCalled(fromDate,toDate)">Merchant Called</button>
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="merchantVisited(fromDate,toDate)">Merchant Visited</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            @*Merchant Called*@
+                            <div class="totalMerchantCalled" ng-show="showTotalMerchantCalled">
+                                <div class="col-lg-12">
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="totalOrderMerchantCalled(fromDate,toDate,'daterange')" data-toggle="modal" data-target="#totalOrderDetailsModal">Total Order (Inside Date Range)</button>
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="totalOrderMerchantCalled(fromDate,toDate,'last7days')" data-toggle="modal" data-target="#totalOrderDetailsModal">Total Order (Last 7 Days)</button>
+                                </div>
+                                <div class="col-lg-12">
+                                    <table class="table table-bordered table-responsive" style="margin-top: 10px;">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 391px;">Total Merchant Called</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td style="cursor: pointer;" ng-click="showMerchantCalledDetails = !showMerchantCalledDetails">
+                                                    {{totalMerchantCalled}}
+                                                    <i class="fa fa-hand-o-left"></i>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-lg-12" ng-show="showMerchantCalledDetails">
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CompanyName'; reverseSort = !reverseSort">
+                                                    Company Name
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='FullName'; reverseSort = !reverseSort">
+                                                    SR Name
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CalledDate'; reverseSort = !reverseSort">
+                                                    Called Date
+                                                </a>
+                                            </th>
+                                            <th>Called Summary</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="m in merchantCalledData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index + 1}}</td>
+                                            <td>{{m.CompanyName}}</td>
+                                            <td>{{m.FullName}}</td>
+                                            <td>{{m.CalledDate | date:'mediumDate'}}</td>
+                                            <td>{{m.CalledSummary}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            @*Merchant Called End*@
+
+                            @*Merchant Visited*@
+                            <div class="totalMerchantVisited" ng-show="showTotalMerchantVisited">
+                                <div class="col-lg-12">
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="totalOrderMerchantVisited(fromDate,toDate,'daterange')" data-toggle="modal" data-target="#totalOrderDetailsModal">Total Order (Inside Date Range)</button>
+                                    <button type="button" class="btn btn-w-m btn-success" ng-click="totalOrderMerchantVisited(fromDate,toDate,'last7days')" data-toggle="modal" data-target="#totalOrderDetailsModal">Total Order (Last 7 Days)</button>
+                                </div>
+                                <div class="col-lg-12">
+                                    <table class="table table-bordered table-responsive" style="margin-top: 10px;">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 391px;">Total Merchant Visited</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td style="cursor: pointer;" ng-click="showMerchantVisitedDetails = !showMerchantVisitedDetails">
+                                                    {{totalMerchantVisited}}
+                                                    <i class="fa fa-hand-o-left"></i>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-lg-12" ng-show="showMerchantVisitedDetails">
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CompanyName'; reverseSort = !reverseSort">
+                                                    Company Name
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='FullName'; reverseSort = !reverseSort">
+                                                    SR Name
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='VisitedDate'; reverseSort = !reverseSort">
+                                                    Visited Date
+                                                </a>
+                                            </th>
+                                            <th>Called Summary</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="m in merchantVisitedData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index + 1}}</td>
+                                            <td>{{m.CompanyName}}</td>
+                                            <td>{{m.FullName}}</td>
+                                            <td>{{m.VisitedDate | date:'mediumDate'}}</td>
+                                            <td>{{m.VisitedSummary}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            @*Merchant Visited End*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Modal Section Start*@
+        <div class="container">
+            <div class="row">
+
+                <div id="totalOrderDetailsModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">{{flag}} Order Details</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CompanyName'; reverseSort = !reverseSort">
+                                                        Company Name
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='FullName'; reverseSort = !reverseSort">
+                                                        Assigned SR Name
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in totalOrderDetails | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{a.CompanyName }}</td>
+                                                <td>{{a.FullName }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        @*Modal Section End*@
+    </div>
+</div>
+
+<script>
+    var app = angular.module('MerchantFollowUpReportModule', []);
+    app.controller('MerchantFollowUpReportController', function ($scope, $http) {
+        //URL
+        var OnlineUrl = "https://adm.ajkerdeal.com/api/deliverytiger/";
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+        //var LocalCoreUrl = "http://localhost:58676/api/";
+
+        $scope.merchantCalled = function (fromDate, toDate) {
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            $scope.showLoader = true;
+
+            $http.post(CoreOnlineUrl + 'Report/GetCalledMerchantList', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.totalMerchantCalled = response.data.model != '' ? response.data.model[0].TotalCalled : 0;
+                    $scope.merchantCalledData = response.data.model;
+                    $scope.showLoader = false;
+                    $scope.showTotalMerchantVisited = false;
+                    $scope.showMerchantVisitedDetails = false;
+                    $scope.showTotalMerchantCalled = true;
+                }, function error(err) {
+                    console.log(err);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.merchantVisited = function (fromDate, toDate) {
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate
+            };
+
+            $scope.showLoader = true;
+
+            $http.post(CoreOnlineUrl + 'Report/GetVisitedMerchantList', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.totalMerchantVisited = response.data.model != '' ? response.data.model[0].TotalVisited : 0;
+                    $scope.merchantVisitedData = response.data.model;
+                    $scope.showLoader = false;
+                    $scope.showTotalMerchantCalled = false;
+                    $scope.showMerchantCalledDetails = false;
+                    $scope.showTotalMerchantVisited = true;
+                }, function error(err) {
+                    console.log(err);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.totalOrderMerchantCalled = function (fromDate, toDate, dateFormat) {
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            if (dateFormat === 'daterange') $scope.flag = "Date Range";
+            else if (dateFormat === 'last7days') $scope.flag = "Last 7 Days";
+            let orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "DateFormat": dateFormat
+            };
+
+            $scope.showLoader = true;
+
+            $http.post(CoreOnlineUrl + 'Report/DateWiseOrderPlacedCalledMerchantList', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.totalOrderDetails = response.data.model;
+                    $scope.showLoader = false;
+                }, function error(err) {
+                    console.log(err);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.totalOrderMerchantVisited = function (fromDate, toDate, dateFormat) {
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            if (dateFormat === 'daterange') $scope.flag = "Date Range";
+            else if (dateFormat === 'last7days') $scope.flag = "Last 7 Days";
+            let orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "DateFormat": dateFormat
+            };
+
+            $scope.showLoader = true;
+
+            $http.post(CoreOnlineUrl + 'Report/DateWiseOrderPlacedVisitedMerchantList', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.totalOrderDetails = response.data.model;
+                    $scope.showLoader = false;
+                }, function error(err) {
+                    console.log(err);
+                    $scope.showLoader = false;
+                });
+        }
+
+    })
+</script>

@@ -1,0 +1,353 @@
+﻿
+@{
+    ViewBag.Title = "CollectorLocationAssignAngular";
+}
+
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<style>
+    .red {
+        color: red;
+    }
+
+    .black {
+        color: black;
+    }
+</style>
+@*http://jagdeep-singh.github.io/angularMultipleSelect/*@
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+
+
+<script type="text/javascript">
+
+    var app = angular.module('myModule', ['multipleSelect']);
+    app.controller('myController', function ($scope, $http) {
+
+
+        //var OnlineUrl = "http://localhost:58676/api/"
+       // var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+        $scope.assignTypes = [
+            {
+                'id': '',
+                'name': 'Select Assign Type'
+            },
+            {
+                'id': 'collection',
+                'name': 'Collection'
+            },
+            {
+                'id': 'return',
+                'name': 'Return'
+            }
+        ]
+
+        $scope.districts = [
+            {
+                'districtId': 14,
+                'district': 'Dhaka',
+                'districtBng': 'ঢাকা'
+            }
+        ]
+
+        var addCollectorDefault =
+        {
+            "collectorId": 0,
+            "collectorName": "Select Collector"
+        }
+
+        var addDistinctDefault =
+        {
+            "districtId": 0,
+            "district": "Select",
+            "districtBng": "Select"
+        }
+
+        $scope.assignType = '';
+        $scope.collector = 0;
+        $scope.district = 14;
+        $scope.thana = [
+            {
+                "districtId": 0,
+                "district": "Select",
+                "districtBng": "Select"
+            }
+        ]
+
+        getAllDistricts();
+        getCollectors();
+        getAllCollectorsLocationAssign();
+
+        function getCollectors() {
+            $http.get(apiBaseURL + 'Fetch/GetAllCollectors', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.collectors = response.data.model;
+
+                    $scope.collectors.push(addCollectorDefault);
+                    $scope.collectors.sort((a, b) => parseFloat(a.collectorId) - parseFloat(b.collectorId));
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        function getAllDistricts() {
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistricts', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //$scope.allDistricts = response.data.model;
+
+                    $scope.thanas = response.data.model.filter(d => d.parentId == 14);
+                    $scope.thanas.forEach(element => {
+                        element.districtBng = element.districtBng + "-" + element.district
+                    });
+
+                    $scope.thanas.push(addDistinctDefault);
+                    $scope.thanas.sort((a, b) => parseFloat(a.districtId) - parseFloat(b.districtId));
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        function getAllCollectorsLocationAssign() {
+            $http.get(apiBaseURL + 'Fetch/GetAllCollectorsLocationAssign', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.assignCollectors = response.data.model;
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        $scope.assign = function (collector, assignType, district, thana) {
+
+            if (collector == 0) {
+                alert("Please seelct collector");
+                return false;
+            }
+            if (assignType == "") {
+                alert("Please seelct assign type");
+                return false;
+            }
+
+            if (thana.length == 0) {
+                alert("Please seelct thana");
+                return false;
+            }
+
+            if (thana.filter(e => e.districtId == 0).length > 0) {
+                alert("Please seelct thana and remove select");
+                return false;
+            }
+
+
+            var collectorAssign = [];
+
+            for (var i = 0; i < thana.length; i++) {
+                let collectorAssignObj = {
+                    "courierUserId": 0,
+                    "collectorId": collector,
+                    "assignType": assignType,
+                    "UpdatedBy": sessionStorage.getItem("userId"),
+                    "districtId": district,
+                    "thanaId": thana[i].districtId,
+                    "areaId": 0
+                };
+                collectorAssign.push(collectorAssignObj);
+            }
+
+            $http.post(apiBaseURL + 'Entry/AddMultipleCollectorAssign', collectorAssign,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+
+                    if (response.data.model.length > 0) {
+                        alert(response.data.model.length + " Done");
+                        $scope.assignType = '';
+                        $scope.collector = 0;
+                        $scope.district = 14;
+                        $scope.thana = [
+                            {
+                                "districtId": 0,
+                                "district": "Select",
+                                "districtBng": "Select"
+                            }
+                        ]
+                        getAllCollectorsLocationAssign();
+                    }
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.updateAssign = function (collectorAssignId, collectorId) {
+
+            let collectorAssign = {
+                collectorId: collectorId,
+                updatedBy: sessionStorage.getItem("userId")
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateCollectorAssignForLocation/' + collectorAssignId, collectorAssign,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    alert("Update");
+                    getAllCollectorsLocationAssign();
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.updateSelectedCollector = function (collectorId){
+            if (collectorId == 0) {
+                alert("Please seelct collector");
+                return false;
+            }
+            if (collectorAssignIdsArray.length == 0) {
+                alert("Please select checkbox");
+                return false;
+            }
+
+            let multipleCollectorAssign = {
+                collectorId: collectorId,
+                CollectorAssignId: collectorAssignIdsArray,
+                updatedBy: sessionStorage.getItem("userId")
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateMultipleCollectorAssignForLocation', multipleCollectorAssign,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    alert("Update Selected Value");
+                    getAllCollectorsLocationAssign();
+                    collectorAssignIdsArray = [];
+                }, function error(response) {
+                    collectorAssignIdsArray = [];
+                    console.log(response.data);
+                });
+        }
+
+
+        var collectorAssignIdsArray = [];
+        $scope.isChecked = false;
+        $scope.allUpdateAssignArray = function (collectorAssignId, isChecked) {
+            if (isChecked) {
+                collectorAssignIdsArray.push(collectorAssignId);
+            }
+            else {
+                removeElement(collectorAssignIdsArray, collectorAssignId);
+            }
+           
+        }
+
+        function removeElement(array, elem) {
+            var index = array.indexOf(elem);
+            if (index > -1) {
+                array.splice(index, 1);
+            }
+        }
+
+    });
+
+</script>
+
+<div ng-app="myModule">
+    <div ng-controller="myController">
+        <h2 style="text-align:center;">Collector Location Assign</h2>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Select Collector</label>
+                    <select class="form-control" ng-model="collector" ng-options="collector.collectorId as collector.collectorName for collector in collectors"></select>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Select Assign Type</label>
+                    <select class="form-control" ng-model="assignType" ng-options="assignType.id as assignType.name for assignType in assignTypes"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Select District</label>
+                    <select class="form-control" ng-model="district" ng-options="district.districtId as district.districtBng for district in districts"></select>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Select Thana</label>
+
+                    <multiple-autocomplete ng-model="thana"
+                                           object-property="districtBng"
+                                           suggestions-arr="thanas">
+                    </multiple-autocomplete>
+
+                </div>
+            </div>
+        </div>
+        <button type="button" ng-click="assign(collector, assignType, district, thana)" class="btn btn-primary">Save</button>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <br />
+                <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                <br />
+                <div class="form-inline">
+                    <div class="form-group">
+                        <select class="form-control" ng-model="collector" ng-options="collector.collectorId as collector.collectorName for collector in collectors"></select>
+                    </div>
+
+                    <button style="margin-left: 8px" ng-click="updateSelectedCollector(collector)" data-toggle="tooltip" data-placement="top" title="Update" type="button" class="btn btn-danger">Selected Collector Update</button>
+                </div>
+                <br />
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                #
+                            </th>
+                            <th>
+                                Assign Type
+                            </th>
+                            <th>
+                                Thana
+                            </th>
+                            <th>
+                                Collector Name
+                            </th>
+                            <th>
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-class='{red : o.isTemporary, info: !o.isTemporary}' ng-repeat="o in assignCollectors | filter:mainSearch | orderBy:'-isTemporary'">
+                            <td>
+                                {{$index +1}}
+                                <input type="checkbox" ng-model="isChecked" ng-click="allUpdateAssignArray(o.collectorAssignId, isChecked)">
+                            </td>
+                            <td>
+                                {{ o.assignType}}
+                            </td>
+                            <td>
+                                {{o.districtBng}}-{{o.district}}
+                            </td>
+                            <td>
+                                <select class="form-control" ng-model="o.collectorId" ng-options="collector.collectorId as collector.collectorName for collector in collectors"></select>
+                            </td>
+                            <td>
+                                <button ng-click="updateAssign(o.collectorAssignId, o.collectorId)" data-toggle="tooltip" data-placement="top" title="Update" type="button" class="btn btn-danger">Single Update</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br />
+        <br />
+    </div>
+</div>

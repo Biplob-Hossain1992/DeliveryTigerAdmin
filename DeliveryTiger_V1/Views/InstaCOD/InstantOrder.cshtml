@@ -1,0 +1,367 @@
+﻿
+@{
+    ViewBag.Title = "InstantOrder";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title">Instant Order Process</h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<div ng-app="InstantOrderModule">
+    <div ng-controller="InstantOrderController" ng-init="loadInitializeData()">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="ibox">
+                        <div class="ibox-title">
+                            <h5>Search Field | <small>Filtering Instant Order</small> <span class="label label-primary" ng-model="totalOrderCount" id="totalOrderCount">{{totalOrderCount}}</span></h5>
+                            <div class="ibox-tools">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="ibox-content" style="padding:5px;">
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr form-control" autocomplete="off" placeholder="From Date" />
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="toDate" name="toDate" class="btn flatpickr form-control" autocomplete="off" placeholder="To Date" />
+                                </div>
+                            </div>
+                            <div style="height:1cm">
+                            </div>
+                            <div class="form-group row" style="justify-content: center">
+                                <div>
+                                    <button type="submit" id="search" class="btn btn-success" ng-click="LoadInstantOrders(fromDate, toDate)"><strong>Load</strong></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="spiner-example" ng-show="showLoader">
+                <div class="sk-spinner sk-spinner-wave">
+                    <div class="sk-rect1">
+                    </div>
+                    <div class="sk-rect2">
+                    </div>
+                    <div class="sk-rect3">
+                    </div>
+                    <div class="sk-rect4">
+                    </div>
+                    <div class="sk-rect5">
+                    </div>
+                </div>
+            </div>
+            <div class="card" ng-show="showTableData">
+                <div class="card-body">
+                    <table id="statusTable" class="table table-striped">
+                        <thead>
+                            <tr style="text-align:center;">
+                                <th scope="col">#</th>
+                                <th scope="col">Image</th>
+                                <th scope="col">OrderInfo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="data in instantOrders">
+                                <th style="text-align: center; width: 30px;" scope="row">{{$index + 1}}</th>
+                                <td style="text-align:center;">
+                                    <h1><b>{{'DT-'+data.id}}</b></h1>
+                                    <a href="{{data.quickOrderImageUrl}}" target="_blank">
+                                        <img ng-src="{{data.quickOrderImageUrl}}" width="200" height="300" />
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="form-group row">
+                                        <div class="col-md-2">
+                                            <label class="form-label" for=""><b>DeliveryTiger-Code:</b></label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" readonly class="form-control-plaintext" value="{{'DT-'+data.id}}">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label" for=""><b>Invoice Number:</b><span style="color:red">*</span></label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" ng-model="data.collectionName" class="form-control" value="{{data.collectionName}}">
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-2">
+                                            <label class="form-label" for=""><b>Customer Name:</b><span style="color:red">*</span></label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control" ng-model="data.customerName" value="{{data.customerName}}">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label" for=""><b>Customer Mobile:</b><span style="color:red">*</span></label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" ng-model="data.mobile" class="form-control" value="{{data.mobile}}">
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-2">
+                                            <label class="form-label" for=""><b>Customer Alt. Mobile:</b></label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" ng-model="data.otherMobile" class="form-control" value="{{data.otherMobile}}">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label" for=""><b>Collection Amount:</b></label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" ng-model="data.collectionAmount" class="form-control" value="{{data.collectionAmount}}">
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-6">
+                                            <label class="form-label" for=""><b>Customer Address:</b><span style="color:red">*</span></label>
+                                            <textarea ng-model="data.address" style="height: 3rem;" class="form-control" rows="4">{{data.address}}</textarea>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for=""><b>Courier Location:</b><span style="color:red">*</span></label>
+                                            <select style="font-size: 12px;font-weight: 600;" class="form-control" ng-model="data.courierLocationId" ng-options="c.courierLocationId as c.locationName + '-' + c.courierName for c in data.courierLocations">
+                                                <option value="">Select CourierLocations</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <label class="form-label" for=""><b>Customer Location:</b><span style="color:red">*</span></label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <select style="font-size: 12px;font-weight: 600;" class="form-control" ng-change="LoadThana(data,data.districtId)" ng-model="data.districtId" ng-options="c.districtId as c.district for c in data.districts">
+                                                <option value="">Select District</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <select style="font-size: 12px;font-weight: 600;" class="form-control" ng-model="data.thanaId" ng-options="c.districtId as c.district for c in data.thanas" ng-change="LoadArea(data,data.thanaId)">
+                                                <option value="">Select Thana</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <select style="font-size: 12px;font-weight: 600;" class="form-control" ng-model="data.areaId" ng-options="c.districtId as c.district for c in data.areas">
+                                                <option value="">Select Area</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <label class="form-label" for=""><b>Collection Location:</b><span style="color:red">*</span></label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <select style="font-size: 12px;font-weight: 600;" class="form-control" ng-model="data.collectAddressDistrictId" ng-options="c.districtId as c.district for c in data.collectDistricts">
+                                                <option value="">Select District</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <select style="font-size: 12px;font-weight: 600;" class="form-control" ng-model="data.collectAddressThanaId" ng-options="c.districtId as c.district for c in data.collectThanas">
+                                                <option value="">Select Thana</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row" style="justify-content: center" ng-show="updateButtonAccess">
+                                        <div>
+                                            <button type="button" ng-click="updateCustomerCourierOrderInfo(data)" id="SubmitBtn" class="btn btn-danger"><strong>Update</strong></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    var app = angular.module('InstantOrderModule', []);
+    app.controller('InstantOrderController', ($scope, $http, $anchorScroll, $location) => {
+
+        let currentUserId = +sessionStorage.getItem("userId");
+        let userAdminType = +sessionStorage.getItem("adminType");
+        let userToken = sessionStorage.getItem("token");
+        var config = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}`
+            }
+        }
+
+        $scope.totalOrderCount = "0";
+        $scope.showTableData = false;
+        //$scope.thanaDisabled = true;
+        //$scope.areaDisabled = true;
+
+        $scope.loadInitializeData = () => {
+            if (currentUserId == 0) {
+                window.location.href = "/Account/Login";
+            }
+            flatpickr(".flatpickr", {
+                enableTime: false,
+                allowInput: true,
+                maxDate: ""
+            });
+            $scope.SetDate();
+            if (userAdminType == 11 || currentUserId == 11) {
+                $scope.updateButtonAccess = true;
+            }
+            else {
+                $scope.updateButtonAccess = false;
+            }
+        }
+        $scope.SetDate = () => {
+            let date = new Date();
+            var dd = String(date.getDate()).padStart(2, '0');
+            var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = date.getFullYear();
+            var toDate = yyyy + '-' + mm + '-' + dd;
+
+            let days = 0; // 7 days behind current date
+            var last = new Date(date.getTime() - (days * 24 * 60 * 60 * 1000));
+            var day = String(last.getDate()).padStart(2, '0');
+            var month = String(last.getMonth() + 1).padStart(2, '0');
+            var year = last.getFullYear();
+            var fromDate = year + '-' + month + '-' + day;
+
+            $scope.fromDate = fromDate;
+            $scope.toDate = toDate;
+        }
+        $scope.LoadInstantOrders = (fromDate, toDate) => {
+            const model = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+            }
+            $scope.showLoader = true;
+            let url = apiBaseURL + 'InstantCod/GetInstantCodOrders'
+            $http.post(url, model, config)
+                .then((response) => {
+                    $scope.instantOrders = response.data.model;
+                    $scope.totalOrderCount = response.data.model.length;
+                    $scope.showLoader = false;
+                    $scope.showTableData = true;
+                    $scope.gotoDiv('search');
+                    //console.log(response.data.model);
+                }, (errors) => {
+                    console.log(errors);
+                })
+        }
+        $scope.LoadAllDistricts = () => {
+            let url = apiBaseURL + 'Fetch/LoadAllDistrictsById/' + 0;
+
+            $http.get(url, { headers: { 'ContentType': 'application/json;utf=charset-8' } })
+                .then(function (response) {
+                    $scope.allDistricts = response.data.model;
+                    $scope.Districts = response.data.model.filter(x => x.parentId == 0 && x.isActive == true);
+                }), function error(response) {
+                    alert('Error fetching Districts');
+                }
+        }
+        $scope.LoadThana = (data,districtId) => {
+
+            if (districtId == '0' || districtId == '' || districtId == null) {
+                data.thanas = [];
+                data.areas = [];
+                data.thanaId = 0;
+                data.areaId = 0;
+            }
+            else {
+                $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById/' + districtId, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                    .then(function (response) {
+                        data.thanas = response.data.model;
+                        data.areas = [];
+                        data.thanaId = 0;
+                        data.areaId = 0;
+                    });
+            }
+
+
+        }
+
+        $scope.LoadArea = (data,thanaId) => {
+            if (thanaId == '0' || thanaId == '' || thanaId == null) {
+                data.areas = [];
+                data.areaId = 0;
+            }
+            else {
+                $http.get(apiBaseURL + 'Fetch/LoadAllDistrictsById/' + thanaId, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                    .then(function (response) {
+                        data.areas = response.data.model;
+                        data.areaId = 0;
+                    })
+
+            }
+        }
+        $scope.updateCustomerCourierOrderInfo = (data) => {
+
+            //console.log(data);
+
+            if (+data.mobile == 0 || +data.districtId == 0 || +data.thanaId == 0
+                || +data.collectAddressDistrictId == 0 || +data.collectAddressThanaId == 0
+                || data.collectionName == "" || +data.courierLocationId == 0 || data.customerName == null) {
+                alert("Please Filled Up Required Field!");
+                return false;
+            }
+            const model = {
+                "Id": +data.id,
+                "Mobile": data.mobile,
+                "OtherMobile": data.otherMobile,
+                "Address": data.address,
+                "DistrictId": +data.districtId,
+                "ThanaId": +data.thanaId,
+                "AreaId": +data.areaId,
+                "CollectionAmount": data.collectionAmount,
+                "collectAddressDistrictId": +data.collectAddressDistrictId,
+                "collectAddressThanaId": +data.collectAddressThanaId,
+                "invoiceNumber": data.collectionName,
+                "collectionName": data.collectionName,
+                "courierLocationId": +data.courierLocationId,
+                "customerName": data.customerName,
+            }
+            $scope.showLoader = true;
+            //console.log(model);
+            let url = apiBaseURL + 'InstantCod/UpdateInstantCodOrder'
+            let updateConfirm = confirm("Do you want to update?");
+            if (updateConfirm) {
+                $http.put(url, model, config)
+                    .then((response) => {
+                        $scope.updateStatus = response.data.model;
+                        $scope.showLoader = false;
+                        alert('Order Updated Successful');
+                        //console.log(response.data.model);
+                    }, (errors) => {
+                        console.log(errors);
+                    })
+            }
+            else {
+                $scope.showLoader = false;
+            }
+        }
+        $scope.gotoDiv = (x) => {
+            $location.hash(x);
+            $anchorScroll();
+        }
+    })
+</script>

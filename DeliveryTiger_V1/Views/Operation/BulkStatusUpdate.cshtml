@@ -1,0 +1,252 @@
+﻿
+@{
+    ViewBag.Title = "BulkStatusUpdate";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+<script src="https://cdn.jsdelivr.net/jsbarcode/3.6.0/JsBarcode.all.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+<!--Page Header & Dashboard link-->
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title">Quick Office Recieve</h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+<!--Header end-->
+<!--Page Start-->
+
+<div ng-app="bulkStatusUpdateModule">
+    <div ng-controller="bulkStatusUpdateController">
+
+        <div class="col-lg-12">
+
+            <label class="col-form-label"><strong>Bulk Status Update (53,52,49,15,40,2,19,21,59,60)</strong></label>
+            <div class="col-md-4" style=" float: right; ">
+                <select style=" margin-bottom: 10px;margin-top: 10px;" class="form-control" ng-model="statusId" ng-change="getTextAndValue(statusId)" ng-options="s.id as s.name for s in Statuses"></select>
+            </div>
+            <div class="col-md-2" style=" float: right; ">
+                <button type="submit" style=" margin-bottom: 10px;margin-top: 10px;" class="btn btn-info" ng-click="showOrderIds()"><strong>Show Scanned Ids</strong></button>
+            </div>
+            <div class="col-md-2" style=" float: right; ">
+                <label class="col-form-label" style=" margin-bottom: 10px;margin-top: 10px; font-size:22px;"><strong>{{onlyShowScannedId}}</strong></label>
+            </div>
+            <textarea ng-model="orderIds" placeholder="Ex: DT-1,DT-106959" id="orderId" class="form-control" style="height:auto;margin-bottom: 10px;" rows="2" ng-keydown="getKeys($event,orderIds)"></textarea>
+
+            <div class="row">
+                <div class="col-lg-4">
+
+                </div>
+                <div class="col-lg-4 text-center">
+                    <button type="submit" style="margin-bottom: 10px;" class="btn btn-info" ng-click="updateBulkStatus(statusId,orderIds)"><strong>Update Bulk Status</strong></button>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="loader">
+            <div class="spiner-example" ng-show="showLoader">
+                <div class="sk-spinner sk-spinner-wave">
+                    <div class="sk-rect1">
+                    </div>
+                    <div class="sk-rect2">
+                    </div>
+                    <div class="sk-rect3">
+                    </div>
+                    <div class="sk-rect4">
+                    </div>
+                    <div class="sk-rect5">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+<!--Page End-->
+
+<script type="text/javascript">
+    var app = angular.module('bulkStatusUpdateModule', []);
+    app.controller('bulkStatusUpdateController', function ($scope, $http) {
+
+
+        let userId = +sessionStorage.userId;
+        let hubName = sessionStorage.hubName;
+        $scope.showTable = false;
+        //$scope.selectedStatusId = "0";
+        $scope.statusId = "0";
+
+        $scope.Statuses = [
+            {
+                'id': '0',
+                'name': 'Select Status'
+            },
+            {
+                'id': '53',
+                'name': 'Order confirm for delivery-53'
+            },
+            {
+                'id': '52',
+                'name': 'Parcel received by Hub-52'
+            },
+            {
+                'id': '49',
+                'name': 'Payment Received From Rider-49'
+            },
+            {
+                'id': '15',
+                'name': 'Delivered to Customer-15'
+            },
+            {
+                'id': '40',
+                'name': 'Order confirm for collection-40'
+            },
+            {
+                'id': '2',
+                'name': 'Merchant confirmation(Rejected)-2'
+            },
+            {
+                'id': '19',
+                'name': 'Received to return from 2LP or 3LP-19'
+            },
+            {
+                'id': '21',
+                'name': 'Return order accepted by merchant-21'
+            },
+            {
+                'id': '59',
+                'name': 'Return order send to hub-59'
+            },
+            {
+                'id': '60',
+                'name': 'Return product received by hub-60'
+            }
+        ]
+
+        $scope.getTextAndValue = (statusId) => {
+
+            $scope.statusName = $scope.Statuses.find(x => x.id == statusId).name;
+
+        }
+
+        //pointer focus to input field
+        let orderId = document.getElementById('orderId');
+        angular.element(orderId).focus();
+
+        $scope.orderIdArray = [];
+        $scope.getKeys = (event, orderIds) => {
+
+            if (event.keyCode == 74 || event.keyCode == 13) {
+                event.preventDefault();
+                if (orderIds != null && orderIds != '0' && orderIds != '') {
+
+                    $scope.orderIdArray.push(orderIds);
+                    $scope.orderIds = '';
+                    $scope.onlyShowScannedId = orderIds;
+                }
+                
+            }
+
+        }
+
+        $scope.showOrderIds = () => {
+            let finalArrList = $scope.orderIdArray;
+            if (finalArrList.length > 0) {
+                $scope.orderIds = finalArrList.join(',');
+            }
+            else {
+                alert('No item scanned yet...!!!');
+                return false;
+            }
+            
+        }
+
+
+        let requestBody = [];
+        $scope.updateBulkStatus = (statusId, orderIds) => {
+
+            if (statusId == null || statusId == '0') {
+                alert("Please select Status");
+                return false;
+            }
+
+            if (orderIds == undefined) {
+                alert('No item scanned yet...!!!');
+                return false;
+            }
+
+            let orderIdArray = orderIds.trim().split(',');
+
+            for (var i = 0; i < orderIdArray.length; i++) {
+
+                let requestModel = {
+                        courierOrdersId: orderIdArray[i],
+                        status: +statusId,
+                        updatedBy: userId,
+                        isConfirmedBy: "admin",
+                        hubName: hubName,
+                        comment: $scope.statusName
+
+                    }
+                requestBody.push(requestModel);
+
+            }
+            
+            //console.log(requestModel);
+
+            $http.put(apiBaseURL + 'Update/UpdateBulkStatus', requestBody, { headers: { 'ContentType': 'application/json;utf=charset-8' } })
+                .then(function (response) {
+                    if (response.data.model > 0) {
+                        alert('Update Successful');
+                        requestBody = [];
+                        $scope.orderIds = '';
+                        $scope.orderIdArray = [];
+                    }
+                    
+                }), function error(response) {
+
+                    alert('Error occured while updating');
+                }
+
+        }
+
+    });
+
+</script>
+
+
+
+
+

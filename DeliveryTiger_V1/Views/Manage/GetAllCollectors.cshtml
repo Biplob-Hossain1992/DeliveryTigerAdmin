@@ -1,0 +1,125 @@
+﻿
+@{
+    ViewBag.Title = "GetAllCollectors";
+}
+<style>
+    .activetoggle, .inactivetoggle {
+        font-size: 40px;
+        cursor: pointer;
+    }
+
+    .activetoggle, .inactivetoggle {
+        font-size: 40px;
+        cursor: pointer;
+    }
+
+    i.activetoggle {
+        color: #5cb85c
+    }
+
+    i.inactivetoggle {
+        color: #d9534f
+    }
+</style>
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<script type="text/javascript">
+
+    var app = angular.module('myModule', []);
+    app.controller('myController', function ($scope, $http) {
+
+
+        //var OnlineUrl = "http://localhost:58676/api/"
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/"
+
+        getAllCollectors();
+
+        function getAllCollectors() {
+            $http.get(apiBaseURL + 'Fetch/GetAllCollectors', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.allCollectors = response.data.model;
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        $scope.changeTemporaryStatus = function (temporaryStatus, collectorId) {
+
+            let collector = {
+                collectorId: collectorId,
+                isTemporary: temporaryStatus
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateTemporaryCollectors/' + collectorId, collector,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    getAllCollectors();
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+
+    });
+
+</script>
+<h2 style="text-align:center;">All Collectors</h2>
+
+<div ng-app="myModule">
+    <div ng-controller="myController">
+        <div class="row">
+            <div class="col-lg-12">
+                <br />
+                <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                <table class="table table-bordered" id="tlb">
+                    <thead>
+                        <tr>
+                            <th>
+                                #
+                            </th>
+                            <th>
+                                Collector Name
+                            </th>
+
+                            <th>
+                                Mobile
+                            </th>
+                            <th>
+                                Temporary (<span style="color:red;">OFF</span>/<span style="color:limegreen;">ON</span>)
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="o in allCollectors | filter:mainSearch | orderBy:'-isTemporary'">
+                            <td>
+                                {{$index +1}}
+                            </td>
+                            <td>
+                                {{o.collectorName}}
+                            </td>
+                            <td>
+                                {{ o.mobile}}
+                            </td>
+                            <td>
+                                <i class="fa fa-toggle-on activetoggle"
+                                   ng-if="o.isTemporary == false"
+                                   ng-click="changeTemporaryStatus(true, o.collectorId)">
+                                </i>
+                                <i class="fa fa-toggle-on fa-rotate-180 inactivetoggle"
+                                   ng-if="o.isTemporary == true"
+                                   ng-click="changeTemporaryStatus(false,o.collectorId)">
+                                </i>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br />
+        <br />
+    </div>
+</div>
+

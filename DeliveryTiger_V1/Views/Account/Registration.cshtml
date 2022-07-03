@@ -1,0 +1,279 @@
+﻿
+@{
+    Layout = null;
+    string message = ViewBag.Error ?? "";
+    ViewBag.Title = "Registration";
+}
+
+<style>
+    .element {
+        background-image: url(/Content/Assets/tiger.svg);
+    }
+</style>
+
+<!DOCTYPE html>
+
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width" />
+    <title>Register: Delivery Tiger</title>
+    <link rel="shortcut icon" href="~/Content/Assets/DT-01.ico" />
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet">
+    <link href="~/Fonts/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="~/Content/animate.css" rel="stylesheet">
+    <link href="~/Content/style.css" rel="stylesheet">
+    <script src="~/Scripts/baseurl.js"></script>
+    <link href="https://www.ajkerdeal.com/css/admin/Report/hover.css" rel="stylesheet" type="text/css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+
+</head>
+<body class="gray-bg">
+    <div ng-app="regModule" class="middle-box text-center loginscreen  animated fadeInDown">
+        <div ng-controller="regCtrl" class="ibox">
+
+            <div>
+                <img src="~/Content/Assets/logo_1.png" alt="Logo Image" class="logo-large" />
+            </div>
+            <h4 style="margin-top:20px; color:red">রেজিস্ট্রেশন সম্পন্ন করার পর আপনার Username এবং E-mail, IT তে mail করুন</h4>
+            <h3 style="margin-top:20px;">Welcome to Delivery Tiger Admin</h3>
+            <div class="col-lg-12">
+                <form class="m-t" role="form" action="#" name="reg_form" novalidate>
+                    <!--FULL NAME-->
+                    <div class="form-group row">
+                        <input type="text" ng-model="fullName" name="fullName" class="form-control" required placeholder="Full Name">
+                        <span style="color:red" ng-show="reg_form.fullName.$dirty && reg_form.fullName.$invalid">
+                            <span ng-show="reg_form.fullName.$error.required">First Name is required.</span>
+                        </span>
+                    </div>
+                    <!--User Name-->
+                    <div class="form-group row">
+                        <input type="text" ng-model="username" name="userName" class="form-control" id="userName" placeholder="Username" required>
+                        <span style="color:red" ng-show="reg_form.userName.$dirty && reg_form.userName.$invalid">
+                            <span ng-show="reg_form.userName.$error.required">User Name is required.</span>
+
+                        </span>
+                    </div>
+                    <!--Password-->
+                    <div class="form-group row">
+                        <input type="password" ng-model="password" name="password" class="form-control" id="password" placeholder="Password" ng-minlength="4" ng-maxlength="11" required>
+                        <span style="color:red" ng-show="reg_form.password.$dirty && reg_form.password.$invalid">
+                            <span ng-show="reg_form.password.$error.required">Password is required.</span>
+                            <span ng-show="reg_form.password.$error.minlength">Password must be atleast 4 characters"</span>
+                            <span ng-show="reg_form.password.$error.maxlength">Password must be maximum 11 characters"</span>
+                        </span>
+                    </div>
+                    <!--Email-->
+                    <div class="form-group row">
+                        <input type="email" ng-model="email" name="email" class="form-control" id="email" placeholder="Email" required>
+                        <span style="color:red" ng-show="reg_form.email.$dirty && reg_form.email.$invalid">
+                            <span ng-show="reg_form.email.$error.required">Email is required.</span>
+                            <span ng-show="reg_form.email.$error.email">Invalid email address.</span>
+                        </span>
+                    </div>
+                    <!--Admin Type-->
+                    <div class="form-group row">
+                        <select class="form-control" name="adminType" ng-model="typeSelect" id="typeSelect" placeholder="Admin Type" required>
+                            <option value="-1" selected>Select admin type</option>
+                            <option value="0">0-Emarging</option>
+                            <option value="1">1-VIP</option>
+                            <option value="2">2-Manager</option>
+                            <option value="4">4-Sales</option>
+
+                            <option value="6">6-CRM</option>
+                            <option value="7">7-Fulfillment</option>
+                            <option value="8">8-Accounts</option>
+                            <option value="9">9-Social Media</option>
+                            <option value="10">10-Content</option>
+                            <option value="11">11-IT</option>
+                            <option value="12">12-Merchandising</option>
+                            <option value="13">13-Service Quality Analyst</option>
+                        </select>
+                        <span ng-show="reg_form.adminType.$error.required">Select Admin Type</span>
+                        @*<div ng-if="adminType==-1">
+                                <span style="color:red" ng-show="reg_form.adminType.$dirty && reg_form.adminType.$invalid">
+                                    <span ng-show="reg_form.adminType.$error.required">Type is required.</span>
+                                </span>
+                            </div>*@
+                    </div>
+                    <!--Mobile Number-->
+                    <div class="form-group row">
+                        <input type="tel" ng-model="mobileNumber" name="mobileNumber" placeholder="Mobile Number" class="form-control"
+                               ng-disabled="AutoConfirmed" required ng-pattern="/^(?:\+?(?:88|01)?)(?:\d{11}|\d{13})$/gm" />
+                        <span style="color:red" ng-show="reg_form.mobileNumber.$dirty && reg_form.mobileNumber.$invalid">
+                            <span ng-show="reg_form.mobileNumber.$error.required">Mobile number is required.</span>
+                            <span class="help-block" ng-show="reg_form.mobileNumber.$error.pattern" style="color:red"> Not valid mobile no.!</span>
+                        </span>
+
+                        @*<p class="help-block" ng-show="reg_form.mobileNumber.$error.pattern" style="color:red"> Not valid mobile no.!</p>*@
+
+                    </div>
+
+                    <!--Gender-->
+                    <div class="form-group row">
+                        <select class="form-control" name="gender" ng-model="genderSelector">
+                            <option value="0">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                    <!--Blood Group-->
+                    <div class="form-group row">
+                        <select class="form-control" name="bloodGroup" ng-model="bloodGroupSelector">
+                            <option value="0">Select Blood Group</option>
+                            <option value="o-">O-</option>
+                            <option value="o+">O+</option>
+                            <option value="a-">A-</option>
+                            <option value="a+">A+</option>
+                            <option value="b-">B-</option>
+                            <option value="b+">B+</option>
+                            <option value="ab-">AB-</option>
+                            <option value="ab+">AB+</option>
+                        </select>
+                    </div>
+                    <!--Address-->
+                    <div class="form-group row">
+                        <textarea class="form-control" name="address" ng-model="address" style="height:auto" placeholder="Address" required></textarea>
+                        <span style="color:red" ng-show="reg_form.address.$dirty && reg_form.address.$invalid">
+                            <span ng-show="reg_form.address.$error.required">Address is required.</span>
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="form-group row">
+                        <button type="button" ng-click="userRegister(fullName,username,password,email,typeSelect,mobileNumber,address,genderSelector,bloodGroupSelector)"
+                                class="btn btn-primary block full-width m-b"
+                                ng-disabled="reg_form.userName.$dirty && reg_form.userName.$invalid
+                                        || reg_form.fullName.$dirty && reg_form.fullName.$invalid
+                                        || reg_form.email.$dirty && reg_form.email.$invalid
+                                        || reg_form.password.$dirty && reg_form.password.$invalid
+                                        || reg_form.address.$dirty && reg_form.address.$invalid
+                                        ||reg_form.mobileNumber.$dirty && reg_form.mobileNumber.$error.required">
+
+                            Registration
+                        </button>
+                        <a href="@Url.Action("Login", "Account")" class="btn btn-primary block full-width m-b">Login</a>
+                    </div>
+                    
+
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>
+
+<script>
+    var app = angular.module('regModule', []);
+    app.controller('regCtrl', function ($scope, $http) {
+
+        $scope.typeSelect = "-1";
+        $scope.genderSelector = "0";
+        $scope.bloodGroupSelector = "0";
+        $scope.userRegister = (fullName, userName, password, email, adminType, mobile, address, gender, bloodGroup) => {
+            if (fullName == undefined || fullName == '') {
+                alert("Please set Full Name...!!!");
+                return false;
+            }
+            if (userName == undefined || userName == '') {
+                alert("Please set User Name...!!!");
+                return false;
+            }
+            if (password == undefined || password == '') {
+                alert("Please set Password...!!!");
+                return false;
+            }
+            if (email == undefined || email == '') {
+                alert("Please set Email...!!!");
+                return false;
+            }
+            if (mobile == undefined || mobile == '') {
+                alert("Please set a valid Mobile number...!!!");
+                return false;
+            }
+            if (address == undefined || address == '') {
+                alert("Please specify a address...!!!");
+                return false;
+            }
+            if (adminType == undefined || adminType == '' || adminType === '-1') {
+                alert("Please select an admin type...!!!");
+                return false;
+            }
+            if (gender == undefined || gender == '' || gender === '0') {
+                alert("Please select your gender...!!!");
+                return false;
+            }
+            if (bloodGroup == undefined || bloodGroup == '' || bloodGroup === '0') {
+                alert("Please select your blood group...!!!");
+                return false;
+            }
+
+            var requestBodyModel = {
+                "userName": userName,
+                "fullName": fullName,
+                "personalEmail": email,
+                "passwrd": password,
+                "adminType": adminType,
+                "mobile": mobile,
+                "isActive": 0,
+                "address": address,
+                "gender": gender,
+                "bloodGroup": bloodGroup
+
+
+
+            };
+
+            let url = apiBaseURL + 'Account/AddAdminUsers';
+
+            $http.post(url, requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    if (response.status == 400) {
+                        alert("Something went wrong!!!");
+                        return false;
+                    }
+                    else {
+                        //if (confirm("User Registered Successfully!!")) { window.location.href = "/Account/Login"; }
+                        alert("User Registered Successfully!!");
+                    }
+
+                }, function error(response) {
+                    if (response.stats == 500) {
+                        alert("Server Error");
+                    }
+                    console.log(response);
+
+                });
+
+
+
+
+
+            //$scope.fullName = "";
+            //$scope.username = "";
+            //$scope.password = "";
+            //$scope.email = "";
+            //$scope.typeSelect = "-1";
+            //$scope.mobileNumber = "";
+            //$scope.address = "";
+
+            //console.log(requestBodyModel);
+
+
+        }
+
+
+
+    });
+
+</script>
+

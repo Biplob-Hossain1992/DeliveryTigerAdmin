@@ -1,0 +1,43 @@
+﻿
+@{
+    ViewBag.Title = "ControlPanel";
+}
+
+<script>
+    $(document).ready(function () {
+        let currentUserId = sessionStorage.getItem("userId");
+        let userAdminType = sessionStorage.getItem("adminType");
+        if (currentUserId == 442 || userAdminType == 11) {
+            var div = document.getElementById('managementReportLink');
+            div.innerHTML += '<a href="/Manage/UpdateUserSalary" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">SR List</a>';
+        }
+    })
+</script>
+
+<div class="col-lg-12"style="margin-top: 3px;">
+    <div class="ibox">
+        <div class="ibox-title">
+            <h3>Management Reports</h3>
+        </div>
+        <div class="ibox-content">
+            <div class="row">
+                <div id="managementReportLink" class="col-lg-12">
+                    <a href="@Url.Action("DtDistrictWiseReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">DT District Wise</a>
+                    <a href="@Url.Action("DtThanaWiseReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">DT Thana Wise</a>
+                    <a href="@Url.Action("MonthWiseRedxEdeshReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Redx Edesh Speed</a>
+                    <a href="@Url.Action("RedxEdeshComplainCount", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Redex Edesh Complain</a>
+                    <a href="@Url.Action("DtOrderSourceWiseOrderReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">DT Order Source Wise</a>
+                    <a href="@Url.Action("GetOrders", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">DT Order</a>
+                    <a href="@Url.Action("DeliveredOrderDetailsReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Delivered Order Details</a>
+                    <a href="@Url.Action("StatusWiseOrderDetailsReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Status Wise Order Details</a>
+                    <a href="@Url.Action("RetentionPerformanceMonitoringReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Retention Performance Monitoring</a>
+                    <a href="@Url.Action("EctAnalysisOverPickReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">ECT Analysis Over Pick</a>
+                    <a href="@Url.Action("AcquisitionReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Acquisition</a>
+                    <a href="@Url.Action("LoanSurvey", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Loan Survey</a>
+                    <a href="@Url.Action("ReRouteReport", "Report")" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Re Route</a>
+                    @*<a href="https://analytics.ajkerdeal.com/dashboard/loan-servey" target="_blank" style="margin-bottom: 3px; margin-left: 2px;" class="btn btn-lg btn-info">Loan Application Report</a>*@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

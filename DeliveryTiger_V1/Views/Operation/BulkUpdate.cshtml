@@ -1,0 +1,117 @@
+﻿
+@{
+    ViewBag.Title = "BulkUpdate";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="~/Scripts/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="~/Scripts/Common/Common.js"></script>
+<script src="~/Scripts/Operation/Operation.js"></script>
+<script src="~/Scripts/Operation/BulkUpdate.js"></script>
+<link href="~/Content/plugins/select2/select2.min.css" rel="stylesheet" />
+<link href="~/Content/plugins/iCheck/custom.css" rel="stylesheet">
+<script src="~/Scripts/plugins/select2/select2.full.min.js"></script>
+
+<script type="text/javascript" src="~/Scripts/plugins/iCheck/icheck.min.js"></script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/xlsx.full.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.i-checks').iCheck({
+            checkboxClass: 'icheckbox_square-green',
+            radioClass: 'iradio_square-green',
+        });
+    });
+</script>
+
+<script>
+    var allOrderToUpdateData = [];
+    var CurrentMerchant;
+    $(document).ready(function () {
+         if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+             var title = "@ViewBag.Title";
+             $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+         }
+         else {
+             window.location.href = "/Account/Login";
+         }
+    });
+</script>
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div class="row" style="margin-top:10px;">
+    <div class="col-lg-12">
+        <div class="ibox">
+            <div class="ibox-title">
+                <h5>Bulk Update</h5>
+            </div>
+            <div class="ibox-content">
+
+                <div class="col-12" style="display:flex;">
+                    <div class="col-lg-2">
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="custom-file">
+                            <input id="excelInput" type="file" class="custom-file-input" onchange="upLoadExcel()">
+                            <label for="excelInput" class="custom-file-label">Choose file...</label>
+                        </div>
+                    </div>
+                    @*<div class="col-lg-2">
+                            <div class="i-checks"><label> <input type="checkbox" checked="" id="isAutoProcess"> <i></i> Auto Process </label></div>
+                        </div>*@
+                    <div class="col-lg-3">
+                        <button type="button" class="btn btn-outline-primary pull-right" data-target="#bulkOrderHintModal" data-toggle="modal"><i class="fa fa-question-circle"></i></button>
+                        <a class="btn btn-info pull-right" style="margin-right:10px;" href="~/Content/Assets/Bulk_Update.xls" download="">Download Excel File</a>
+                    </div>
+                    <div class="col-lg-1">
+                        @*<button type="button" class="btn btn-outline-primary pull-right" data-target="#bulkOrderHintModal" data-toggle="modal">Help <i class="fa fa-question-circle"></i></button>*@
+                        <button type="button" class="btn btn-primary" onclick="updateBulkOrder()">Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal inmodal" id="bulkOrderHintModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Bulk Order Update Hint</h4>
+            </div>
+            <div class="modal-body">
+                <div class="col-lg-12 " style="display:flex;justify-content:center;padding:2px 20px 2px 20px;">
+                    <div class="alert alert-info" style="justify-content:center;width:100%;">
+                        <i class="fa fa-chevron-right"></i>
+                        <strong>Do Not Change Any Column Name Of The Excel File</strong> <br><br>
+                        <i class="fa fa-chevron-right"></i>
+                        OrderId : Mandatory<br><br>
+                        <i class="fa fa-chevron-right"></i>
+                        OrderId : e.g. DT-101<br><br>
+                        <div class="col-lg-12 " style="display:flex;justify-content:center;margin-top:15px;">
+                            ** Success Rate Depends On Accuracy and Details In Provided Data **
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

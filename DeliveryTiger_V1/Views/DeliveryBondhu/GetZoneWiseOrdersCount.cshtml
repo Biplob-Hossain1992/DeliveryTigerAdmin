@@ -1,0 +1,837 @@
+﻿
+@{
+    ViewBag.Title = "GetZoneWiseOrdersCount";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('zoneWiseOrdersCountModule', []);
+    app.controller('zoneWiseOrdersCountController', function ($scope, $http, $anchorScroll, $location) {
+
+        $scope.type = 'collection';
+        $scope.zoneId = 0;
+        let addZoneInfoDefault =
+        {
+            "zoneId": 0,
+            "zoneName": "Select Zone"
+        }
+        
+        $scope.getZoneWiseOrdersCount = (fromDate, toDate, type, zoneId) => {
+            $scope.showLoader = true;
+
+            if (type == 'collection') {
+                $scope.showCollectionTable = true;
+                $scope.showDeliveryTable = false;
+            }
+            else if (type == 'delivery') {
+                $scope.showCollectionTable = false;
+                $scope.showDeliveryTable = true;
+            }
+
+            if (fromDate == null || fromDate == "" || toDate == null || toDate == "") {
+                alert("Please Select Date Range");
+                $scope.showLoader = false;
+                return false;
+            }
+            
+            let requestBody = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "type": type,
+                "zoneId": zoneId
+            }
+
+            $http.post(apiBaseURL + "Bondhu/GetZoneWiseOrdersCount", requestBody, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.zoneWiseOrdersCountData = response.data.model;
+                    $scope.calculateTotal(response.data.model, type);
+                    $scope.showLoader = false;
+                    $scope.showTotal = true;
+                }),
+                function error(response) {
+                    alert("Something Went Wrong!!");
+                }
+
+
+        };
+
+        $scope.init = () => {
+            $scope.getDeliveryZone();
+            $scope.showCollectionTable = true;
+            //$scope.showDeliveryTable = false;
+            $scope.showTotal = false;
+        }
+
+        
+        //get Delivery Zone
+        $scope.getDeliveryZone = function () {
+
+            $http.get(apiBaseURL + 'Fetch/GetDeliveryZone', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.zoneInfos = response.data.model;
+                    $scope.zoneInfos.push(addZoneInfoDefault);
+                    $scope.zoneInfos.sort((a, b) => parseFloat(a.zoneId) - parseFloat(b.zoneId));
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+
+        };
+
+        $scope.getOrdersCountDetails = (fromDate, toDate, zoneId, type, thanaId) => {
+            $scope.showLoader = true;
+            
+            let requestBody = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "zoneId": zoneId,
+                "thanaId": thanaId,
+                "type": type
+            }
+
+            $http.post(apiBaseURL + "Bondhu/GetZoneWiseOrderDetails", requestBody, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.modalData = response.data.model;
+                    $scope.showLoader = false;
+                }),
+                function error(response) {
+                    alert("Something Went Wrong!!");
+                }
+
+
+        };
+
+        $scope.calculateTotal = (data, type) => {
+
+            //Sum
+            $scope.totalOrder = data.reduce((acc, curr) => acc + curr.TotalOrder, 0);
+            $scope.totalMerchant = data.reduce((acc, curr) => acc + curr.TotalMerchant, 0);
+            if (type == 'collection') {
+                $scope.collectedMerchant = data.reduce((acc, curr) => acc + curr.CollectedMerchant, 0);
+                $scope.pendingMerchant = data.reduce((acc, curr) => acc + curr.PendingMerchant, 0);
+                $scope.attemptedMerchant = data.reduce((acc, curr) => acc + curr.AttemptedMerchant, 0);
+            }
+            else if (type == 'delivery') {
+                $scope.deliveredCustomer = data.reduce((acc, curr) => acc + curr.DeliveredCustomer, 0);
+                $scope.pendingCustomer = data.reduce((acc, curr) => acc + curr.PendingCustomer, 0);
+            }
+            
+            
+
+        }
+
+        $scope.getMerchantDetails = (fromDate, toDate, zoneId, thanaId, flag) => {
+            $scope.showLoader = true;
+
+            if (flag == 2) {
+                $scope.totalMerchantsModal = false;
+                $scope.collectedMerchantWiseOrders = true;
+                $scope.pendingMerchantWiseOrders = false;
+                $scope.attemptedMerchantWiseOrders = false;
+            }
+            else if (flag == 3) {
+                $scope.totalMerchantsModal = false;
+                $scope.collectedMerchantWiseOrders = false;
+                $scope.pendingMerchantWiseOrders = true;
+                $scope.attemptedMerchantWiseOrders = false;
+            }
+            else if (flag == 4) {
+                $scope.totalMerchantsModal = false;
+                $scope.collectedMerchantWiseOrders = false;
+                $scope.pendingMerchantWiseOrders = false;
+                $scope.attemptedMerchantWiseOrders = true;
+            }
+            else {
+                $scope.totalMerchantsModal = true;
+                $scope.collectedMerchantWiseOrders = false;
+                $scope.pendingMerchantWiseOrders = false;
+                $scope.attemptedMerchantWiseOrders = false;
+            }
+
+            let requestBody = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "zoneId": zoneId,
+                "thanaId": thanaId,
+                "flag": flag
+            }
+
+            $http.post(apiBaseURL + "Bondhu/CollectedNotCollectedMerchantInfo", requestBody, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.merchantModalData = response.data.model;
+                    $scope.totalOrderInModal = response.data.model.reduce((acc, curr) => acc + curr.totalOrder, 0);
+                    $scope.showLoader = false;
+                }),
+                function error(response) {
+                    alert("Something Went Wrong!!");
+                }
+
+
+        };
+
+        $scope.getMerchantWiseOrders = (fromDate, toDate, zoneId, thanaId, flag, merchantId) => {
+            $scope.showLoader = true;
+
+            let requestBody = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "zoneId": zoneId,
+                "thanaId": thanaId,
+                "flag": flag,
+                "merchantId": merchantId
+            }
+
+            $http.post(apiBaseURL + "Bondhu/MerchantWiseOrder", requestBody, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.collectedandPendingMerchantOrderData = response.data.model;
+                    $scope.showLoader = false;
+                }),
+                function error(response) {
+                    alert("Something Went Wrong!!");
+                }
+
+
+        };
+
+        $scope.getCustomerDetails = (fromDate, toDate, zoneId, thanaId, flag) => {
+            $scope.showLoader = true;
+
+            let requestBody = {
+                "fromDate": fromDate,
+                "toDate": toDate,
+                "zoneId": zoneId,
+                "thanaId": thanaId,
+                "flag": flag
+            }
+
+            $http.post(apiBaseURL + "Bondhu/DeliveredAndPendingCustomerInfo", requestBody, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.customerModalData = response.data.model;
+                    $scope.totalOrderInModal = response.data.model.reduce((acc, curr) => acc + curr.totalOrder, 0);
+                    $scope.showLoader = false;
+                }),
+                function error(response) {
+                    alert("Something Went Wrong!!");
+                }
+
+
+        };
+
+    })
+
+</script>
+
+<div class="row" ng-app="zoneWiseOrdersCountModule">
+    <div class="col-lg-12" ng-controller="zoneWiseOrdersCountController" ng-init="init()">
+        @*Modal Start*@
+        <div class="modal inmodal fade" id="dataModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="dataModalHeader">Count Details</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showModalLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12 align-content-center" id="dataDetailsModal" style="height: auto; overflow: auto;">
+                            <div class="table table-responsive" id="dataModalTable">
+                                <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center;width: 96px;" class="text-lg">#</th>
+                                            <th style="text-align: center;" class="text-lg">Company Name</th>
+                                            <th style="text-align: center;" class="text-lg">Order Id</th>
+                                            <th style="text-align: center;" class="text-lg">Last Status</th>
+                                            <th style="text-align: center;" class="text-lg">Rider</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTable">
+                                        <tr ng-repeat="data in modalData">
+                                            <td style="text-align:center;">{{$index + 1}}</td>
+                                            <td style="text-align:center;">{{data.CompanyName}}</td>
+                                            <td style="text-align:center;">DT-{{data.Id}}</td>
+                                            <td style="text-align:center;">{{data.Comment}}-{{data.Status}}</td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="data.Name == ''">NA</span>
+                                                <span ng-if="data.Name != ''">{{data.Name}}</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        @*Modal Start*@
+        @*Merchant Details Modal*@
+        <div class="modal inmodal fade" id="merchantDataModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="merchantDataModalHeader">Merchant Count Details</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showModalLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12 align-content-center" id="merchantDataDetailsModal" style="height: auto; overflow: auto;">
+                            <div class="table table-responsive" id="merchantDataModalTable">
+                                <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center;width: 96px;" class="text-lg">#</th>
+                                            <th style="text-align: center;" class="text-lg">Company Name</th>
+                                            <th style="text-align: center;" class="text-lg">Mobile</th>
+                                            <th style="text-align: center;" class="text-lg">Address</th>
+                                            <th style="text-align: center;" class="text-lg">Total Order</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTable">
+                                        <tr ng-repeat="data in merchantModalData">
+                                            <td style="text-align:center;">{{$index + 1}}</td>
+                                            <td style="text-align:center;">{{data.companyName}}</td>
+                                            <td style="text-align:center;">{{data.mobile}}</td>
+                                            <td style="text-align:center;">{{data.address}}</td>
+                                            <td style="text-align:center;">
+
+                                                <span ng-show="totalMerchantsModal">
+                                                    {{data.totalOrder}}
+                                                </span>
+                                                <span ng-show="collectedMerchantWiseOrders">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#collectedandPendingMerchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantWiseOrders(fromDate, toDate, zoneId, data.collectAddressThanaId, 1, data.merchantId)">
+                                                        {{data.totalOrder}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                    </a>
+                                                </span>
+                                                <span ng-show="pendingMerchantWiseOrders">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#collectedandPendingMerchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantWiseOrders(fromDate, toDate, zoneId, data.collectAddressThanaId, 2, data.merchantId)">
+                                                        {{data.totalOrder}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                    </a>
+                                                </span>
+                                                <span ng-show="attemptedMerchantWiseOrders">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#collectedandPendingMerchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantWiseOrders(fromDate, toDate, zoneId, data.collectAddressThanaId, 3, data.merchantId)">
+                                                        {{data.totalOrder}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                    </a>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td style="text-align:center;"><b>{{totalOrderInModal}}</b></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        @*Collected and Pending Merchant Orders Modal*@
+        <div class="modal inmodal fade" id="collectedandPendingMerchantDataModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="collectedandPendingMerchantModalHeader">Merchant Order Count Details</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showModalLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12 align-content-center" id="collectedandPendingMerchantDataDetailsModal" style="height: auto; overflow: auto;">
+                            <div class="table table-responsive" id="collectedandPendingMerchantDataModalTable">
+                                <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center;width: 96px;" class="text-lg">#</th>
+                                            <th style="text-align: center;" class="text-lg">Order Id</th>
+                                            <th style="text-align: center;" class="text-lg">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTable">
+                                        <tr ng-repeat="data in collectedandPendingMerchantOrderData">
+                                            <td style="text-align:center;">{{$index + 1}}</td>
+                                            <td style="text-align:center;">DT-{{data.id}}</td>
+                                            <td style="text-align:center;">{{data.statusNameEng}}</td>
+                                        </tr>
+                                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        @*CustomerInfo Modal*@
+        <div class="modal inmodal fade" id="customerDataModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="customerDataModalHeader">Customer Count Details</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showModalLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12 align-content-center" id="customerDataDetailsModal" style="height: auto; overflow: auto;">
+                            <div class="table table-responsive" id="customerDataModalTable">
+                                <table id="statusTable" class="table table-striped table-bordered statusTable" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center;width: 96px;" class="text-lg">#</th>
+                                            <th style="text-align: center;" class="text-lg">Customer Name</th>
+                                            <th style="text-align: center;" class="text-lg">Mobile</th>
+                                            <th style="text-align: center;" class="text-lg">Address</th>
+                                            <th style="text-align: center;" class="text-lg">Total Order</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTable">
+                                        <tr ng-repeat="data in customerModalData">
+                                            <td style="text-align:center;">{{$index + 1}}</td>
+                                            <td style="text-align:center;">{{data.customerName}}</td>
+                                            <td style="text-align:center;">{{data.mobile}}</td>
+                                            <td style="text-align:center;">{{data.address}}</td>
+                                            <td style="text-align:center;">{{data.totalOrder}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td style="text-align:center;"><b>{{totalOrderInModal}}</b></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        @*Modal End*@
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+
+                                    <input type="text" autocomplete="off" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" autocomplete="off" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+
+                                    <select style="margin-left:5px;" ng-model="type" class="form-control">
+                                        <option value="collection">Collection</option>
+                                        <option value="delivery">Delivery</option>
+
+                                    </select>
+                                    <select style="margin-left:5px;" class="form-control"
+                                            ng-model="zoneId" ng-options="zoneInfo.zoneId as zoneInfo.zoneName for zoneInfo in zoneInfos">
+                                    </select>
+
+                                    <button style="margin-left:5px;" type="button" class="btn btn-w-m btn-success" ng-click="getZoneWiseOrdersCount(fromDate, toDate,type,zoneId)">Search</button>
+                                </div>
+
+                                <div style="margin-top:5px;">
+
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ibox-content">
+
+                        <div class="row">
+                            <div class="col-lg-2" style="margin-top:14px">
+                                <span>Total Count: <b style="color:orangered;">{{zoneWiseOrdersCountData.length}}</b></span><br />
+                            </div>
+                            <div class="col-lg-12" style="margin-top: 40px;" ng-show="showCollectionTable">
+
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+
+                                            <th>Thana/Area</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='TotalOrder'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='TotalMerchant'; reverseSort = !reverseSort">
+                                                    Total Merchant
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='CollectedMerchant'; reverseSort = !reverseSort">
+                                                    Collected Merchant
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='PendingMerchant'; reverseSort = !reverseSort">
+                                                    Pending Merchant
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='AttemptedMerchant'; reverseSort = !reverseSort">
+                                                    Attempted Merchant
+                                                </a>
+                                            </th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        <tr ng-repeat="z in zoneWiseOrdersCountData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+
+                                            <td>{{z.District}}</td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="z.TotalOrder == 0 ">
+                                                    {{z.TotalOrder}}
+                                                </span>
+                                                <span ng-if="z.TotalOrder != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#dataModal" data-backdrop="static" data-keyboard="false" ng-click="getOrdersCountDetails(fromDate, toDate, zoneId, type, z.DistrictId)">{{z.TotalOrder}} <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="z.TotalMerchant == 0 ">
+                                                    {{z.TotalMerchant}}
+                                                </span>
+                                                <span ng-if="z.TotalMerchant != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#merchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantDetails(fromDate, toDate, zoneId, z.DistrictId, 1)">{{z.TotalMerchant}} <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="z.CollectedMerchant == 0 ">
+                                                    {{z.CollectedMerchant}}
+                                                </span>
+                                                <span ng-if="z.CollectedMerchant != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#merchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantDetails(fromDate, toDate, zoneId, z.DistrictId, 2)">
+                                                        {{z.CollectedMerchant}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i> <b style="color:chocolate;">({{z.CollectedMerchant * 100 / z.TotalMerchant | number: 2}} %)</b>
+                                                    </a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="z.PendingMerchant == 0 ">
+                                                    {{z.PendingMerchant}}
+                                                </span>
+                                                <span ng-if="z.PendingMerchant != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#merchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantDetails(fromDate, toDate, zoneId, z.DistrictId, 3)">{{z.PendingMerchant}} <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="z.AttemptedMerchant == 0 ">
+                                                    {{z.AttemptedMerchant}}
+                                                </span>
+                                                <span ng-if="z.AttemptedMerchant != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#merchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantDetails(fromDate, toDate, zoneId, z.DistrictId, 4)">{{z.AttemptedMerchant}} <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+
+                                        </tr>
+                                        <tr ng-show="showTotal">
+                                            <td></td>
+                                            <td></td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="totalOrder == 0 ">
+                                                    {{totalOrder}}
+                                                </span>
+                                                <span ng-if="totalOrder != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#dataModal" data-backdrop="static" data-keyboard="false" ng-click="getOrdersCountDetails(fromDate, toDate, zoneId, type, 0)"><b>{{totalOrder}}</b> <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="totalMerchant == 0 ">
+                                                    {{totalMerchant}}
+                                                </span>
+                                                <span ng-if="totalMerchant != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#merchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantDetails(fromDate, toDate, zoneId, 0, 1)"><b>{{totalMerchant}}</b> <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="collectedMerchant == 0 ">
+                                                    {{collectedMerchant}}
+                                                </span>
+                                                <span ng-if="collectedMerchant != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#merchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantDetails(fromDate, toDate, zoneId, 0, 2)"><b>{{collectedMerchant}}</b> 
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i> <b style="color:chocolate;">({{collectedMerchant * 100 / totalMerchant | number: 2}} %)</b>
+                                                    </a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="pendingMerchant == 0 ">
+                                                    {{pendingMerchant}}
+                                                </span>
+                                                <span ng-if="pendingMerchant != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#merchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantDetails(fromDate, toDate, zoneId,0, 3)"><b>{{pendingMerchant}}</b> <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="attemptedMerchant == 0 ">
+                                                    {{attemptedMerchant}}
+                                                </span>
+                                                <span ng-if="attemptedMerchant != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#merchantDataModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantDetails(fromDate, toDate, zoneId, 0, 4)"><b>{{attemptedMerchant}}</b> <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+                            <div class="col-lg-12" style="margin-top: 40px;" ng-show="showDeliveryTable">
+
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+
+                                            <th>Thana/Area</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='TotalOrder'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='TotalMerchant'; reverseSort = !reverseSort">
+                                                    Total Merchant
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='DeliveredCustomer'; reverseSort = !reverseSort">
+                                                    Delivered Customer
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='PendingCustomer'; reverseSort = !reverseSort">
+                                                    Pending Customer
+                                                </a>
+                                            </th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        <tr ng-repeat="z in zoneWiseOrdersCountData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+
+                                            <td>{{z.District}}</td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="z.TotalOrder == 0 ">
+                                                    {{z.TotalOrder}}
+                                                </span>
+                                                <span ng-if="z.TotalOrder != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#dataModal" data-backdrop="static" data-keyboard="false" ng-click="getOrdersCountDetails(fromDate, toDate, zoneId, type, z.DistrictId)">{{z.TotalOrder}} <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">{{z.TotalMerchant}}</td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="z.DeliveredCustomer == 0 ">
+                                                    {{z.DeliveredCustomer}}
+                                                </span>
+                                                <span ng-if="z.DeliveredCustomer != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#customerDataModal" data-backdrop="static" data-keyboard="false" ng-click="getCustomerDetails(fromDate, toDate, zoneId, z.DistrictId, 2)">{{z.DeliveredCustomer}} 
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i> <b style="color:chocolate;">({{z.DeliveredCustomer * 100 / z.TotalOrder | number: 2}} %)</b>
+                                                    </a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="z.PendingCustomer == 0 ">
+                                                    {{z.PendingCustomer}}
+                                                </span>
+                                                <span ng-if="z.PendingCustomer != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#customerDataModal" data-backdrop="static" data-keyboard="false" ng-click="getCustomerDetails(fromDate, toDate, zoneId, z.DistrictId, 3)">{{z.PendingCustomer}} <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="totalOrder == 0 ">
+                                                    {{totalOrder}}
+                                                </span>
+                                                <span ng-if="totalOrder != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#dataModal" data-backdrop="static" data-keyboard="false" ng-click="getOrdersCountDetails(fromDate, toDate, zoneId, type, 0)"><b>{{totalOrder}}</b> <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;"><b>{{totalMerchant}}</b></td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="deliveredCustomer == 0 ">
+                                                    {{deliveredCustomer}}
+                                                </span>
+                                                <span ng-if="deliveredCustomer != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#customerDataModal" data-backdrop="static" data-keyboard="false" ng-click="getCustomerDetails(fromDate, toDate, zoneId, 0, 2)">{{deliveredCustomer}} 
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i> <b style="color:chocolate;">({{deliveredCustomer * 100 / totalOrder | number: 2}} %)</b>
+                                                    </a>
+                                                </span>
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span ng-if="pendingCustomer == 0 ">
+                                                    {{pendingCustomer}}
+                                                </span>
+                                                <span ng-if="pendingCustomer != 0 ">
+                                                    <a aria-hidden="true" data-toggle="modal" data-target="#customerDataModal" data-backdrop="static" data-keyboard="false" ng-click="getCustomerDetails(fromDate, toDate, zoneId, 0, 3)">{{pendingCustomer}} <i class="fa fa-hand-o-left" aria-hidden="true"></i></a>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>

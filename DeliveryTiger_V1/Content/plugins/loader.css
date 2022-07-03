@@ -1,0 +1,75 @@
+﻿/* Mady By y2j */
+.loader-lg {
+    border: 20px solid lightgray;
+    border-radius: 50%;
+    border-top: 20px solid #2f4050;
+    /*border-bottom: 16px solid grey;*/
+    width: 150px;
+    height: 150px;
+    -webkit-animation: spin 1.5s linear infinite;
+    animation: spin 1.5s linear infinite;
+}
+
+.loader-md {
+    border: 16px solid lightgray;
+    border-radius: 50%;
+    border-top: 16px solid #2f4050;
+    /*border-bottom: 16px solid grey;*/
+    width: 125px;
+    height: 125px;
+    -webkit-animation: spin 1.5s linear infinite;
+    animation: spin 1.5s linear infinite;
+}
+
+.loader-sm {
+    border: 10px solid lightgray;
+    border-radius: 50%;
+    border-top: 10px solid #2f4050;
+    /*border-bottom: 16px solid grey;*/
+    width: 60px;
+    height: 60px;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+}
+
+.loader-xs {
+    border: 5px solid lightgray;
+    border-radius: 50%;
+    border-top: 5px solid #2f4050;
+    /*border-bottom: 16px solid grey;*/
+    width: 20px;
+    height: 20px;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+}
+
+.loader-moon {
+    border: 0px solid lightgray;
+    border-radius: 50%;
+    border-top: 3px solid #2f4050;
+    /*border-bottom: 16px solid grey;*/
+    width: 25px;
+    height: 25px;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+}
+
+@-webkit-keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+    }
+
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

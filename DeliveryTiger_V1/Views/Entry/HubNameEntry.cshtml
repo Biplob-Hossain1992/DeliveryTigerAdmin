@@ -1,0 +1,382 @@
+﻿@{
+    ViewBag.Title = "HubNameEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('hubModule', []);
+    app.controller('hubController', function ($scope, $http) {
+        $scope.isActive = 1;
+        $scope.hubs = [];
+        //get all delivery typelist
+        $scope.getAllHub = () => {
+
+            $http.get(apiBaseURL + 'Fetch/GetAllHubs', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.hubs = response.data.model;
+                    //$scope.removeRedisCache();
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data.model);
+                    $scope.showLoader = false;
+                });
+        }
+
+        $scope.getModalData = (id) => {
+            $scope.isActive = 1;
+            $scope.getData = $scope.hubs.filter(hub => hub.id == id);
+        }
+
+        $scope.save = (name, value, isActive, address, longitude, latitude, mobile) => {
+            if (name == '' || name == null || value == '' || value == null || address == '' || address == null || longitude == '' || longitude == null || latitude == '' || latitude == null || mobile == '' || mobile == null) {
+                alert("Please Insert all information..");
+                return false;
+            }
+  
+            var requestBodyModel = {
+                "Name": name,
+                "Value": value,
+                "IsActive": isActive,
+                "HubAddress": address,
+                "Longitude": longitude,
+                "Latitude": latitude,
+                "HubMobile": mobile
+            };
+
+            $http.post(apiBaseURL + 'Entry/AddHub', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Hub Added Succeefully...!!!")
+
+                    $scope.removeRedisCache();
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        $scope.update = (id, name, value, address, longitude, latitude, mobile, isActive, redxPickUpStoreId) => {
+
+            var requestBodyModel = {
+                "Id": id,
+                "Name": name,
+                "Value": value,
+                "IsActive": isActive,
+                "HubAddress": address,
+                "Longitude": longitude,
+                "Latitude": latitude,
+                "HubMobile": mobile,
+                "RedxPickUpStoreId": redxPickUpStoreId
+            };
+
+            $http.put(apiBaseURL + 'Entry/UpdateHub', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Hub Updated Succeefully...!!!")
+
+                    $scope.removeRedisCache();
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        //redis Cache
+        $scope.removeRedisCache = () => {
+            let GetAllHubs = 'GetAllHubs';
+            $http.delete(apiBaseURL + 'Redis/SingleRemoveAsync/' + GetAllHubs, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.getAllHub();
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+    });
+</script>
+
+<div class="row" ng-app="hubModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="hubController" data-ng-init="getAllHub()">
+        @*Update Hub Modal*@
+        <div class="modal inmodal fade" id="updateHubModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" ng-repeat="h in getData">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateHubModalHeader">Update Hub</h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">Name</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.name" class="form-control" />
+                            </div>
+                            <label class="col-lg-2 col-form-label">Value</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.value" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+
+                            <label class="col-lg-2 col-form-label">Address</label>
+                            <div class="col-lg-10">
+                                <input type="text" ng-model="h.hubAddress" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">Logitude</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.longitude" class="form-control" />
+                            </div>
+                            <label class="col-lg-2 col-form-label">Latitude</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.latitude" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">Mobile</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.hubMobile" class="form-control" />
+                            </div>
+                            <label class="col-lg-2 col-form-label">IsActive</label>
+                            <div class="col-lg-4">
+                                <select ng-model="isActive" class="form-control">
+                                    <option value="1" selected>True</option>
+                                    <option value="0">False</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-2 col-form-label">Redx PickUpStoreId</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="h.redxPickUpStoreId" class="form-control" />
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="update(h.id,h.name,h.value,h.hubAddress,h.longitude,h.latitude,h.hubMobile,isActive,h.redxPickUpStoreId)" data-dismiss="modal">Update</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Modal End*@
+        <div class="row">
+            
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <button type="submit" class="btn" style="background-color: green; color: white;margin-bottom: 7px; margin-top: 7px; cursor: pointer;" data-toggle="modal" data-target="#addHubModal"><strong><i class='fa fa-plus'></i> Add New Hub</strong></button>
+                    </div>
+
+
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+
+                                <div class="col-lg-12" style="margin: 20px 0px 10px 0px" id="hubDetails">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Id</th>
+                                                <th>Name</th>
+                                                <th>Value</th>
+                                                <th>Active</th>
+                                                <th>Address</th>
+                                                <th>Longitude</th>
+                                                <th>Latitude</th>
+                                                <th>Mobile</th>
+                                                <th>Redx PickUpStoreId</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            <tr ng-repeat="h in hubs">
+
+                                                <td>{{h.id}}</td>
+                                                <td>{{h.name}}</td>
+                                                <td>{{h.value}}</td>
+                                                <td>
+                                                    <span ng-if="h.isActive == true">Yes</span>
+                                                    <span ng-if="h.isActive != true">No</span>
+                                                </td>
+                                                <td>{{h.hubAddress}}</td>
+                                                <td>{{h.longitude}}</td>
+                                                <td>{{h.latitude}}</td>
+                                                <td>{{h.hubMobile}}</td>
+                                                <td>{{h.redxPickUpStoreId}}</td>
+                                                <td>
+                                                    <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="getModalData(h.id)" data-toggle="modal" data-target="#updateHubModal"><strong><i class='fa fa-pencil'></i></strong></button>
+                                                </td>
+
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+                @*ADD HUB MODAL*@
+            <div class="modal" id="addHubModal">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title">Add Hub</h1>
+                            <button type="button" class="close" data-dismiss="modal" data-target="#addHubModal">&times;</button>
+
+                        </div>
+
+                        <div class="modal-body">
+                            <form name="addHubForm">
+                            <div class="form-group">
+                                
+                               
+                                    <div class="col-lg-12">
+                                        <div class="form-group row">
+                                            <label class="col-lg-4 col-form-label" for="NameLbl"><sup><i class="fa fa-asterisk" style="font-size: 8px; color:red"></i></sup>Name</label>
+                                            <div class="col-lg-4">
+                                                <input type="text" ng-model="name" class="form-control"  placeholder="উত্তরা হাব" required />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-12">
+                                        <div class="form-group row">
+                                            <label class="col-lg-4 col-form-label" for="ValueLbl"><sup><i class="fa fa-asterisk" style="font-size:8px; color:red"></i></sup>Value</label>
+                                            <div class="col-lg-4">
+                                                <input type="text" ng-model="value" class="form-control" placeholder="uttara-hub" required/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-12">
+                                        <div class="form-group row">
+                                            <label class="col-lg-4 col-form-label" for="IsActiveLbl">Is Active</label>
+                                            <div class="col-lg-4">
+                                                <select ng-model="isActive" class="form-control" data-live-search="true" >
+                                                    <option value="1" selected>True</option>
+                                                    <option value="0">False</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                               
+                              
+                                    <div class="col-lg-12">
+                                        <div class="form-group row">
+                                            <label class="col-lg-4 col-form-label" for="addressLbl">Address</label>
+                                            <div class="col-lg-8">
+                                                <input type="text" ng-model="address" class="form-control" placeholder="section-3, Uttara dhaka" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-12">
+                                        <div class="form-group row">
+                                            <label class="col-lg-4 col-form-label" for="addressLbl">Longitude</label>
+                                            <div class="col-lg-4">
+                                                <input type="text" ng-model="longitude" class="form-control" placeholder="90.3700263"  />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-12">
+                                        <div class="form-group row">
+                                            <label class="col-lg-4 col-form-label" for="addressLbl">Latitude</label>
+                                            <div class="col-lg-4">
+                                                <input type="text" ng-model="latitude" class="form-control" placeholder="23.7546203" />
+                                            </div>
+                                        </div>
+                                    </div>
+                               
+                               
+                                    <div class="col-lg-12">
+                                        <div class="form-group row">
+                                            <label class="col-lg-4 col-form-label" for="addressLbl">Mobile</label>
+                                            <div class="col-lg-4">
+                                                <input type="text" ng-model="mobile" class="form-control" placeholder="01555555555" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-12 text-center">
+                                      
+                              
+                                         
+                                                <button type="submit" ng-click="save(name,value,isActive,address,longitude,latitude,mobile)" class="btn btn-info" ng-disabled="addHubForm.$invalid">Add Hub</button>
+                                           
+
+                                 
+                                   
+                                      
+                                    </div>
+
+                                    </div>
+                                </form>
+
+                        </div>
+
+                        <div class="modal-footer">
+                          
+
+                                <div class="col-lg-6">
+                                    <h5 style="color:red"><i class="fa fa-asterisk" style="font-size: 8px; color:red"></i>marked fields are rquired</h5>
+                                </div>
+                                <div class="col-lg-6" style="text-align:right">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#addHubModal">Close</button>
+                                </div>
+                                </div>
+                          
+                    </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+

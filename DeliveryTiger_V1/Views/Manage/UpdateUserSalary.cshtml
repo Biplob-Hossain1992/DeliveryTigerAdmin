@@ -1,0 +1,171 @@
+﻿
+@{
+    ViewBag.Title = "UpdateUserSalary";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<div ng-app="UpdateUserSalaryModule">
+    <div ng-controller="UpdateUserSalaryController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="margin-right: 5px;" type="text" class="form-control form-control-sm" placeholder="UserName" ng-model="searchUserName" />
+                                <select class="form-control" name="adminType" ng-model="adminType" id="adminType" placeholder="Admin Type">
+                                    <option value="255" selected>Select admin type</option>
+                                    <option value="0">0-Emarging</option>
+                                    <option value="1">1-VIP</option>
+                                    <option value="2">2-Manager</option>
+                                    <option value="4">4-Sales</option>
+
+                                    <option value="6">6-CRM</option>
+                                    <option value="7">7-Fulfillment</option>
+                                    <option value="8">8-Accounts</option>
+                                    <option value="9">9-Social Media</option>
+                                    <option value="10">10-Content</option>
+                                    <option value="11">11-IT</option>
+                                    <option value="12">12-Merchandising</option>
+                                    <option value="13">13-Service Quality Analyst</option>
+                                </select>
+                                <button style="margin-left: 5px;" type="button" class="btn btn-w-m btn-success" ng-click="showUserList(searchUserName,adminType)">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div style="margin: 20px 0px 10px 0px" ng-show="showTable">
+                            <table class="table table-bordered table-striped table-hover">
+                                <thead>
+                                    <tr>
+
+                                        <th>Full Name</th>
+                                        <th>User Name </th>
+                                        <th style="width:100px;">Salary</th>
+                                        <th style="text-align:center;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    <tr ng-repeat="u in userList">
+
+
+                                        <td>{{ u.fullName }}</td>
+                                        <td>{{ u.userName }}</td>
+                                        <td><input type="number" class="form-control"  ng-model="u.salaryAmount" /></td>
+                                        <td style="text-align:center;"><button type="button" class="btn btn-success" ng-click="updateUserSalary(u.userId,u.salaryAmount)">Save</button></td>
+
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var app = angular.module('UpdateUserSalaryModule', []);
+    app.controller('UpdateUserSalaryController', function ($scope, $http) {
+        let currentUserId = sessionStorage.getItem("userId");
+        let userAdminType = sessionStorage.getItem("adminType");
+        angular.element(document).ready(function () {
+            if (currentUserId != 442 && userAdminType != 11) {
+                //alert("You are not authorised here!!");
+                window.location.href = "/ControlPanel/ControlPanel";
+            }
+        });
+        $scope.searchUserName = "";
+        $scope.adminType = '255';
+        let userBodyModel;
+        $scope.showUserList = function (userName, adminType) {
+            if (userName.length == 0 && adminType == "255") {
+
+                alert("Select AdminType or Write Username");
+                return false;
+            }
+            if (userName.length > 0 && adminType != "255") {
+                alert("Select either Username or Admin Type");
+                return false;
+            }
+            //if (userName.length > 0 && adminType == "255") {
+            //    userBodyModel = {
+            //        "userName": userName
+            //    }
+
+            //}
+            //else {
+            //    userBodyModel = {
+            //        "adminType": adminType
+            //    }
+            //}
+            userBodyModel = {
+                "userName": userName,
+                "adminType": adminType
+            }
+
+            //console.log(userBodyModel);
+
+            $scope.showLoader = true;
+            $scope.showTable = false;
+            $http.post(apiBaseURL + 'Fetch/GetAdUsersByFilter', userBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.userList = response.data.model;
+                    
+                    $scope.showTable = true;
+                    
+
+                }, function (error) {
+                    $scope.showLoader = false;
+                    console.log(error);
+                })
+        }
+
+
+        $scope.updateUserSalary = (userId, salary) => {
+            if (salary == undefined || salary == 0) {
+                alert("Please Update Salary");
+                return false;
+            }
+            var updateBodyModel = {
+                "userId": userId,
+                "salaryAmount": salary
+            }
+            $http.put(apiBaseURL + 'Update/UpdateAdUserSalaryAmount', updateBodyModel, { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    if (response.status == 200) {
+                        alert("Salary Updated Successfully");
+                        $scope.showUserList($scope.searchUserName, $scope.adminType);
+                    }
+                    else {
+                        alert("Something Went Wrong!!");
+                        return false;
+                    }
+                }, function error(response) {
+                    if (response.status == 500)
+                        alert("Server Error!!");
+                    console.log(response.message);
+                }
+                )
+
+            //console.log(updateBodyModel);
+        }
+    });
+</script>

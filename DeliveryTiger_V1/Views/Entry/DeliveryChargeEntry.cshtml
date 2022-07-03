@@ -1,0 +1,258 @@
+﻿
+@{
+    ViewBag.Title = "DeliveryChargeEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="~/Scripts/Entry/Entry.js"></script>
+<script src="~/Scripts/plugins/dataTables/dataTables.bootstrap4.min.js"></script>
+<script src="~/Scripts/plugins/dataTables/datatables.min.js"></script>
+<link href="~/Content/plugins/dataTable/datatables.min.css" rel="stylesheet" />
+<script>
+    $(document).ready(function () {
+        if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+            var title = "@ViewBag.Title";
+            $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+            LoadDistrictParentIdWise(0, "District", null);
+            LoadWeightList("Weight", null);
+            LoadDeliveryType("DeliveryType", null);
+
+            LoadDistrictParentIdWise(0, "DistrictSearch", null);
+            LoadWeightList("WeightSearch", null);
+            LoadDeliveryType("DeliveryTypeSearch", null);
+
+            LoadBreakableCharge();
+        }
+        else {
+            window.location.href = "/Account/Login";
+        }
+    });
+</script>
+<style>
+    .col-form-label {
+        font-weight: bold;
+    }
+</style>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+@*<%--Delivery Charge Entry--%>*@
+
+<div class="row" style="margin-top:20px;">
+    <div class="col-lg-7">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Delivery Charge Entry <small>Input Delivery Charge Location Wise</small></h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="container" style="display:flex">
+                    <div class="col-lg-6">
+                        <input id="UserHidden" type="hidden" value="" />
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="DistrictLbl">District</label>
+                            <div class="col-lg-9">
+                                <select id="District" class="form-control" onchange="GetThanaList()" data-live-search="true">
+                                    <option value="0">Select District</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="ThanaLbl">Thana</label>
+                            <div class="col-lg-9">
+                                <select id="Thana" class="form-control" @*onchange="GetAreaList()"*@ disabled>
+                                    <option value="0">Select Thana</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            @*<label class="col-lg-3 col-form-label" for="AreaLbl">Area</label>
+                                <div class="col-lg-8">
+                                    <select id="Area" class="form-control" disabled>
+                                        <option value="0">Select Area</option>
+                                    </select>
+                                </div>*@
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="WeightLbl">Weight</label>
+                            <div class="col-lg-9">
+                                <select id="Weight" class="form-control">
+                                    <option value="0">Select Weight</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="DeliveryTypeLbl">Type</label>
+                            <div class="col-lg-9">
+                                <select id="DeliveryType" class="form-control">
+                                    <option value="0">Select Delivery Type</option>
+                                </select>
+                            </div>
+                        </div>
+
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label" for="DeliveryChargeLbl">Charge</label>
+                            <div class="col-lg-9">
+                                <input type="number" id="DeliveryCharge" class="form-control" placeholder=" Ex: 50.0" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row" style="justify-content: center">
+                    <button type="button" id="addDeliveryChargeBtn" class="btn btn-success" style="margin: 10px;" onclick="addDeliveryCharge()"><strong>Add Delivery Charge</strong></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*EXTRA Charge *@
+    <div class="col-lg-5">
+        <div class="ibox ">
+            <div class="ibox-title">
+                <h5>Extra Charges <small>Manage Variable Charges</small></h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                @*Breakable Charge*@
+                <div class="col-lg-12" style="padding: 0px;">
+                    <div class="form-group row">
+                        <label class="col-lg-6 col-form-label" for="BreakableChargeLbl">Breakable Charge</label>
+                        <div class="col-lg-3">
+                            <input type="number" id="BreakableCharge" value=0.0 class="form-control" placeholder=" Ex: 50.0" />
+                        </div>
+                        <input type="hidden" id="BreakableChargeIdHidden" value="" />
+                        <button type="button" id="editBreakableChargeBtn" class="btn btn-secondary" style="display:block;" onclick="editBreakableCharge()">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button type="button" id="updateBreakableChargeBtn" class="btn btn-success" style="display:none;" onclick="updateBreakableCharge()">
+                            <i class="fa fa-check"></i>
+                        </button>
+                        <button type="button" id="cancelBreakableChargeBtn" class="btn btn-danger" style="display:none;margin-left:5px;" onclick="LoadBreakableCharge()">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                @*COD Charge*@
+                <div class="col-lg-12" style="padding: 0px;">
+                    <div class="form-group row">
+                        <label class="col-lg-6 col-form-label" for="CODMinChargeLbl">COD Minimum Charge</label>
+                        <div class="col-lg-3">
+                            <input type="number" id="CODMinCharge" value=0.0 class="form-control" placeholder=" Ex: 10.0" />
+                        </div>
+                        <button type="button" id="editCodChargeBtn" class="btn btn-secondary" style="display:block;" onclick="editCodMinCharge()">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button type="button" id="updateCodChargeBtn" class="btn btn-success" style="display:none;" onclick="updateBreakableCharge()">
+                            <i class="fa fa-check"></i>
+                        </button>
+                        <button type="button" id="cancelCodChargeBtn" class="btn btn-danger" style="display:none;margin-left:5px;" onclick="LoadBreakableCharge()">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-12" style="padding: 0px;">
+                    <div class="form-group row">
+                        <label class="col-lg-6 col-form-label" for="CODPercentageCharge">COD Charge (Outside)</label>
+                        <div class="col-lg-3">
+                            <input type="number" id="CODPercentageCharge" value=0 class="form-control" placeholder=" Ex: 1" />
+                        </div>
+                        <button type="button" id="editCodPercentageBtn" class="btn btn-secondary" style="display:block;" onclick="editCodPercentageCharge()">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button type="button" id="updateCodPercentageBtn" class="btn btn-success" style="display:none;" onclick="updateBreakableCharge()">
+                            <i class="fa fa-check"></i>
+                        </button>
+                        <button type="button" id="cancelCodPercentageBtn" class="btn btn-danger" style="display:none;margin-left:5px;" onclick="LoadBreakableCharge()">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-12" style="padding: 0px;">
+                    <div class="form-group row">
+                        <label class="col-lg-6 col-form-label" for="CODPercentageDhakaCharge">COD Charge (Dhaka)</label>
+                        <div class="col-lg-3">
+                            <input type="number" id="CODPercentageDhakaCharge" value=0 class="form-control" placeholder=" Ex: 1" />
+                        </div>
+                        <button type="button" id="editCodPercentageDhakaBtn" class="btn btn-secondary" style="display:block;" onclick="editCodPercentageDhakaCharge()">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button type="button" id="updateCodPercentageDhakaBtn" class="btn btn-success" style="display:none;" onclick="updateBreakableCharge()">
+                            <i class="fa fa-check"></i>
+                        </button>
+                        <button type="button" id="cancelCodPercentageDhakaBtn" class="btn btn-danger" style="display:none;margin-left:5px;" onclick="LoadBreakableCharge()">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-12" style="padding: 0px;">
+                    <div class="form-group row">
+                        <label class="col-lg-6 col-form-label" for="BigProductCharge">Big Product Charge</label>
+                        <div class="col-lg-3">
+                            <input type="number" id="BigProductCharge" value=0 class="form-control" placeholder=" Ex: 100" />
+                        </div>
+                        <button type="button" id="editBigProductChargeBtn" class="btn btn-secondary" style="display:block;" onclick="editBigProductCharge()">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button type="button" id="updateBigProductChargeBtn" class="btn btn-success" style="display:none;" onclick="updateBreakableCharge()">
+                            <i class="fa fa-check"></i>
+                        </button>
+                        <button type="button" id="cancelBigProductChargeBtn" class="btn btn-danger" style="display:none;margin-left:5px;" onclick="LoadBreakableCharge()">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Delivery Charge Update*@
+<div class="row">
+    <div class="col-lg-12">
+        <div class="ibox ">
+            <div class="ibox-title" style="display:flex;">
+                <h5 style="margin-top:5px;">Delivery Charge List <small>Search Delivery Charge Location Wise  </small> </h5>
+                <div class="col-lg-3">
+                    <select id="DistrictSearch" class="form-control" onchange="GetThanaSearchList()" data-live-search="true">
+                        <option value="0">Select District</option>
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <select id="ThanaSearch" class="form-control" @*onchange="GetAreaList()"*@ disabled>
+                        <option value="0">Select Thana</option>
+                    </select>
+                </div>
+                <button class="btn btn-info" type="button" id="deliveryChargeListLoadBtn" onclick="loadDeliveryChargeList()">Search</button>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content" style="padding:5px;">
+                <div class="table-responsive" style="padding: 0px;" id="deliveryChargeListDetails">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

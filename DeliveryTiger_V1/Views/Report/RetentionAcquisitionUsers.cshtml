@@ -1,0 +1,235 @@
+﻿
+@{
+    ViewBag.Title = "RetentionAcquisitionUsers";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+    
+</script>
+
+
+<div ng-app="retentionAcquisitionModule">
+    <div ng-controller="retentionAcquisitionController" data-ng-init="retentionAcquisitionUsers(userId, adminType, 0)">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+
+                                <select class="form-control" ng-model="retentionUsers" ng-show="retentionShow">
+                                    <option value="0" selected>Select Retention User</option>
+                                    <option value="54">Toufik Sheikh</option>
+                                    <option value="83">rezu</option>
+                                    <option value="100">Yasir Rubayat</option>
+                                    <option value="157">Foysal Hossain</option>
+                                    <option value="289">Ashik Ul Haque Biswas</option>
+                                    <option value="442">Shohag khan</option>
+                                </select>
+                                <button style="margin-left:5px; margin-right:5px;" type="button" class="btn btn-w-m btn-primary" ng-show="searchButton" ng-click="retentionAcquisitionUsers(retentionUsers, adminType,'retention')">Search Retention</button>
+                                <select ng-model="acquisitionUsers" class="form-control" ng-show="acquisitionShow">
+                                    <option value="0" selected>Select Acquisition Users</option>
+                                    <option ng-repeat="u in acqUsers" value="{{u.userId}}">{{u.userName}}</option>
+                                </select>
+                                <button style="margin-left:5px;" type="button" class="btn btn-w-m btn-primary" ng-show="searchButton" ng-click="retentionAcquisitionUsers(acquisitionUsers, adminType,'acquisition')">Search Acquisition</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-6" ng-show="retentiondivShow">
+                                <span style="font:caption;"><b>Retention Users</b></span>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>
+                                                Company Name
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='totalOrder'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="r in retentionUsersData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+                                            <td>
+                                                {{ r.companyName}}
+                                            </td>
+                                            <td>
+                                                {{r.totalOrder}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="col-lg-6" ng-show="acquisitiondivShow">
+                                <span style="font:caption;"><b>Acquisition Users</b></span>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>
+                                                Company Name
+                                            </th>
+                                            <th>
+                                                Registration Date
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='totalOrder'; reverseSort = !reverseSort">
+                                                    Total Order
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='totalMerchantCalled'; reverseSort = !reverseSort">
+                                                    Total Merchant Called
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='totalMerchantVisited'; reverseSort = !reverseSort">
+                                                    Total Merchant Visited
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="a in acquisitionUsersData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+                                            <td>
+                                                {{ a.companyName}}
+                                            </td>
+                                            <td>
+                                                {{ a.joinDate}}
+                                            </td>
+                                            <td>
+                                                {{a.totalOrder}}
+                                            </td>
+                                            <td>
+                                                {{a.totalMerchantCalled}}
+                                            </td>
+                                            <td>
+                                                {{a.totalMerchantVisited}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<script type="text/javascript">
+    var app = angular.module('retentionAcquisitionModule', []);
+    app.controller('retentionAcquisitionController', function ($scope, $http) {
+
+        $scope.userId = sessionStorage.getItem('userId');
+        $scope.adminType = +sessionStorage.getItem('adminType');
+        
+        $scope.retentionUsers = 0;
+        $scope.acquisitionUsers = 0;
+        
+        $scope.retentionAcquisitionUsers = function (userId, adminType, flag) {
+            
+            $scope.flag = flag;
+
+            if (flag == 'retention') {
+                $scope.retentiondivShow = true;
+                $scope.acquisitiondivShow = false;
+            }
+            else if (flag == 'acquisition') {
+                $scope.retentiondivShow = false;
+                $scope.acquisitiondivShow = true;
+            }
+            else if (userId == 54 || userId == 83 || userId == 100 || userId == 157 || userId == 289 || userId == 442) {
+                $scope.retentiondivShow = true;
+                $scope.acquisitiondivShow = false;
+            }
+            else if (userId != 54 || userId != 83 || userId != 100 || userId != 157 || userId != 289 || userId != 442) {
+                $scope.retentiondivShow = false;
+                $scope.acquisitiondivShow = true;
+            }
+
+            //single User Conditions
+            if (userId == '1' || userId == '2' || userId == '11' || adminType == 1 || adminType == 2 || adminType == 11) {
+                $scope.retentionShow = true;
+                $scope.searchButton = true;
+                $scope.acquisitionShow = true;
+            }
+            else {
+                $scope.retentionShow = false;
+                $scope.searchButton = false;
+                $scope.acquisitionShow = false;
+            }
+
+            $scope.showLoader = true;
+
+            $http.get(apiBaseURL + 'Report/GetRetentionAcquisitionUsers/' + parseInt(userId), { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    
+                    $scope.retentionUsersData = response.data.model.retentionUserModel;
+                    $scope.acquisitionUsersData = response.data.model.acquisitionUserModel;
+                    $scope.showLoader = false;
+
+                }, function error(response) {
+                    console.log(response.data);
+                    $scope.showLoader = false;
+                });
+
+            $scope.loadAllRetentionUsers();
+        };
+
+        $scope.loadAllRetentionUsers = function () {
+            
+            $http.get(apiBaseURL + 'Fetch/GetAdUsers', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.acqUsers = response.data.model.filter(d => d.isActive == 1 && d.userId != 54 && d.userId != 83 && d.userId != 100 && d.userId != 157 && d.userId != 289 && d.userId != 442);
+                    console.log($scope.acqUsers);
+                }, function error(response) {
+
+                })
+
+        };
+    });
+</script>
+

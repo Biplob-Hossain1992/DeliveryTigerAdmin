@@ -1,0 +1,719 @@
+﻿
+@{
+    ViewBag.Title = "GetCollectionSlotWiseOrders";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
+<style>
+    .modal {
+        overflow-y: auto;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+<script type="text/javascript">
+    var app = angular.module('collectionSlotWiseOrdersModule', []);
+    app.controller('collectionSlotWiseOrdersController', function ($scope, $http) {
+
+        $scope.collectionTimeSlotId = '0';
+        $scope.statusId = '0';
+        
+        $scope.getCollectionSlotWiseOrders = function (fromDate, toDate, collectionTimeSlotId, statusId) {
+
+
+            if (typeof fromDate == 'undefined' || typeof toDate == 'undefined') {
+                alert("Please must be select From and To Date...!!!");
+                return false;
+            }
+            else if (collectionTimeSlotId == '0') {
+                alert("Please  must be select slot time..!!!");
+                return false;
+            }
+            else if (statusId == '0') {
+                alert("Please  must be select status..!!!");
+                return false;
+            }
+
+            if (statusId == '40') {
+                $scope.checkAllDisable = false;
+                $scope.updateDisable = false;
+            }
+            else {
+                $scope.checkAllDisable = true;
+                $scope.updateDisable = true;
+            }
+            var requestBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CollectionTimeSlotId": +collectionTimeSlotId,
+                "StatusId": +statusId
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Fetch/GetCollectionSlotWiseOrders', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.ordersData = response.data.model;
+                    let data = response.data.model;
+                    $scope.uniqueMerchantList = $scope.uniqueMerchant(data);
+                    $scope.showLoader = false;
+
+                    if (data.length > 0) {
+                        $scope.showRiderButton = true;
+                    }
+                    else {
+                        $scope.showRiderButton = false;
+                    }
+
+                }, function error(response) {
+
+                    $scope.showLoader = false;
+                });
+
+
+        };
+
+        $scope.getData = () => {
+
+            let gropedData = [];
+            let datas = $scope.ordersData;
+
+            for (var i = 0; i < datas.length; i++) {
+                let obj = {
+                    merchantId: datas[i].merchantId,
+                    companyName: datas[i].courierUsers.companyName,
+                    deliveryUserId: datas[i].deliveryUsersViewModel.id
+                };
+
+                gropedData.push(obj);
+                
+            }
+
+
+            let arrayList = [...new Set(gropedData.map(JSON.stringify))]
+                .map(x => JSON.parse(x))
+                .map(x => {
+                    return { merchantId: x.merchantId, companyName: x.companyName, deliveryUserId: x.deliveryUserId }
+                });
+
+            $scope.arrayData = [];
+            let counter = 1;
+            for (var i = 0; i < arrayList.length; i++) {
+
+                let companyName = false;
+                if ($scope.arrayData.length > 0) {
+                    companyName = $scope.arrayData[$scope.arrayData.length - 1].merchantId == arrayList[i].merchantId;
+                }
+                
+                if (companyName == true) {
+                    
+                    let index = $scope.arrayData.findIndex(x => x.merchantId == arrayList[i].merchantId);
+
+                    $scope.arrayData[index].count = ++counter;
+                    counter = 1;
+
+                }
+                else {
+                    let obj = {
+                        merchantId: arrayList[i].merchantId,
+                        companyName: arrayList[i].companyName,
+                        count: 1
+                    };
+
+                    $scope.arrayData.push(obj);
+                }
+
+            }
+
+        }
+
+        //clickable merchants wise orders
+        $scope.getMerchantWiseOrders = (merchantId) => {
+            $scope.detailsData = $scope.ordersData.filter(c => c.merchantId == merchantId);
+        }
+
+        $scope.init = function () {
+
+            $scope.getCollectionTimeSlot();
+            $scope.showHide();
+            $scope.showuncheckAll = false;
+            $scope.showcheckAll = true;
+            $scope.checkAllDisable = true;
+            $scope.updateDisable = true;
+        }
+
+        //get Collection Time Slot
+
+        $scope.timeSlotData = [];
+        $scope.getCollectionTimeSlot = function () {
+
+            $http.get(apiBaseURL + 'Fetch/GetCollectionTimeSlot', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.timeSlotData = response.data.model;
+
+                    let obj = {
+                        collectionTimeSlotId: 4,
+                        cutOffTime: "21:00:00",
+                        endTime: "22:00:00",
+                        formattingCutOffTime: "21:00 PM",
+                        formattingEndTime: "10:00 PM",
+                        formattingStartTime: "10:00 AM",
+                        isActive: false,
+                        orderLimit: 5000,
+                        ordering: 4,
+                        slotName: "সারাদিন",
+                        startTime: "10:00:00"
+                    };
+                    $scope.timeSlotData.push(obj);
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+
+        };
+
+        //update time slot Manually 
+        $scope.updateCollectionTimeSlotIdManually = (flag) => {
+            if (confirm("Are you sure you want to update?")) {
+                $http.put(apiBaseURL + 'QuickOrder/UpdateCollectionTimeSlotIdManually' + '/' + flag, { headers: { 'Content-Type': 'application/json' } })
+                    .then(function (response) {
+
+                        if (response.data.model > 0) {
+                            alert("Data Updated Successfully...!!!");
+                        }
+                        else {
+                            alert("No Data Found for Update...!!!");
+                        }
+
+                        $scope.showLoader = false;
+
+                    }, function error(response) {
+
+                        $scope.showLoader = false;
+                    });
+            }
+            else {
+                return false;
+            }
+           
+        };
+
+        //Unique Merchant
+        $scope.uniqueMerchant = (data) => {
+            var arrayList = [];
+            for (var i = 0; i < data.length; i++) {
+
+                if (arrayList.indexOf(data[i].merchantId) === -1) {
+                    arrayList.push(data[i].merchantId);
+                }
+            }
+            return arrayList;
+        }
+
+        //button hide show
+        $scope.showHide = () => {
+            let currDate = new Date();
+            let time = currDate.toTimeString();
+            let currTime = time.slice(0, 8);
+            let firstSlot = '10:00:00';
+            //let secondSlot = '14:01:00';
+            let secondSlot = '15:01:00';
+            //let thirdSlot = '18:01:00';
+            let thirdSlot = '19:01:00';
+            //let nextDay = '21:01:00';
+            let nextDay = '22:01:00';
+
+            if (currTime >= firstSlot && currTime < secondSlot) {
+                $scope.morning = true;
+                //$scope.afternoon = false;
+                //$scope.night = false;
+                //$scope.nextDay = false;
+            }
+            else if (currTime >= secondSlot && currTime < thirdSlot) {
+                //$scope.morning = false;
+                $scope.afternoon = true;
+                //$scope.night = false;
+                //$scope.nextDay = false;
+            }
+            else if (currTime >= thirdSlot && currTime < nextDay) {
+                $scope.night = true;
+            }
+            else if (currTime >= nextDay && currTime <= '23:59:00') {
+                $scope.nextDay = true;
+            }
+
+        };
+
+        $scope.checkedThanaIds = [];
+        $scope.checkedOrderIds = [];
+        $scope.checkAll = () => {
+
+            angular.forEach($scope.ordersData, (data) => {
+                data.checked = true;
+                $scope.checkedThanaIds.push(data.districtsViewModel.thanaId);
+                $scope.checkedOrderIds.push(data.id);
+            });
+            $scope.showuncheckAll = true;
+            $scope.showcheckAll = false;
+        }
+
+        $scope.uncheckAll = () => {
+
+            $scope.checkedThanaIds = [];
+            $scope.checkedOrderIds = [];
+            angular.forEach($scope.ordersData, function (data) {
+                data.checked = false;
+            });
+            $scope.showuncheckAll = false;
+            $scope.showcheckAll = true;
+        }
+
+        $scope.Clicked = (thanaId,id, isChecked) => {
+
+            if (isChecked) {
+                $scope.checkedThanaIds.push(thanaId);
+                $scope.checkedOrderIds.push(id);
+            }
+            else {
+                var index1 = $scope.checkedThanaIds.indexOf(thanaId);
+                $scope.checkedThanaIds.splice(index1, 1);
+
+            }
+        }
+
+        $scope.GetRiders = (checkedThanaIds, checkedOrderIds) => {
+            $scope.status = '41';
+            $scope.selectedOrderIds = checkedOrderIds.map(x => x).join(',');
+
+            let arrayList = [];
+
+            for (let i = 0; i < checkedThanaIds.length; i++) {
+                let obj = {
+                    thanaId: parseInt(checkedThanaIds[i])
+                };
+                arrayList.push(obj);
+            }
+
+            let uniqueArrayList = [...new Set(arrayList.map(JSON.stringify))]
+                .map(x => JSON.parse(x))
+                .map(x => { return { thanaId: x.thanaId } });
+
+            $http.post(apiBaseURL + 'Fetch/GetLocationWiseRiders', uniqueArrayList, { headers: { 'ContentType': 'application/json;utf=charset-8' } })
+                .then(function (response) {
+                    $scope.deliveryUserList = response.data.model;
+
+                }), function error(response) {
+
+                    alert('Error occured while getting');
+                }
+
+        }
+
+        //AssignRider(selectedRequestedId, collectionTimeSlotId)
+        $scope.AssignRider = (selectedOrderIds, deliveryUserId, status) => {
+
+            let userId = sessionStorage.getItem('userId');
+            let hubName = sessionStorage.getItem('hubName');
+            let comment = "";
+
+            if (deliveryUserId == '0' || deliveryUserId == undefined) {
+                alert('Please select Rider...!!!');
+                return false;
+            }
+
+            if (+status == 41) {
+                comment = 'Delivery Accepted by Rider-41';
+            }
+            else if (+status == 53) {
+                comment = 'Order confirm for delivery-53';
+            }
+
+            let selectedData = selectedOrderIds.split(',');
+
+            let arrayList = [];
+
+            for (let i = 0; i < selectedData.length; i++) {
+                let obj = {
+                    id: parseInt(selectedData[i]),
+                    deliveryUserId: +deliveryUserId,
+                    updatedBy: +userId,
+                    hubName: hubName,
+                    status: +status,
+                    comment: comment
+                };
+                arrayList.push(obj);
+            }
+
+
+            $http.put(apiBaseURL + 'Update/UpdateMultipleOrdersWithRider', arrayList, { headers: { 'ContentType': 'application/json;utf=charset-8' } })
+                .then(function (response) {
+
+                    if (response.data.didError) {
+                        alert('Something went wrong');
+                        return false;
+                    }
+                    alert('Assigned Successful');
+                    $scope.checkedThanaIds = [];
+                    $scope.checkedOrderIds = [];
+
+
+                }), function error(response) {
+
+                    alert('Error occured while updating');
+                }
+
+        }
+        
+    });
+</script>
+
+<div class="row" ng-app="collectionSlotWiseOrdersModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="collectionSlotWiseOrdersController" data-ng-init="init()">
+        @*Update Rider*@
+        <div class="modal inmodal fade" id="updateModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateModalHeader">Assign Rider</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="form-group row" style="display:none;">
+                            <div class="col-md-4">
+                                <label class="col-lg-4 col-form-label">Order Ids</label>
+                            </div>
+                            <div class="col-md-4">
+                                <textarea class="form-control" ng-model="selectedOrderIds" disabled rows="6" cols="50"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <label class="col-lg-4 col-form-label">Status</label>
+                            </div>
+                            <div class="col-md-5">
+                                <select ng-model="status" class="form-control">
+                                    <option value="41">Delivery Accepted by Rider-41</option>
+                                    <option value="53">Order confirm for delivery-53</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                <label class="col-lg-4 col-form-label">Rider</label>
+                            </div>
+                            <div class="col-md-4">
+                                <select style="margin-left:5px;" ng-model="deliveryUserId" class="form-control">
+                                    <option ng-repeat="d in deliveryUserList" value="{{d.id}}">{{d.name}}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="AssignRider(selectedOrderIds,deliveryUserId,status)" data-dismiss="modal">Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*Merchant Wise Rider Count Model*@
+        <div class="modal inmodal fade" id="riderCountModal" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="riderCountModalHeader">Count Wise Data</h5>
+                    </div>
+                    <div class="col-lg-2" style="margin-top:14px; margin-left:28px;">
+                        <span>Total Count: <b style="color:orangered;">{{arrayData.length}}</b></span><br />
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="col-lg-12 align-content-center" id="dataModal" style="height: auto; overflow: auto;">
+                            <div class="table table-responsive" id="dataModalTable">
+                                <table id="statusTable" class="table table-striped table-bordered countDetailsTable" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center;" class="text-md">#</th>
+
+                                            <th style="text-align: center;">
+                                                <a href="#" ng-click="orderByField='companyName'; reverseSort = !reverseSort">
+                                                    Merchant Name
+                                                </a>
+                                            </th>
+                                            <th style="text-align: center;">
+                                                <a href="#" ng-click="orderByField='count'; reverseSort = !reverseSort">
+                                                    Total Rider
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTable">
+                                        <tr ng-repeat="data in arrayData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td style="text-align:center;">{{$index + 1}}</td>
+                                            <td style="text-align:center;">{{data.companyName}}</td>
+                                            <td style="text-align:center;">
+                                                <a aria-hidden="true" data-toggle="modal" data-target="#merchantWiseRiderCountDetailsModal" data-backdrop="static" data-keyboard="false" ng-click="getMerchantWiseOrders(data.merchantId)">
+                                                    {{data.count}}
+                                                    <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        @*Merchant Wise Orders with rider Modal*@
+        <div class="modal inmodal fade" id="merchantWiseRiderCountDetailsModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="merchantWiseRiderCountDetailsModalHeader">Merchant Order Count Details</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="loader">
+                            <div class="spiner-example" ng-show="showModalLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12 align-content-center" style="height: auto; overflow: auto;">
+                            <div class="table table-responsive">
+                                <table id="statusTable" class="table table-striped table-bordered" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center;width: 96px;" class="text-lg">#</th>
+                                            <th style="text-align: center;" class="text-lg">Rider</th>
+                                            <th style="text-align: center;" class="text-lg">Order Id</th>
+                                            <th style="text-align: center;" class="text-lg">Collection Time</th>
+                                            @*<th style="text-align: center;" class="text-lg">Actual Slot</th>*@
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTable">
+                                        <tr ng-repeat="data in detailsData">
+                                            <td style="text-align:center;">{{$index + 1}}</td>
+                                            <td style="text-align:center;">{{data.deliveryUsersViewModel.name}}</td>
+                                            <td style="text-align:center;">DT-{{data.id}}</td>
+                                            <td style="text-align:center;">{{data.collectionTime | date:'medium'}}</td>
+                                        </tr>
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        @*Modal Ends*@
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1">
+                        </div>
+                        <div class="sk-rect2">
+                        </div>
+                        <div class="sk-rect3">
+                        </div>
+                        <div class="sk-rect4">
+                        </div>
+                        <div class="sk-rect5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+
+                            <div class="form-inline">
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+
+                                    <input type="text" autocomplete="off" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" />
+                                    <input type="text" autocomplete="off" style="border: 1px solid #46b8da" ng-model="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" />
+
+                                    <select style="margin-left:5px;" ng-model="collectionTimeSlotId" class="form-control">
+                                        <option value="0" selected>Select-Slot</option>
+                                        <option ng-repeat="d in timeSlotData" value="{{d.collectionTimeSlotId}}">{{d.slotName}} ({{d.formattingStartTime}} - {{d.formattingEndTime}})</option>
+                                    </select>
+                                    <select style="margin-left:5px;" ng-model="statusId" class="form-control">
+                                        <option value="0">Select-Status</option>
+                                        <option value="40">নতুন অর্ডার</option>
+                                        <option value="41">অ্যাকসেপ্ট করেছি</option>
+                                        <option value="44">কালেক্ট করেছি</option>
+
+                                    </select>
+
+                                    <button style="margin-left:5px;" type="button" class="btn btn-w-m btn-success" ng-click="getCollectionSlotWiseOrders(fromDate, toDate,collectionTimeSlotId, statusId)">Search</button>
+                                    <button ng-show="showRiderButton" style="margin-left:5px;" type="button" class="btn btn-w-m btn-primary" data-toggle="modal" data-target="#riderCountModal" data-backdrop="static" data-keyboard="false" ng-click="getData()">Show Rider Count</button>
+                                </div>
+
+                                <div style="margin-top:5px;">
+
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ibox-content">
+                        <div class="container" style="display:flex">
+                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                <div class="row col-lg-12">
+                                    <div class="col-lg-2" style="margin-top:14px">
+                                        <span>Total Count: <b style="color:orangered;">{{ordersData.length}}</b></span><br />
+                                    </div>
+                                    <div class="col-lg-2" style="margin-top:14px">
+                                        <span>Total Merchant: <b style="color:orangered;">{{uniqueMerchantList.length}}</b></span><br />
+                                    </div>
+                                    <div class="col-lg">
+                                        <input type="button" ng-disabled="checkAllDisable" class="btn btn-primary btn-lg" value="Check All" ng-click="checkAll()" style="float: right; margin-right: 18px;" ng-show="showcheckAll" />
+                                        <input type="button" class="btn btn-primary btn-lg" value="Uncheck All" ng-click="uncheckAll()" style="float: right; margin-right: 18px;" ng-show="showuncheckAll" />
+                                    </div>
+                                    <div class="col-lg">
+                                        <input type="button" ng-disabled="updateDisable" style="float: right; margin-right: 40px;" class="btn btn-success btn-lg" data-toggle="modal" data-target="#updateModal" data-backdrop="static" data-keyboard="false" ng-click="GetRiders(checkedThanaIds,checkedOrderIds)" value="Assign Riders to Multiple Orders" />
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <div style="float:right;margin-right:92px;">
+                                            <button ng-show="morning" ng-click="updateCollectionTimeSlotIdManually(1)" data-toggle="tooltip" title="10:00 AM - 3:00 PM" style="background-color: #4CAF50; border-radius: 2px;" type="button" class="btn btn-primary">সকাল</button>
+                                            <button ng-show="afternoon" ng-click="updateCollectionTimeSlotIdManually(2)" data-toggle="tooltip" title="3:00 PM - 7:00 PM" type="button" class="btn btn-success">বিকাল</button>
+                                            <button ng-show="night" ng-click="updateCollectionTimeSlotIdManually(3)" data-toggle="tooltip" title="7:00 PM - 10:00 PM" type="button" class="btn btn-primary">রাত</button>
+                                            <button ng-show="nextDay" ng-click="updateCollectionTimeSlotIdManually(4)" data-toggle="tooltip" title="10:01 PM - 11:59 PM" type="button" class="btn btn-primary">পরের দিন</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="row">
+                            <div class="col-lg-12" style="margin-top: 40px;">
+
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+
+                                            <th>
+                                                <a href="#" ng-click="orderByField='id'; reverseSort = !reverseSort">
+                                                    Order Id
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='courierUsers.companyName'; reverseSort = !reverseSort">
+                                                    Company Name
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='deliveryUsersViewModel.name'; reverseSort = !reverseSort">
+                                                    Rider Name
+                                                </a>
+                                            </th>
+                                            <th>CheckBox</th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='districtsViewModel.thana'; reverseSort = !reverseSort">
+                                                    Collection Thana
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='collectAddressDistrictId'; reverseSort = !reverseSort">
+                                                    ISD/OSD
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='paymentType'; reverseSort = !reverseSort">
+                                                    Payment Type
+                                                </a>
+                                            </th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        <tr ng-repeat="o in ordersData | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>{{$index +1}}</td>
+
+                                            <td>DT-{{o.id}}</td>
+                                            <td>{{o.courierUsers.companyName}}</td>
+                                            <td>{{o.deliveryUsersViewModel.name}}</td>
+                                            <td style="text-align:center;">
+                                                <input type="checkbox" ng-model="o.checked" ng-change="Clicked(o.districtsViewModel.thanaId, o.id, o.checked)" />
+                                            </td>
+                                            <td>{{o.districtsViewModel.thana}}</td>
+                                            <td>
+                                                <span ng-if="o.collectAddressDistrictId == 14">Inside Dhaka</span>
+                                                <span ng-if="o.collectAddressDistrictId != 14">Outside Dhaka</span>
+                                            </td>
+                                            <td>{{o.paymentType}}</td>
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>

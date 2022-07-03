@@ -1,0 +1,465 @@
+﻿
+@{
+    ViewBag.Title = "CDD till date Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+@*<script src="https://code.angularjs.org/1.2.14/angular.js"></script>*@
+
+<script src="https://code.angularjs.org/1.4.8/angular.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.min.js" integrity="sha512-IO99nu6TitXdydITTnjerPUo0HffdgLC9yIfv5gwglcsSR7nN008a7QDynI5Ih0mGLlnNnt8tGIuBCFRZaNjqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-sanitize.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-select/0.19.8/select.css" integrity="sha512-3MNyrZTIbIT7sGASBSy4HeOwFNhRephd5RfnYcyr7Nbs0CX3/KaNcpPivPOAkOfrKBLL2VtyNzXgphX1i71nEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+<link href="~/Content/multiple-select.min.css" rel="stylesheet" />
+<script src="~/Content/multiple-select.min.js"></script>
+
+
+<div class="row wrapper border-bottom white-bg page-heading" style="padding:0px 10px 5px 10px">
+    <div class="col-lg-7">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        //GetAllDeliveryTypeList();
+     if (sessionStorage.getItem("userId") !== null && sessionStorage.getItem("userId") !== "undefined") {
+            $("#UserHidden").val(sessionStorage.getItem("userId"));
+
+         var title = "@ViewBag.Title";
+         $("#title").html(title.replace(/([A-Z])/g, ' $1').trim());
+
+     }
+         else {
+             window.location.href = "/Account/Login";
+         }
+
+    });
+
+</script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: ""
+        });
+    });
+</script>
+
+
+<script type="text/javascript">
+    var app = angular.module('deliveryRangeModule', ['ui.select', 'ngSanitize','multipleSelect']);
+    app.controller('deliveryRangeReportController', function ($scope, $http) {
+        //var localUrl = "http://localhost:58676/api/";
+        //var OnlineUrl = "https://adcore.ajkerdeal.com/api/";
+
+        //Load Table Data
+        $scope.courierUserId = -1;
+        $scope.merchantType = '1';
+        $scope.dhakaMerchants = true;
+        $scope.outsideDhakaMerchants = false;
+        $scope.dateFlag = '0';
+        $scope.tigerStatusId = '-1';
+        $scope.hideSelect = true;
+
+        $scope.hiddenSelectField = (tigerStatusId) => {
+            tigerStatusId != "-1" ? $scope.hideSelect = false : $scope.hideSelect = true;
+        }
+
+        $scope.getDeliveryRangeTypeWiseOrders = (dateFlag, fromDate, toDate, deliveryRangeIds, hours, district, courier, outsideDhaka, tigerStatusId) => {
+
+            var deliveryRangeIdsArray = [];
+            for (var i = 0; i < deliveryRangeIds.length; i++) {
+                deliveryRangeIdsArray.push(deliveryRangeIds[i].id)
+            }
+            if (deliveryRangeIdsArray.length == 0) {
+                alert("Please must be select DeliveryRange Type");
+                return false;
+            }
+
+            if (dateFlag == '0') {
+                alert("Please select date flag...!!!");
+                return false;
+            }
+            if (fromDate == '' || fromDate == null || toDate == '' || toDate == null) {
+                alert("Please select fromDate and toDate...!!!");
+                return false;
+            }
+            var orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "DeliveryRangeIds": deliveryRangeIdsArray.toString(),
+                "Hours": hours,
+                "DistrictId": district,
+                "CourierId": courier,
+                "OutsideDhaka": outsideDhaka,
+                "MerchantId": $scope.courierUserId,
+                "DateFlag": dateFlag,
+                "TigerStatusId": tigerStatusId,
+            };
+            $scope.showLoader = true;
+
+            $http.post(apiBaseURL + 'Report/GetDeliveryRangeTypeWiseOrders', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    //console.log(orderBodyModel);
+                    $scope.getDeliveryRangeTypeWiseOrdersList = response.data.model;
+
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data);
+                    $scope.showLoader = false;
+                });
+        }
+
+        //Get CourierOrderId Wise Details
+        $scope.getCourierOrderIdWiseReportDetails = (courierOrdersId) => {
+            $scope.orderId = courierOrdersId;
+
+            $http.get(apiBaseURL + "Fetch/OrderUpdateHistory/" + courierOrdersId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.getCourierOrderIdWiseDetails = response.data.model;
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        //get all delivery typelist
+        $scope.getDeliveryRangeList = () => {
+
+            $http.get(apiBaseURL + 'Fetch/GetDeliveryRange', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.getDeliveryRangeTypeList = response.data.model;
+                    $scope.statusMultiSelect = response.data.model;
+
+                    $scope.statusMultiSelect.forEach(ele => {
+                        ele.name = ele.name + ' ' + ele.day + ' ' + ele.dayType
+                    })
+
+                    //console.log(response);
+                    $scope.showLoader = false;
+                    $scope.showTable = true;
+
+                }, function error(response) {
+                    //console.log(response.data.model);
+                    $scope.showLoader = false;
+                });
+        }
+
+        //LoadAll Districts
+        $scope.init = function () {
+            $http.get(apiBaseURL + 'Fetch/LoadAllDistricts', { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.districts = response.data.model.filter(d => d.parentId === 0 && d.isActive === true);
+                    $scope.district = '-1';
+                    $scope.courier = '-1';
+                    $scope.deliveryRangeId = '-1';
+                    $scope.outsideDhaka = '-1';
+                    //console.log($scope.district);
+
+                }, function error(response) {
+                })
+            $scope.getDeliveryRangeList();
+        };
+
+
+        $scope.GetInsideDhakaMerchantId = (merchantId, $select) => {
+            $scope.courierUserId = merchantId
+        }
+
+        $scope.GetOutSideDhakaMerchantId = (merchantid) => {
+            $scope.courierUserId = merchantid;
+        }
+
+        $scope.GetInsideDhakaMerchants = (search, isDhaka) => {
+
+            if (search == '0') {
+                return false;
+            }
+
+            let url = apiBaseURL + 'Fetch/GetDistrictwiseCourierUserInfo/' + isDhaka + '/' + search;
+            $scope.isDhakaMerchants = isDhaka;
+
+            $http.get(url, { headers: { 'ContentType': 'application/json;charset=utf-8' } })
+                .then(function (response) {
+                    if (isDhaka) {
+                        $scope.DhakaMerchants = response.data.model;
+                    }
+                    else {
+                        $scope.OutsideDhakaMerchants = response.data.model;
+                    }
+                    //console.log($scope.merchant);
+                })
+
+        }
+
+        $scope.MerchantType = (type) => {
+            if (type == '1') {
+                $scope.dhakaMerchants = true;
+                $scope.outsideDhakaMerchants = false;
+            }
+            else if (type == '3') {
+                $scope.dhakaMerchants = false;
+                $scope.outsideDhakaMerchants = false;
+                $scope.courierUserId = -1;
+            }
+            else {
+                $scope.dhakaMerchants = false;
+                $scope.outsideDhakaMerchants = true;
+            }
+        }
+
+    });
+</script>
+
+<div class="row" ng-app="deliveryRangeModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="deliveryRangeReportController" data-ng-init="init()">
+        @*Modal Start*@
+        <div class="modal fade" id="myModal" role="dialog">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 style="font-weight:bold; margin-left:340px;" class="modal-title">{{orderId}}</h3>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Commented By</th>
+                                    <th>Commented On</th>
+                                    <th>Status</th>
+                                    <th>Comment</th>
+                                    <th>Hub</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="o in getCourierOrderIdWiseDetails | filter:mainSearch">
+                                    <td>
+                                        {{$index +1}}
+                                    </td>
+                                    <td>{{o.namePostedBy}}({{o.isConfirmedBy}})</td>
+                                    <td>{{o.postedOn}}</td>
+                                    <td>{{o.status}}</td>
+                                    <td>{{o.comment}}</td>
+                                    <td>{{o.hubName}}</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*Modal End*@
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <div class="row form-inline">
+                                <div class="col-md-12">
+                                    <div class="input-daterange input-group" id="datepickerReport">
+                                        <input type="text" style="width:150px;" class="form-control-lg form-control col-lg-4" placeholder="Search" ng-model="mainSearch" />
+                                        <select style="margin-left:3px;" class="form-control" ng-model="dateFlag">
+                                            <option value="0" selected>Select Date</option>
+                                            <option value="1">Shipment</option>
+                                            <option value="2">Order</option>
+                                        </select>
+                                        <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="fromDate" name="fromDate" class="btn flatpickr form-control" autocomplete="off" placeholder="From Date" />
+                                        <input type="text" style="border: 1px solid #46b8da;margin-left:2px;" ng-model="toDate" name="toDate" class="btn flatpickr form-control" autocomplete="off" placeholder="To Date" />
+                                    </div>
+                                </div>
+                                <div class="col-md-12" style="margin-top: 0.5rem;">
+                                    <select style="" class="form-control" ng-change="hiddenSelectField(tigerStatusId)" ng-model="tigerStatusId">
+                                        <option value="-1" selected>Select Delivery Status</option>
+                                        <option value="1">All Delivery Tiger</option>
+                                        <option value="2">Inside Delivery Tigers</option>
+                                        <option value="3">Outside Delivery Tigers</option>
+                                    </select>
+                                    <select style="margin-left:5px;" ng-model="district" class="form-control" ng-show="hideSelect">
+                                        <option value="-1" selected>Select District</option>
+                                        <option ng-repeat="d in districts" value="{{d.districtId}}">{{d.district}}</option>
+                                    </select>
+                                    <select style="" class="form-control" ng-model="courier" ng-show="hideSelect">
+                                        <option value="-1" selected>Select Courier</option>
+                                        <option value="28">Bangladesh Postal Service</option>
+                                        <option value="30">Paperfly</option>
+                                        <option value="32">E-Desh</option>
+                                        <option value="34">Redx</option>
+                                        <option value="49">Steadfast</option>
+                                        <option value="50">Chittagong Tiger</option>
+                                        <option value="51">Sylhet Tiger</option>
+                                        <option value="52">Khulna Tiger</option>
+                                        <option value="53">Narayangonj Tiger</option>
+                                        <option value="54">Gazipur Tiger</option>
+                                        <option value="55">Dhaka Tiger</option>
+                                        <option value="56">Coxsbazar Tiger</option>
+                                        <option value="57">Jatrabari Tiger</option>
+                                        <option value="58">Uttara Tiger</option>
+                                        <option value="59">Mirpur10 Tiger</option>
+                                        <option value="60">Mirpur01 Tiger</option>
+                                        <option value="61">Lalmatia Tiger</option>
+                                        <option value="62">NewMarket Tiger</option>
+                                        <option value="63">Islampur Tiger</option>
+                                        <option value="64">Santinagar Tiger</option>
+                                        <option value="65">Gulisthan Tiger</option>
+                                        <option value="66">Rampura Tiger</option>
+                                        <option value="67">Badda Tiger</option>
+                                        <option value="69">KawranBazar Tiger</option>
+                                        <option value="75">Savar Tiger</option>
+                                    </select>
+
+                                    <select style="" class="form-control" ng-model="merchantType" ng-change="MerchantType(merchantType)">
+                                        <option value="1" selected>Inside Dhaka Merchant</option>
+                                        <option value="2">Outside Dhaka Merchant</option>
+                                        <option value="3">Default</option>
+                                    </select>
+
+                                    <select style="" class="form-control" ng-model="outsideDhaka" ng-show="hideSelect">
+                                        <option value="-1" selected>Select</option>
+                                        <option value="76">Outside Dhaka</option>
+                                    </select>
+
+                                    <input style="margin:0.5rem 0 0.5rem 0" type="text" class="form-control-sm form-control" placeholder="Ex: 24 Hours" ng-model="hours" />
+                                    <ui-select ng-model="$select.selected" theme="select2" style="min-width:200px; margin-left:20px" ng-click="GetInsideDhakaMerchantId($select.selected.courierUserId, $select)" ng-show="dhakaMerchants">
+                                        <ui-select-match placeholder="Select Dhaka Merchants" allow-clear="true">
+                                            <span ng-bind="$select.selected.companyName"></span>
+                                        </ui-select-match>
+                                        <ui-select-choices repeat="item in (DhakaMerchants | filter: $select.search)" refresh="GetInsideDhakaMerchants($select.search, true)" refresh-delay="1000" minimum-input-length="1">
+                                            <span ng-bind="item.companyName +' => '+item.mobile"></span>
+                                        </ui-select-choices>
+                                    </ui-select>
+
+                                    <ui-select ng-model="$select.selected" theme="select2" style="min-width:200px; margin-left:20px" ng-click="GetOutSideDhakaMerchantId($select.selected.courierUserId)" ng-show="outsideDhakaMerchants">
+                                        <ui-select-match placeholder="Select Outside Dhaka Merchants" allow-clear="true">
+                                            <span ng-bind="$select.selected.companyName"></span>
+                                        </ui-select-match>
+                                        <ui-select-choices repeat="item in (OutsideDhakaMerchants | filter: $select.search)" refresh="GetInsideDhakaMerchants($select.search, false)" refresh-delay="1000" minimum-input-length="1">
+                                            <span ng-bind="item.companyName +' => '+item.mobile"></span>
+                                        </ui-select-choices>
+                                    </ui-select>
+                                    <div class="form-group" style="margin-left:5px;width: auto;">
+                                        <multiple-autocomplete ng-model="deliveryRangeIds"
+                                                               object-property="name"
+                                                               suggestions-arr="statusMultiSelect">
+                                        </multiple-autocomplete>
+                                    </div>
+
+                                    <button type="button" style="margin-left:5px; margin-top:5px;" class="btn btn-w-m btn-success" ng-click="getDeliveryRangeTypeWiseOrders(dateFlag, fromDate, toDate, deliveryRangeIds, hours, district, courier,outsideDhaka,tigerStatusId)">Search</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="col-lg-12">
+                            <div class="spiner-example" ng-show="showLoader">
+                                <div class="sk-spinner sk-spinner-wave">
+                                    <div class="sk-rect1">
+                                    </div>
+                                    <div class="sk-rect2">
+                                    </div>
+                                    <div class="sk-rect3">
+                                    </div>
+                                    <div class="sk-rect4">
+                                    </div>
+                                    <div class="sk-rect5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <table class="table table-bordered" ng-show="showTable">
+
+                            <div style="color:orangered;"><b>Total Count: {{getDeliveryRangeTypeWiseOrdersList.length}}</b></div>
+
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='courierOrdersId'; reverseSort = !reverseSort">
+                                            OrderId
+                                        </a>
+                                    </th>
+                                    <th>PodNumber</th>
+                                    <th>Status/Comment</th>
+                                    <th>District-Thana/Courier</th>
+                                    <th>CDD</th>
+                                    <th>
+                                        <a href="#" ng-click="orderByField='hours'; reverseSort = !reverseSort">
+                                            Hours
+                                        </a>
+                                    </th>
+                                    <th>Delivery Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="d in getDeliveryRangeTypeWiseOrdersList | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                    <td style="width:50px;">
+                                        {{$index+1}}
+                                    </td>
+                                    <td>
+                                        <a href="https://admin.deliverytiger.com.bd/Operation/Operation?orderId={{d.courierOrdersId}}" style="cursor:pointer;">{{d.courierOrdersId}}</a><br />
+                                        <button class="btn btn-success" type="button" ng-click="getCourierOrderIdWiseReportDetails(d.courierOrdersId)" style="cursor:pointer;" data-toggle="modal" data-target="#myModal">ViewAllComments</button>
+                                    </td>
+                                    <td>
+                                        {{d.podNumber}}
+                                    </td>
+                                    <td>
+                                        {{d.statusNameEng}}<br />
+                                        {{d.comment}}:({{d.status}})
+                                    </td>
+                                    <td>
+                                        {{d.districtsViewModel.district}}-{{d.districtsViewModel.thana}}<br />
+
+                                        {{d.couriers.courierName}}
+                                    </td>
+                                    <td>
+                                        {{d.expectedDeliveryDate | date}}
+                                    </td>
+
+                                    <td>
+                                        {{d.hours}}
+                                    </td>
+                                    <td>
+                                        {{d.deliveryRange.name}} {{d.deliveryRange.day}} {{d.deliveryRange.dayType}}
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+

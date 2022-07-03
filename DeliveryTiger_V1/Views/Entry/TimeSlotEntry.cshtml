@@ -1,0 +1,346 @@
+﻿
+@{
+    ViewBag.Title = "TimeSlotEntry";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true
+            //maxDate: "today"
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    var app = angular.module('timeSlotModule', []);
+    app.controller('timeSlotController', function ($scope, $http) {
+
+        $scope.init = () => {
+            $scope.isActive = "true";
+            $scope.showDataTable = false;
+        }
+
+        $scope.timeSlotEntry = (startTime, endTime, cutOffTime, priority, orderLimit, isActive) => {
+
+            if (startTime == '' || startTime == undefined) {
+                alert("Please input Start Time...!!!");
+                return false;
+            }
+            else if (endTime == '' || endTime == undefined) {
+                alert("Please input End Time...!!!");
+                return false;
+            }
+            else if (cutOffTime == '' || cutOffTime == undefined) {
+                alert("Please input Cut-Off Time...!!!");
+                return false;
+            }
+            else if (priority == '' || priority == undefined) {
+                alert("Please input Priority...!!!");
+                return false;
+            }
+            else if (orderLimit == '' || orderLimit == undefined) {
+                alert("Please input Order Limit...!!!");
+                return false;
+            }
+            
+            var requestBodyModel = {
+                "StartTime": startTime,
+                "EndTime": endTime,
+                "CutOffTime": cutOffTime,
+                "Ordering": priority,
+                "OrderLimit": orderLimit,
+                "IsActive": isActive
+            };
+
+            $http.post(apiBaseURL + 'Entry/AddCollectionTimeSlot', requestBodyModel,
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+                    alert("Added Succeefully...!!!")
+
+                    $scope.startTime = '';
+                    $scope.endTime = '';
+                    $scope.cutOffTime = '';
+                    $scope.ordering = '';
+                    $scope.orderLimit = '';
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        $scope.timeSlotData = [];
+        $scope.getCollectionTimeSlot = () => {
+
+            $scope.showDataTable = true;
+
+            $http.get(apiBaseURL + 'Fetch/GetCollectionTimeSlot',
+                { headers: { 'Content-Type': 'application/json', "Authorization": "Bearer " + sessionStorage.getItem("token").trim() } })
+                .then(function (response) {
+
+                    $scope.timeSlotData = response.data.model;
+
+                }, function error(response) {
+                    //console.log(response.data);
+                });
+        }
+
+        $scope.getModalData = (collectionTimeSlotId) => {
+            $scope.getData = $scope.timeSlotData.filter(timeSlot => timeSlot.collectionTimeSlotId == collectionTimeSlotId);
+
+            $scope.isActive = $scope.timeSlotData.find(d => d.collectionTimeSlotId == collectionTimeSlotId).isActive;
+            if ($scope.isActive == true) {
+                $scope.isActive = '1';
+            }
+            else {
+                $scope.isActive = '0';
+            }
+        }
+
+        $scope.updateTimeSlot = (startTime, endTime, collectionTimeSlotId,cutOffTime, ordering, orderLimit, isActive) => {
+
+            var requestBodyModel = {
+                "StartTime": startTime,
+                "EndTime": endTime,
+                "CollectionTimeSlotId": collectionTimeSlotId,
+                "CutOffTime": cutOffTime,
+                "Ordering": +ordering,
+                "OrderLimit": +orderLimit,
+                "IsActive": +isActive
+            };
+
+            $http.put(apiBaseURL + 'Update/UpdateTimeSlot', requestBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    alert("Data Updated Succeefully...!!!")
+                    $scope.getCollectionTimeSlot();
+                }, function error(response) {
+                    console.log(response.data.model);
+            });
+        }
+
+        $scope.isActives = [
+            {
+                'id': '1',
+                'name': 'True'
+            },
+            {
+                'id': '0',
+                'name': 'False'
+            }
+        ]
+
+    });
+</script>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-9">
+        <h2 id="title"></h2>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+</div>
+
+<div class="row" ng-app="timeSlotModule" style="display:flex;margin-top:10px;">
+    <div class="col-lg-12" ng-controller="timeSlotController" data-ng-init="init()">
+
+        @*Modal Start*@
+        <div class="modal inmodal fade" id="updateDataModal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" ng-repeat="d in getData">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h5 class="modal-title" id="updateDataModalHeader">Update Slotting Time</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Start Time</label>
+                            <div class="col-lg-4">
+                                <input type="time" ng-model="d.startTime" class="form-control" placeholder="Ex: 9:00" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">End Time</label>
+                            <div class="col-lg-4">
+                                <input type="time" ng-model="d.endTime" class="form-control" placeholder="Ex: 3:00" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">CutOff Time</label>
+                            <div class="col-lg-4">
+                                <input type="time" ng-model="d.cutOffTime" class="form-control" placeholder="Ex: 2:00" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Priority</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="d.ordering" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Order Limit</label>
+                            <div class="col-lg-4">
+                                <input type="text" ng-model="d.orderLimit" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-4 col-form-label">Is Active</label>
+                            <div class="col-lg-4">
+                                <select class="form-control" ng-model="isActive" ng-options="d.id as d.name for d in isActives"></select>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="updateTimeSlot(d.startTime,d.endTime,d.collectionTimeSlotId,d.cutOffTime,d.ordering,d.orderLimit,isActive)" data-dismiss="modal">Update</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*Modal End*@
+        <div class="row" style="margin-top:20px;">
+            @*<%--TimeSlot Entry--%>*@
+            <div class="col-lg-6">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <h5>TimeSlot Entry <small>Input TimeSlot in Panel</small></h5>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-12">
+
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="StartTimeLbl">Start Time</label>
+                                    <div class="col-lg-6">
+                                        <input type="time" ng-model="startTime" class="form-control" placeholder="Ex: 9:00" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="EndTimeLbl">End Time</label>
+                                    <div class="col-lg-6">
+                                        <input type="time" ng-model="endTime" class="form-control" placeholder="Ex: 3:00" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="CutOffTimeLbl">Cut-Off Time</label>
+                                    <div class="col-lg-6">
+                                        <input type="time" ng-model="cutOffTime" class="form-control" placeholder="Ex: 2:00" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="PriorityLbl">Priority</label>
+                                    <div class="col-lg-6">
+                                        <input type="text" ng-model="priority" class="form-control" placeholder="Ex: 1" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="OrderLimitLbl">Order Limit</label>
+                                    <div class="col-lg-6">
+                                        <input type="text" ng-model="orderLimit" class="form-control" placeholder="Ex: 100" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="IsActivelbl">IsActive</label>
+                                    <div class="col-lg-6">
+                                        <select ng-model="isActive" class="form-control">
+                                            <option value="true">True</option>
+                                            <option value="false">False</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" style="justify-content: center">
+                                    <div>
+                                        <button type="button" class="btn btn-success" ng-click="timeSlotEntry(startTime, endTime, cutOffTime, priority, orderLimit, isActive)"><strong>Add TimeSlot</strong></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox ">
+                    <div class="ibox-title">
+                        <h5>TimeSlot List <small>Load All TimeSlots</small></h5>
+                        <button class="btn btn-info offset-1" type="button" ng-click="getCollectionTimeSlot()">Show Details</button>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content" style="padding:5px;" ng-show="showDataTable">
+                        <div class="col-lg-12" style="padding:0px;">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        @*<th>Id</th>*@
+                                        <th>Start-Time</th>
+                                        <th>End-Time</th>
+                                        <th>Cut-Off Time</th>
+                                        <th>Priority</th>
+                                        <th>Order Limit</th>
+                                        <th>IsActive</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    <tr ng-repeat="t in timeSlotData">
+
+                                        <td>{{$index+1}}</td>
+                                        @*<td>{{t.collectionTimeSlotId}}</td>*@
+                                        <td>{{t.formattingStartTime}}</td>
+                                        <td>{{t.formattingEndTime}}</td>
+                                        <td>{{t.formattingCutOffTime}}</td>
+                                        <td>{{t.ordering}}</td>
+                                        <td>{{t.orderLimit}}</td>
+                                        <td>
+                                            <span ng-if="t.isActive == true">True</span>
+                                            <span ng-if="t.isActive != true">False</span>
+                                        </td>
+                                        <td>
+                                            <button type="submit" class="btn btn-info" style="margin-bottom:7px;margin-top:7px;cursor:pointer;" ng-click="getModalData(t.collectionTimeSlotId)" data-toggle="modal" data-target="#updateDataModal">
+                                                <strong>
+                                                    <i class='fa fa-pencil'></i>
+                                                </strong>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        
+
+        

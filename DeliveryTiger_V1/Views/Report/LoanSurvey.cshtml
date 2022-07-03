@@ -1,0 +1,3130 @@
+﻿
+@{
+    ViewBag.Title = "Loan Survey Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+@*HighCharts cdn link*@
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="https://code.highcharts.com/modules/drilldown.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .greenBackground {
+        background-color: limegreen;
+        color: white;
+    }
+
+    .redBackground {
+        background-color: red;
+        color: white;
+    }
+
+    .modal {
+        overflow-y: auto;
+    }
+
+    .tableLoan {
+        position: relative;
+        overflow: auto;
+        height: 500px;
+    }
+
+    .tableLoan thead th {
+        position: sticky;
+        top: 0;
+    }
+
+    fieldset {
+        border-width: 2px !important;
+        border-style: groove !important;
+        border-color: threedface !important;
+        border-image: initial !important;
+    }
+    .Loan-modal-body {
+        margin: 0;
+        padding: 0;
+        background-color: #FAFAFA;
+        font: 12pt "Tahoma";
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+    }
+
+    .page {
+        width: 21cm;
+        min-height: 29.7cm;
+        padding: 0.5cm;
+        margin: 1cm auto;
+        border: 1px #D3D3D3 solid;
+        border-radius: 5px;
+        background: white;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile {
+        margin-top: -10%;
+    }
+
+    .second-section {
+        margin-top: -5%;
+    }
+
+    .subpage {
+        padding: 1cm;
+        border: 5px red solid;
+        height: 256mm;
+        outline: 2cm #FFEAEA solid;
+    }
+
+    .Loan-modal-body table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .Loan-modal-body td, .Loan-modal-body th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        font-size: 8px;
+        padding: 8px;
+    }
+
+    .col-7 {
+        margin-top: -10%;
+    }
+
+    /*tr:nth-child(even) {
+    background-color: #dddddd;
+    }*/
+
+    /* For desktop: */
+    .col-1 {
+        width: 8.33%;
+    }
+
+    .col-2 {
+        width: 16.66%;
+    }
+
+    .col-3 {
+        width: 25%;
+    }
+
+    .col-4 {
+        width: 33.33%;
+    }
+
+    .col-5 {
+        width: 41.66%;
+    }
+
+    .col-6 {
+        width: 50%;
+    }
+
+    .col-7 {
+        width: 58.33%;
+    }
+
+    .col-8 {
+        width: 66.66%;
+    }
+
+    .col-9 {
+        width: 75%;
+    }
+
+    .col-10 {
+        width: 83.33%;
+    }
+
+    .col-11 {
+        width: 91.66%;
+    }
+
+    .col-12 {
+        width: 100%;
+    }
+
+
+    .Loan-modal-body .row::after {
+        content: "";
+        clear: both;
+        display: block;
+    }
+
+    [class*="col-"] {
+        float: left;
+        padding: 15px;
+    }
+
+    @@page {
+        size: A4;
+        margin: 0;
+    }
+
+    @@media print {
+        .page {
+            margin: 0;
+            border: initial;
+            border-radius: initial;
+            width: initial;
+            min-height: initial;
+            box-shadow: initial;
+            background: initial;
+            page-break-after: always;
+        }
+    }
+</style>
+
+<div ng-app="LoanSurveyReportModule">
+    <div ng-controller="LoanSurveyReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">Loan Survey Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="margin-right: 2px;" type="text" class="form-control-sm form-control" placeholder="Search" ng-model="mainSearch" />
+                                <div class="input-group input-daterange">
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="fromDate" name="fromDate" id="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 10px;" ng-model="toDate" name="toDate" id="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                    <label style="margin-right: 5px; font-weight: bold;">Last Months</label>
+                                    <select class="form-control" ng-model="lastDymanicMonth">
+                                        <option value="1" selected>1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                        <option value="11">11</option>
+                                        <option value="12">12</option>
+                                    </select>
+                                </div>
+                                <button type="button" style="margin-left: 2px;" class="btn btn-w-m btn-success" ng-click="getLoanSurveyData(fromDate,toDate,lastDymanicMonth)">Show</button>
+                                <button type="button" style="margin-left: 2px;" class="btn btn-w-m btn-primary" ng-click="exportToExcelMainDiv($event)">Excel</button>
+                                @*<button type="button" style="margin-left: 2px;" class="btn btn-w-m btn-info" ng-click="createExcelSheet(loanSurveyReport)">Export To Excel</button>*@
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <h4 class="text-info">Search Filter</h4>
+                            <div class="form-inline">
+                                <label style="font-weight: bold; margin-right: 5px;">Trade License:</label>
+                                <select class="form-control" ng-model="tradeLicense">
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                    <option value="both">All</option>
+                                </select>
+                                <label style="font-weight: bold; margin-left: 5px;">লোনের পরিমাণ(সর্বনিম্ন):</label>
+                                @*<input style="margin-left: 2px; width: 120px;" type="text" class="form-control-sm form-control" placeholder="লোনের পরিমাণ (সর্বনিম্ন)" ng-model="minInterestedLoanAmount" maxlength="7" />*@
+                                <select style="margin-left: 2px;" class="form-control" ng-model="minInterestedLoanAmount">
+                                    <option value="0">নির্বাচন করুন</option>
+                                    <option value="50000">50,000</option>
+                                    <option value="75000">75,000</option>
+                                    <option value="100000">1,00,000</option>
+                                    <option value="150000">1,50,000</option>
+                                    <option value="200000">2,00,000</option>
+                                    <option value="250000">2,50,000</option>
+                                    <option value="300000">3,00,000</option>
+                                    <option value="400000">4,00,000</option>
+                                    <option value="500000">5,00,000</option>
+                                    <option value="600000">6,00,000</option>
+                                    <option value="700000">7,00,000</option>
+                                    <option value="800000">8,00,000</option>
+                                    <option value="900000">9,00,000</option>
+                                    <option value="1000000">10,00,000</option>
+                                </select>
+                                <label style="font-weight: bold; margin-left: 5px;">লোনের পরিমাণ(সর্বোচ্চ):</label>
+                                @*<input style="margin-left: 2px; width: 120px;" type="text" class="form-control-sm form-control" placeholder="লোনের পরিমাণ (সর্বোচ্চ)" ng-model="maxInterestedLoanAmount" maxlength="7" />*@
+                                <select style="margin-left: 2px;" class="form-control" ng-model="maxInterestedLoanAmount">
+                                    <option value="0">নির্বাচন করুন</option>
+                                    <option value="50000">50,000</option>
+                                    <option value="75000">75,000</option>
+                                    <option value="100000">1,00,000</option>
+                                    <option value="150000">1,50,000</option>
+                                    <option value="200000">2,00,000</option>
+                                    <option value="250000">2,50,000</option>
+                                    <option value="300000">3,00,000</option>
+                                    <option value="400000">4,00,000</option>
+                                    <option value="500000">5,00,000</option>
+                                    <option value="600000">6,00,000</option>
+                                    <option value="700000">7,00,000</option>
+                                    <option value="800000">8,00,000</option>
+                                    <option value="900000">9,00,000</option>
+                                    <option value="1000000">10,00,000</option>
+                                </select>
+                                <label style="font-weight: bold; margin-left: 5px;">মাসিক অ্যাভারেজ ট্রানসেকশন:</label>
+                                <input style="margin-left: 2px; width: 120px;" type="text" class="form-control-sm form-control" placeholder="মাসিক অ্যাভারেজ ট্রানসেকশন" ng-model="cashToCollectAvg" maxlength="5" />
+                                <label style="font-weight: bold; margin-right: 5px;">Bank Statement:</label>
+                                <select class="form-control" ng-model="bankStatementFilter">
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                    <option value="both">All</option>
+                                </select>
+                                <label style="font-weight: bold; margin-left: 5px;">লোন স্ট্যাটাস:</label>
+                                <select class="form-control" ng-model="loanStatusFilter">
+                                    <option value="00000" selected>নির্বাচন করুন</option>
+                                    <option value="00001">Primarily Selected</option>
+                                    <option value="00002">Approved</option>
+                                    <option value="00003">Waiting for Disbursement</option>
+                                    <option value="00004">Rejected</option>
+                                    <option value="00005">Successful</option>
+                                    <option value="00006">Failed</option>
+                                    <option value="00007">Open</option>
+                                    <option value="00008">Close</option>
+                                </select>
+                            </div>
+                            <button type="button" style="margin-left: 5px;" class="btn btn-w-m btn-success mt-3" ng-click="filterLoanSurveyData(tradeLicense,minInterestedLoanAmount,maxInterestedLoanAmount,cashToCollectAvg,bankStatementFilter,loanStatusFilter)">Filter</button>
+                        </div>
+                    </div>
+                    <div class="ibox-content" ng-init="getData()">
+                        <div class="row">
+                            <div id="loanSurveyReport" class="col-lg-12">
+                                <div class="form-group">
+                                    <span style="font-weight: bold;">Showing data from {{fromdate}} to {{todate}}</span>
+                                </div>
+                                <span><b>Total Merchants: {{loanSurveyDataFinal.length}}</b></span>
+
+                                <div id="loanMainDiv">
+                                    <table id="tableLoan" class="table table-bordered table-responsive tableLoan" ng-show="showTableLoan">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    <input type="checkbox" id="checkAll" ng-change="CheckUncheckAll()" ng-model="IsAllChecked">
+                                                </th>
+                                                <th style="text-align: center;">#</th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='merchantName'; reverseSort = !reverseSort">
+                                                        প্রতিষ্ঠানের নাম <br />
+                                                        (লোন আবেদনের আইডি)
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='collectionAmountAvg'; reverseSort = !reverseSort">
+                                                        মাসিক অ্যাভারেজ ট্রানসেকশন
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='hasTradeLicense'; reverseSort = !reverseSort">
+                                                        প্রতিষ্ঠানের ট্রেড লাইসেন্স <br />
+                                                        নম্বর <br />
+                                                        (মেয়াদ শেষ হওয়ার তারিখ)
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='tradeLicenseImageUrl'; reverseSort = !reverseSort">
+                                                        প্রতিষ্ঠানের ট্রেড <br />
+                                                        লাইসেন্সের ছবি
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='businessStartDate'; reverseSort = !reverseSort">
+                                                        ব্যবসা শুরুর <br />
+                                                        তারিখ
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='hasTin'; reverseSort = !reverseSort">
+                                                        টিন নাম্বার
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='tinImageUrl'; reverseSort = !reverseSort">
+                                                        টিন সার্টিফিকেট <br />
+                                                        এর ছবি
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='bankStatementUrl'; reverseSort = !reverseSort">
+                                                        প্রতিষ্ঠানের ব্যাংক <br />
+                                                        স্টেটমেন্টের ছবি
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='eduLevel'; reverseSort = !reverseSort">
+                                                        শিক্ষাগত যোগ্যতা
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='gender'; reverseSort = !reverseSort">
+                                                        লিঙ্গ
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='dateOfBirth'; reverseSort = !reverseSort">
+                                                        জন্ম তারিখ
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='age'; reverseSort = !reverseSort">
+                                                        বয়স
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='nidNo'; reverseSort = !reverseSort">
+                                                        এনআইডি
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='nidImageUrl'; reverseSort = !reverseSort">
+                                                        এনআইডি এর ছবি
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='married'; reverseSort = !reverseSort">
+                                                        বৈবাহিক অবস্থা
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='famMem'; reverseSort = !reverseSort">
+                                                        পরিবারের সদস্য সংখ্যা
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='applicationDate'; reverseSort = !reverseSort">
+                                                        লোনের আবেদনের <br />
+                                                        তারিখ
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='interestedAmount'; reverseSort = !reverseSort">
+                                                        কত টাকা <br />
+                                                        লোন নিতে <br />
+                                                        ইচ্ছুক
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='interestedAmount'; reverseSort = !reverseSort">
+                                                        কত মাসের জন্য <br />
+                                                        লোন নিতে <br />
+                                                        ইচ্ছুক
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='loanEmi'; reverseSort = !reverseSort">
+                                                        কিস্তি
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='monthlyOrder'; reverseSort = !reverseSort">
+                                                        গড় অর্ডার
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='transactionAmount'; reverseSort = !reverseSort">
+                                                        অনলাইন বা <br />
+                                                        ফেসবুকের <br />
+                                                        মাধ্যমে প্রতি <br />
+                                                        মাসে বিক্রির <br />
+                                                        পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='isLocalShop'; reverseSort = !reverseSort">
+                                                        ফিজিক্যাল দোকান<br />
+                                                        (প্রতি মাসে <br />
+                                                        অ্যাভারেজ বিক্রি)
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='monthlyTotalCodAmount'; reverseSort = !reverseSort">
+                                                        মাসিক <br />
+                                                        সর্বমোট COD <br />
+                                                        (ডেলিভারি <br />
+                                                        টাইগারসহ <br />
+                                                        অন্য কুরিয়ার)
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='annualTotalIncome'; reverseSort = !reverseSort">
+                                                        বার্ষিক মোট <br />
+                                                        আয়
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='othersIncome'; reverseSort = !reverseSort">
+                                                        অন্যান্য আয়
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='monthlyExp'; reverseSort = !reverseSort">
+                                                        মাসিক খরচ <br />
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='basketValue'; reverseSort = !reverseSort">
+                                                        গড় বাস্কেট
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='isBankAccount'; reverseSort = !reverseSort">
+                                                        ব্যাংক একাউন্ট <br />
+                                                        (ব্যাংকের নাম)<br />
+                                                        (একাউন্ট নাম্বার)
+                                                    </a>
+                                                </th>
+
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='hasCreditCard'; reverseSort = !reverseSort">
+                                                        ক্রেডিট কার্ড
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='cardHolder'; reverseSort = !reverseSort">
+                                                        কার্ড হোল্ডার(ব্যাংক)
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='cardLimit'; reverseSort = !reverseSort">
+                                                        কার্ড লিমিট
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='guarantorName'; reverseSort = !reverseSort">
+                                                        গ্যারেন্টর <br />
+                                                        এর নাম <br />
+                                                        (ফোন নাম্বার)
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='loanAmount'; reverseSort = !reverseSort">
+                                                        লোনের পরিমাণ <br />
+                                                        (অন্য লোনের ক্ষেত্রে)
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='bankName'; reverseSort = !reverseSort">
+                                                        ব্যাংকের নামে <br />
+                                                        (অন্য লোনের ক্ষেত্রে)
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='repayType'; reverseSort = !reverseSort">
+                                                        লোন পরিশোধের <br />
+                                                        ধরন
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='relationMarchent'; reverseSort = !reverseSort">
+                                                        মার্চেন্টের সাথে <br />
+                                                        কত বছরের পরিচয়
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='shopOwnership'; reverseSort = !reverseSort">
+                                                        দোকানের মালিকানা
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='couriersWithLoanSurvey'; reverseSort = !reverseSort">
+                                                        ডেলিভারি <br />
+                                                        টাইগার ব্যতীত <br />
+                                                        ব্যবহৃত অন্য <br />
+                                                        সার্ভিস
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center; min-width: 150px;">
+                                                    <a href="" ng-click="orderByField='presentAddHouseNo'; reverseSort = !reverseSort">
+                                                        <span>(বর্তমান ঠিকানা এর তথ্য)</span> <br />
+                                                        <span>হাউজ নাম্বার</span> <br />
+                                                        রোড নাম্বার <br />
+                                                        রোড এর নাম <br />
+                                                        পোস্ট অফিস <br />
+                                                        জেলা<br />
+                                                        থানা<br />
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center; min-width: 150px;">
+                                                    <a href="" ng-click="orderByField='permanentAddHouseNo'; reverseSort = !reverseSort">
+                                                        (স্থায়ী ঠিকানা এর তথ্য) <br />
+                                                        হাউজ নাম্বার <br />
+                                                        রোড নাম্বার <br />
+                                                        রোড এর নাম <br />
+                                                        পোস্ট অফিস <br />
+                                                        জেলা<br />
+                                                        থানা<br />
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;" min-width: 160px;>
+                                                    <a href="" ng-click="orderByField='houseOwner'; reverseSort = !reverseSort">
+                                                        (বাড়ির মালিকানা) <br />
+                                                        বাড়ির নাম <br />
+                                                        কত দিন ধরে বসবাস করছেন <br />
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='recommend'; reverseSort = !reverseSort">
+                                                        সুপারিশ
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='status'; reverseSort = !reverseSort">
+                                                        লোন স্ট্যাটাস
+                                                    </a>
+                                                </th>
+                                                <th style="text-align: center;">
+                                                    <a href="" ng-click="orderByField='comments'; reverseSort = !reverseSort">
+                                                        মন্তব্য
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in loanSurveyDataFinal | orderBy:orderByField:reverseSort | filter:mainSearch"
+                                                ng-class="{'redBackground': (d.statusCode == '00004' || d.statusCode == '00006'), 'greenBackground': (d.statusCode == '00001' || d.statusCode == '00002' || d.statusCode == '00003' || d.statusCode == '00005')}">
+                                                <td>
+                                                    <input type="checkbox" class="mainDivCheckBox" id="checkLoanSurvey" name="checkLoanSurvey" ng-model="d.Selected" ng-change="CheckUncheckHeader()">
+                                                </td>
+                                                <td style="text-align: center;">{{$index+1}}</td>
+                                                @*<td>{{d.merchantName}}</td>*@
+                                                <td class="merchantName" style="text-align:center;">
+                                                    <span style="cursor: pointer; color: darkorange;" data-toggle="modal" data-target="#merchantInformationModal" ng-click="merchantInfo(d.courierUserId)">
+                                                        {{d.merchantName}} ({{d.loanSurveyId}})
+                                                        <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>
+                                                    </span> <br />
+                                                    <span style="cursor: pointer; color: darkviolet;" ng-click="getMerchantBusinessInformation(d.courierUserId)" data-toggle="modal" data-target="#merchantBusinessInformationModal">
+                                                        (business data)
+                                                        <i class="fa fa-hand-o-left" style="color: cornflowerblue" aria-hidden="true"></i>
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="test collectionAmountAvg" ng-if="d.collectionAmountAvg == 0">NA</span>
+                                                    <span class="test collectionAmountAvg" ng-if="d.collectionAmountAvg != 0" data-toggle="modal" data-target="#monthWiseCashToCollectModal" style="cursor:pointer; color:#0482f3;" ng-click="getMonthWiseCollectionAmount(d.courierUserId)">
+                                                        {{d.collectionAmountAvg | number:'0'}}
+                                                        <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="tradeLicense" ng-if="d.hasTradeLicense==true">
+                                                        {{d.tradeLicenseNo}}
+                                                        <span ng-if="d.tradeLicenseExpireDate!='1900-01-01T00:00:00'">
+                                                            ({{d.tradeLicenseExpireDate | date: 'medium'}})
+                                                        </span>
+                                                        <span ng-if="d.tradeLicenseExpireDate=='1900-01-01T00:00:00'">
+                                                            N/A
+                                                        </span>
+                                                    </span>
+                                                    <span class="tradeLicense" ng-if="d.hasTradeLicense==false">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="tradeLicenseImg" ng-if="d.tradeLicenseImageUrl!=''" style="cursor: pointer;" ng-click="setImageUrl(d.tradeLicenseImageUrl)">
+                                                        <img data-toggle="modal" data-target="#modalShowTradeLicence" src="{{d.tradeLicenseImageUrl}}" width="100" height="100" />
+                                                    </span>
+                                                    <span class="tradeLicenseImg" ng-if="d.tradeLicenseImageUrl==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="businessStartDate" ng-if="d.businessStartDate!=null">
+                                                        <span ng-if="d.businessStartDate!='1900-01-01T00:00:00'">
+                                                            ({{d.businessStartDate | date: 'medium'}})
+                                                        </span>
+                                                        <span ng-if="d.businessStartDate=='1900-01-01T00:00:00'">
+                                                            N/A
+                                                        </span>
+                                                    </span>
+                                                    <span class="businessStartDate" ng-if="d.businessStartDate==null">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="tinNumber" ng-if="d.hasTin==true">
+                                                        {{d.tinNumber}}
+                                                    </span>
+                                                    <span class="tinNumber" ng-if="d.hasTin==false">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="tinImage" ng-if="d.tinImageUrl!=''" style="cursor: pointer;" ng-click="setImageUrl(d.tinImageUrl)">
+                                                        <img data-toggle="modal" data-target="#modalShowTradeLicence" src="{{d.tinImageUrl}}" width="100" height="100" />
+                                                    </span>
+                                                    <span class="tinImage" ng-if="d.tinImageUrl==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="bankStatementImg" ng-if="d.bankStatementUrl!=''" style="cursor: pointer;" ng-click="setImageUrl(d.bankStatementUrl)">
+                                                        <img data-toggle="modal" data-target="#modalShowTradeLicence" src="{{d.bankStatementUrl}}" width="100" height="100" />
+                                                    </span>
+                                                    <span class="bankStatementImg" ng-if="d.bankStatementUrl==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="eduLevel" ng-if="d.eduLevel!=''">
+                                                        {{d.eduLevel}}
+                                                    </span>
+                                                    <span class="eduLevel" ng-if="d.eduLevel==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="gender" ng-if="d.gender!=null">
+                                                        {{d.gender}}
+                                                    </span>
+                                                    <span class="gender" ng-if="d.gender==null">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="dateOfBirth" ng-if="d.dateOfBirth != '' && d.dateOfBirth != '1900-01-01T00:00:00'">
+                                                        {{d.dateOfBirth | date: 'medium'}}
+                                                    </span>
+                                                    <span class="dateOfBirth" ng-if="d.dateOfBirth == '1900-01-01T00:00:00'">
+                                                        N/A
+                                                    </span>
+                                                    <span class="dateOfBirth" ng-if="d.dateOfBirth==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="age" ng-if="d.age!=''">
+                                                        {{d.age}}
+                                                    </span>
+                                                    <span class="age" ng-if="d.age==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="nidNo" ng-if="d.nidNo!=''">
+                                                        {{d.nidNo}}
+                                                    </span>
+                                                    <span class="nidNo" ng-if="d.nidNo==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="nidImage" ng-if="d.nidImageUrl!=''" style="cursor: pointer;" ng-click="setImageUrl(d.nidImageUrl)">
+                                                        <img data-toggle="modal" data-target="#modalShowTradeLicence" src="{{d.nidImageUrl}}" width="100" height="100" />
+                                                    </span>
+                                                    <span class="nidImage" ng-if="d.nidImageUrl==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="married" ng-if="d.married!=''">
+                                                        {{d.married}}
+                                                    </span>
+                                                    <span class="married" ng-if="d.married==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="famMem" ng-if="d.famMem!=''">
+                                                        {{d.famMem}}
+                                                    </span>
+                                                    <span class="famMem" ng-if="d.famMem==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td class="applicationDate" style="text-align: center;">
+                                                    {{d.applicationDate | date: 'medium'}}
+                                                </td>
+                                                <td class="interestedAmount" style="text-align: center;">
+                                                    {{d.interestedAmount | number:'0'}}
+                                                </td>
+                                                <td class="reqTenorMonth" style="text-align: center;">
+                                                    {{d.reqTenorMonth | number:'0'}}
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="loanEmi" ng-if="d.loanEmi!=''">
+                                                        {{d.loanEmi}}
+                                                    </span>
+                                                    <span class="loanEmi" ng-if="d.loanEmi==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="monthlyOrder" ng-if="d.monthlyOrder!=''">
+                                                        {{d.monthlyOrder}}
+                                                    </span>
+                                                    <span class="monthlyOrder" ng-if="d.monthlyOrder==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+
+                                                <td class="transactionAmount" style="text-align: center;">
+                                                    {{d.transactionAmount | number:'0'}}
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="monthlyTotalAverageSale" ng-if="d.isLocalShop==true">
+                                                        Yes ({{d.monthlyTotalAverageSale | number:'0'}})
+                                                    </span>
+                                                    <span class="monthlyTotalAverageSale" ng-if="d.isLocalShop==false">
+                                                        No ({{d.monthlyTotalAverageSale | number:'0'}})
+                                                    </span>
+                                                </td>
+                                                <td class="monthlyTotalCodAmount" style="text-align: center;">
+                                                    {{d.monthlyTotalCodAmount | number:'0'}}
+                                                </td>
+                                                <td class="annualTotalIncome" style="text-align: center;">
+                                                    {{d.annualTotalIncome | number:'0'}}
+                                                </td>
+                                                <td class="othersIncome" style="text-align: center;">
+                                                    {{d.othersIncome | number:'0'}}
+                                                </td>
+                                                <td class="monthlyExp" style="text-align: center;">
+                                                    {{d.monthlyExp}}
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="basketValue" ng-if="d.basketValue!=''">
+                                                        {{d.basketValue}}
+                                                    </span>
+                                                    <span class="basketValue" ng-if="d.basketValue==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="companyBankAccName" ng-if="d.isBankAccount==true">
+                                                        {{d.companyBankAccName}} ({{d.companyBankAccNo}})
+                                                    </span>
+                                                    <span class="companyBankAccName" ng-if="d.isBankAccount==false">
+                                                        No
+                                                    </span>
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                    <span class="hasCreditCard" ng-if="d.hasCreditCard==true">
+                                                        Yes
+                                                    </span>
+                                                    <span class="hasCreditCard" ng-if="d.hasCreditCard==false">
+                                                        No
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="cardHolder" ng-if="d.cardHolder!=''">
+                                                        {{d.cardHolder}}
+                                                    </span>
+                                                    <span class="cardHolder" ng-if="d.cardHolder==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="cardLimit" ng-if="d.cardLimit!=''">
+                                                        {{d.cardLimit}}
+                                                    </span>
+                                                    <span class="cardLimit" ng-if="d.cardLimit==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="guarantor" ng-if="d.guarantorName!=''">
+                                                        {{d.guarantorName}} ({{d.guarantorMobile}})
+                                                    </span>
+                                                    <span class="guarantor" ng-if="d.guarantorName==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td class="loanAmount" style="text-align: center;">
+                                                    {{d.loanAmount | number:'0'}}
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="bankName" ng-if="d.bankName!=''">
+                                                        {{d.bankName}}
+                                                    </span>
+                                                    <span class="bankName" ng-if="d.bankName==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="repayType" ng-if="d.repayType!=''">
+                                                        {{d.repayType}}
+                                                    </span>
+                                                    <span class="repayType" ng-if="d.repayType==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="relationMarchent" ng-if="d.relationMarchent!=''">
+                                                        {{d.relationMarchent}}
+                                                    </span>
+                                                    <span class="relationMarchent" ng-if="d.relationMarchent==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="shopOwnership" ng-if="d.shopOwnership!=''">
+                                                        {{d.shopOwnership}}
+                                                    </span>
+                                                    <span class="shopOwnership" ng-if="d.shopOwnership==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td class="couriersWithLoanSurvey" style="text-align: center;">
+                                                    {{d.couriersWithLoanSurvey}}
+                                                </td>
+                                                <td class="presentAddressInfo" style="text-align: center;">
+                                                    {{d.presentAddHouseNo}}<br />
+                                                    {{d.presentAddRoadNo}}<br />
+                                                    {{d.presentAddRoadName}}<br />
+                                                    {{d.presentAddPostOffice}}<br />
+                                                    @*{{d.}}<br />{{d.}}<br />*@
+                                                </td>
+                                                <td class="permanentAddressInfo" style="text-align: center;">
+                                                    {{d.permanentAddHouseNo}}<br />
+                                                    {{d.permanentAddRoadNo}}<br />
+                                                    {{d.permanentAddRoadName}}<br />
+                                                    {{d.permanentAddPostOffice}}<br />
+                                                    @*{{d.}}<br />{{d.}}<br />*@
+                                                </td>
+                                                <td class="houseOwnerAddressInfo" style="text-align: center;">
+                                                    {{houseOwner}}<br />
+                                                    {{durationOfLiving}}<br />
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="recommend" ng-if="d.recommend!=''">
+                                                        {{d.recommend}}
+                                                    </span>
+                                                    <span class="recommend" ng-if="d.recommend==''">
+                                                        N/A
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <ul ng-repeat="l in d.loanApprovedStatusViewModel">
+                                                        <li>{{l.status}}</li>
+                                                    </ul><br />
+                                                    <span ng-click="getLoanStatusInfo(d.courierUserId)" data-toggle="modal" data-target="#merchantLoanApprovedStatusModal" style="cursor: pointer;">
+                                                        (লোন স্ট্যাটাসের তথ্য
+                                                        <i class="fa fa-hand-o-left" style="color: cornflowerblue" aria-hidden="true"></i>)
+                                                    </span><br />
+                                                    <span ng-click="getLoanDisbursementInfo(d.loanSurveyId)" data-toggle="modal" data-target="#merchantLoanDisbursementInfoModal" style="cursor: pointer;">
+                                                        (লোন ডিসবারসমেন্টের তথ্য
+                                                        <i class="fa fa-hand-o-left" style="color: cornflowerblue" aria-hidden="true"></i>)
+                                                    </span><br />
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="comments" ng-if="d.comments!=''">
+                                                        {{d.comments}}
+                                                    </span>
+                                                    <span class="comments" ng-if="d.comments==''">
+                                                        N/A
+                                                    </span>
+                                                    <span class="mt-2">
+                                                        <a class="btn btn-primary" ng-click="commentMerchant(d.loanSurveyId,d.comments)" data-toggle="modal" data-target="#applicantsCommentUpdateModal">মন্তব্য করুন</a>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div id="exportToExcelMainDiv" style="display: none;"></div> @*ng-show="hideExportTable"*@
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+
+                @*Show Trade License/ Bank Statement Image*@
+                <div id="modalShowTradeLicence" class="modal fade" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                @*<h4 class="modal-title">Trade Licence</h4>*@
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <img src="{{imageUrl}}" width="435" height="500" />
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*End*@
+
+                @*Merchant Informations*@
+                <div id="merchantInformationModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 style="font-weight: bold;">মার্চেন্ট এর তথ্য</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div id="tblMerchantInformation" class="modal-body Loan-modal-body" style="overflow: auto;">
+                                <div class="book" id="reportPage">
+                                    <div class="page">
+
+
+                                        <div class="row info">
+
+                                            <div class="col-12" style="margin-top:-3%;">
+                                                <div class="col-6" style="text-align: left;">
+                                                    <h3>Company:   {{merchantData.companyName}}</h3>
+                                                    <h5><b>Address:</b>   <span style="font-weight:400;">{{merchantData.address}}</span></h5>
+                                                    <h5><b>Category:</b>   <span style="font-weight:400;">{{merchantData.categoryName}}</span></h5>
+                                                    <h5><b>Email:</b>   <span style="font-weight:400;">{{merchantData.emailAddress}}</span></h5>
+                                                    <h5><b>Mobile:</b>   <span style="font-weight:400;">{{merchantData.mobile}}</span></h5>
+                                                </div>
+                                                <div class="col-6" style="text-align: right;">
+                                                    <h4>Loan Request<br>{{merchantModalLoanSurvey.interestedAmount}}</h4>
+                                                </div>
+
+                                                @*<div class="col-12">
+
+                                            <div class="col-6 profile">
+                                                <div class="col-6">
+                                                    <span><h5>Address:   </h5></span><span><p>{{merchantData.address}}</p></span>
+                                                    <span><h5>Category:  </h5></span><span><p>{{merchantData.categoryName}}</p></span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <span><h5>Email:    </h5></span><span><p>{{merchantData.emailAddress}}</p></span>
+                                                    <span><h5>Mobile:   </h5></span><span><p>{{merchantData.mobile}}</p></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-6">
+                                            </div>
+
+                                        </div>*@
+                                            </div>
+                                        </div>
+
+                                        <div class="row second-section">
+                                            <div class="col-4">
+                                                <table class="monthlyAvgTransaction">
+                                                    <tr>
+                                                        <td colspan="2" style="text-align: center; width: 100%; font-size: 16px;">
+                                                            গড় বাস্কেট ভ্যালু (প্রতি মাসে)
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>মাসের নাম/বছর</th>
+                                                        <th>কালেকশন অ্যামাউন্ট</th>
+                                                    </tr>
+                                                    <tr ng-repeat="m in monthlyAvgTransaction" ng-if="$index <= 5">
+                                                        <td>{{m.monthName}}/{{m.year}}</td>
+                                                        <td>{{m.totalCollectionAmount}}</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+
+                                            <div class="col-1">
+
+                                            </div>
+                                            <div class="col-7">
+                                                <figure class="highcharts-figure">
+                                                    <div id="monthlyAvgTransactionBarChart"></div>
+                                                </figure>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-12" style="margin-top:-4%;">
+                                                <table>
+                                                    <tr>
+
+                                                        <td colspan="11" style="text-align: center; width: 100%; font-size: 16px;">
+                                                            কন্ট্যাক্ট পারসনের তথ্য
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>নাম</th>
+                                                        <th>মোবাইল</th>
+                                                        <th>এন আই ডি</th>
+                                                        <th>ঠিকানা</th>
+                                                        <th>ইমেইল</th>
+                                                        <th>জেন্ডার</th>
+                                                        <th>শিক্ষাগত যোগ্যতা</th>
+                                                        <th>জন্ম তারিখ</th>
+                                                        <th>বয়স</th>
+                                                        <th>বৈবাহিক অবস্থা</th>
+                                                        <th>পরিবারের সদস্য সংখ্যা</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>{{merchantData.userName}}</td>
+                                                        <td>{{merchantData.mobile}}</td>
+                                                        <td>
+                                                            <span class="nidNo" ng-if="merchantModalLoanSurvey.nidNo!=''">
+                                                                {{merchantModalLoanSurvey.nidNo}}
+                                                            </span>
+                                                            <span class="nidNo" ng-if="merchantModalLoanSurvey.nidNo==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantData.address!=''">
+                                                                {{merchantData.address}}
+                                                            </span>
+                                                            <span ng-if="merchantData.address==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantData.emailAddress!=''">
+                                                                {{merchantData.emailAddress}}
+                                                            </span>
+                                                            <span ng-if="merchantData.emailAddress==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantData.gender!=''">
+                                                                {{merchantData.gender}}
+                                                            </span>
+                                                            <span ng-if="merchantData.gender==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="eduLevel" ng-if="merchantModalLoanSurvey.eduLevel!=''">
+                                                                {{merchantModalLoanSurvey.eduLevel}}
+                                                            </span>
+                                                            <span class="eduLevel" ng-if="merchantModalLoanSurvey.eduLevel==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            {{merchantModalLoanSurvey.dateOfBirth}}
+                                                            <span class="dateOfBirth" ng-if="merchantModalLoanSurvey.dateOfBirth != '' && merchantModalLoanSurvey.dateOfBirth != '1900-01-01T00:00:00'">
+                                                                {{merchantModalLoanSurvey.dateOfBirth | date: 'medium'}}
+                                                            </span>
+                                                            <span class="dateOfBirth" ng-if="merchantModalLoanSurvey.dateOfBirth == '1900-01-01T00:00:00'">
+                                                                N/A
+                                                            </span>
+                                                            <span class="dateOfBirth" ng-if="merchantModalLoanSurvey.dateOfBirth==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="age" ng-if="merchantModalLoanSurvey.age!=''">
+                                                                {{merchantModalLoanSurvey.age}}
+                                                            </span>
+                                                            <span class="age" ng-if="merchantModalLoanSurvey.age==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="married" ng-if="merchantModalLoanSurvey.married!=''">
+                                                                {{merchantModalLoanSurvey.married}}
+                                                            </span>
+                                                            <span class="married" ng-if="merchantModalLoanSurvey.married==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="famMem" ng-if="merchantModalLoanSurvey.famMem!=''">
+                                                                {{merchantModalLoanSurvey.famMem}}
+                                                            </span>
+                                                            <span class="famMem" ng-if="merchantModalLoanSurvey.famMem==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+
+                                                <table>
+                                                    <tr>
+                                                        <td colspan="14" style="text-align: center; width: 100%; font-size: 16px;">
+                                                            কোম্পানির তথ্য
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>কোম্পানির নাম/</th>
+                                                        <th>ফেসবুক লিঙ্ক/ওয়েব লিঙ্ক</th>
+                                                        <th>ক্যাটাগরি</th>
+                                                        <th>ব্যাংক নাম</th>
+                                                        <th>ব্যাংক অ্যাকাউন্ট নাম্বার</th>
+                                                        <th>TIN নাম্বার</th>
+                                                        <th>জয়েন ডেট</th>
+                                                        <th>মারচেন্ট রিভিউ</th>
+                                                        <th>মারচেন্ট রিকমেন্ডেশন</th>
+                                                        <th>
+                                                            প্রতিষ্ঠানের ট্রেড লাইসেন্স
+                                                            নম্বর
+                                                            (মেয়াদ শেষ হওয়ার তারিখ)
+                                                        </th>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>{{merchantData.companyName}}</td>
+                                                        <td>
+                                                            <span ng-if="merchantData.fburl != ''" ng-click="redirectToSite(merchantData.fburl)">
+                                                                <a>{{merchantData.fburl}}</a>
+                                                            </span><br />
+                                                            <span ng-if="merchantData.webURL != ''" ng-click="redirectToSite(merchantData.webURL)">
+                                                                /<a>{{merchantData.webURL}}</a>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantData.categoryName != '' || merchantData.subCategoryName != ''">
+                                                                {{merchantData.categoryName}}
+                                                                <span ng-if="merchantData.categoryName != ''">
+                                                                    /{{merchantData.subCategoryName}}
+                                                                </span>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.isBankAccount==true">
+                                                                {{merchantModalLoanSurvey.companyBankAccName}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.isBankAccount==false">
+                                                                No
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.isBankAccount==true">
+                                                                {{merchantModalLoanSurvey.companyBankAccNo}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.isBankAccount==false">
+                                                                No
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.hasTin==true">
+                                                                {{merchantModalLoanSurvey.tinNumber}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.hasTin==false">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>{{merchantData.joinDate | date: 'medium'}}</td>
+                                                        <td>
+                                                            <span ng-if="merchantData.merchantReview==0">
+                                                                N\A
+                                                            </span>
+                                                            <span ng-if="merchantData.merchantReview == 1">
+                                                                <span>&#9733;</span>
+                                                            </span>
+                                                            <span ng-if="merchantData.merchantReview == 2">
+                                                                <span>&#9733; &#9733;</span>
+                                                            </span>
+                                                            <span ng-if="merchantData.merchantReview == 3">
+                                                                <span>&#9733; &#9733; &#9733;</span>
+                                                            </span>
+                                                            <span ng-if="merchantData.merchantReview == 4">
+                                                                <span>&#9733; &#9733; &#9733; &#9733;</span>
+                                                            </span>
+                                                            <span ng-if="merchantData.merchantReview == 5">
+                                                                <span>&#9733; &#9733; &#9733; &#9733; &#9733;</span>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantData.recommendation==0">
+                                                                N\A
+                                                            </span>
+                                                            <span ng-if="merchantData.recommendation==1">
+                                                                Silver
+                                                            </span>
+                                                            <span ng-if="merchantData.recommendation==2">
+                                                                Gold
+                                                            </span>
+                                                            <span ng-if="merchantData.recommendation==3">
+                                                                Platinum
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.hasTradeLicense==true">
+                                                                {{merchantModalLoanSurvey.tradeLicenseNo}}
+                                                                <span ng-if="merchantModalLoanSurvey.tradeLicenseExpireDate!='1900-01-01T00:00:00'">
+                                                                    ({{merchantModalLoanSurvey.tradeLicenseExpireDate | date: 'medium'}})
+                                                                </span>
+                                                                <span ng-if="merchantModalLoanSurvey.tradeLicenseExpireDate=='1900-01-01T00:00:00'">
+                                                                    N/A
+                                                                </span>
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.hasTradeLicense==false">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-12" style="margin-top:-4%;">
+
+                                                <table>
+                                                    <tr>
+                                                        <td colspan="10" style="text-align: center; width: 100%; font-size: 16px;">
+                                                            লোনের তথ্য
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>
+                                                            লোনের আবেদনের
+                                                            তারিখ
+                                                        </th>
+                                                        <th>
+                                                            কত টাকা
+                                                            লোন নিতে
+                                                            ইচ্ছুক
+                                                        </th>
+                                                        <th>
+                                                            কত মাসের জন্য
+                                                            লোন নিতে
+                                                            ইচ্ছুক
+                                                        </th>
+                                                        <th>কিস্তি</th>
+                                                        <th>
+                                                            গ্যারেন্টর
+                                                            এর নাম
+                                                            (ফোন নাম্বার)
+                                                        </th>
+                                                        <th>
+                                                            লোনের পরিমাণ
+                                                            (অন্য লোনের ক্ষেত্রে)
+                                                        </th>
+                                                        <th>
+                                                            লোন পরিশোধের
+                                                            ধরন
+                                                        </th>
+                                                        <th>
+                                                            ডেলিভারি
+                                                            টাইগার ব্যতীত
+                                                            ব্যবহৃত অন্য
+                                                            সার্ভিস
+                                                        </th>
+                                                        <th>
+                                                            ব্যাংকের নাম
+                                                            (অন্য লোনের ক্ষেত্রে)
+                                                        </th>
+
+
+                                                    </tr>
+                                                    <tr>
+                                                        <td>{{merchantModalLoanSurvey.applicationDate}}</td>
+                                                        <td>{{merchantModalLoanSurvey.interestedAmount}}</td>
+                                                        <td>{{merchantModalLoanSurvey.reqTenorMonth}}</td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.loanEmi!=''">
+                                                                {{merchantModalLoanSurvey.loanEmi}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.loanEmi==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="guarantor" ng-if="merchantModalLoanSurvey.guarantorName!=''">
+                                                                {{merchantModalLoanSurvey.guarantorName}} ({{merchantModalLoanSurvey.guarantorMobile}})
+                                                            </span>
+                                                            <span class="guarantor" ng-if="merchantModalLoanSurvey.guarantorName==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>{{merchantModalLoanSurvey.loanAmount}}</td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.repayType!=''">
+                                                                {{merchantModalLoanSurvey.repayType}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.repayType==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>{{merchantModalLoanSurvey.couriersWithLoanSurvey}}</td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.bankName!=''">
+                                                                {{merchantModalLoanSurvey.bankName}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.bankName==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+
+                                                    </tr>
+                                                </table>
+
+                                                <table>
+                                                    <tr>
+                                                        <th>গড় অর্ডার</th>
+                                                        <th>
+                                                            বার্ষিক মোট
+                                                            আয়
+                                                        </th>
+                                                        <th>অন্যান্য আয়</th>
+                                                        <th>মাসিক খরচ</th>
+                                                        <th>গড় বাস্কেট</th>
+                                                        <th>ক্রেডিট কার্ড</th>
+                                                        <th>কার্ড হোল্ডার(ব্যাংক)</th>
+                                                        <th>কার্ড লিমিট</th>
+                                                        <th>
+                                                            মার্চেন্টের সাথে
+                                                            কত বছরের পরিচয়
+                                                        </th>
+                                                        <th>সুপারিশ</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            {{merchantModalLoanSurvey.monthlyOrder}}
+                                                            <span ng-if="merchantModalLoanSurvey.monthlyOrder!=''">
+                                                                {{merchantModalLoanSurvey.monthlyOrder}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.monthlyOrder==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>{{merchantModalLoanSurvey.annualTotalIncome}}</td>
+                                                        <td>{{merchantModalLoanSurvey.othersIncome}}</td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.monthlyExp!=''">
+                                                                {{merchantModalLoanSurvey.monthlyExp}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.monthlyExp==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span ng-if="merchantModalLoanSurvey.basketValue!=''">
+                                                                {{merchantModalLoanSurvey.basketValue}}
+                                                            </span>
+                                                            <span ng-if="merchantModalLoanSurvey.basketValue==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="hasCreditCard" ng-if="merchantModalLoanSurvey.hasCreditCard==true">
+                                                                Yes
+                                                            </span>
+                                                            <span class="hasCreditCard" ng-if="merchantModalLoanSurvey.hasCreditCard==false">
+                                                                No
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="cardHolder" ng-if="merchantModalLoanSurvey.cardHolder!=''">
+                                                                {{merchantModalLoanSurvey.cardHolder}}
+                                                            </span>
+                                                            <span class="cardHolder" ng-if="merchantModalLoanSurvey.cardHolder==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="cardLimit" ng-if="merchantModalLoanSurvey.cardLimit!=''">
+                                                                {{merchantModalLoanSurvey.cardLimit}}
+                                                            </span>
+                                                            <span class="cardLimit" ng-if="merchantModalLoanSurvey.cardLimit==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="relationMarchent" ng-if="merchantModalLoanSurvey.relationMarchent!=''">
+                                                                {{merchantModalLoanSurvey.relationMarchent}}
+                                                            </span>
+                                                            <span class="relationMarchent" ng-if="merchantModalLoanSurvey.relationMarchent==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="recommend" ng-if="merchantModalLoanSurvey.recommend!=''">
+                                                                {{merchantModalLoanSurvey.recommend}}
+                                                            </span>
+                                                            <span class="recommend" ng-if="merchantModalLoanSurvey.recommend==''">
+                                                                N/A
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-success" ng-click="PrintDiv(merchantData.userName);">Print</button>
+                                @*<button type="button" class="btn btn-primary" ng-click="createExcelSheet('tblMerchantInformation',$event)">Excel</button>*@
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*End*@
+
+                @*Month Wise Cash To Collect Informations*@
+                <div id="monthWiseCashToCollectModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">মাসিক অ্যাভারেজ ট্রানসেকশনের তথ্য</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div id="monthWiseCashToCollectDetails">
+                                    <table class="table table-bordered" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">SN.</th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='totalCollectionAmount'; reverseSort = !reverseSort">
+                                                        কালেকশনের পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='month'; reverseSort = !reverseSort">
+                                                        মাসের নাম
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='year'; reverseSort = !reverseSort">
+                                                        বছর
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="m in monthWiseCollectionAmountData | orderBy:orderByField:reverseSort">
+                                                <td style="text-align: center">{{$index+1}}</td>
+                                                <td style="text-align: center">{{m.totalCollectionAmount}}</td>
+                                                <td style="text-align: center">{{m.monthName}}</td>
+                                                <td style="text-align: center">{{m.year}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" ng-click="createExcelSheet('monthWiseCashToCollectDetails')">Excel</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*End*@
+
+                @*Update applicant comments*@
+                <div id="applicantsCommentUpdateModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">মার্চেন্ট এর মন্তব্য করুন</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="row">
+                                    <div class="col-lg-6" ng-show="false">
+                                        <div class="form-group">
+                                            <input type="text" ng-model="Id" class="form-control" value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label style="margin-right: 5px; font-weight: bold;">মন্তব্য: </label>
+                                            <input type="text" ng-model="comments" class="form-control" value="" maxlength="100" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-primary" type="button" ng-click="updateApplicantComment(Id,comments)" data-dismiss="modal">আপডেট</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Update applicant comments Modal End*@
+
+                @*Merchant Business Informations*@
+                <div id="merchantBusinessInformationModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">ব্যবসায়িক তথ্য</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div id="merchantBusinessInformation">
+                                    <table class="table table-bordered" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" style="min-width: 160px;">
+                                                    <a href="">
+                                                        (সর্বোচ্চ পণ্য বিক্রির মাসের সংখ্যা)<br />
+                                                        (সর্বোচ্চ পণ্য বিক্রির পরিমাণ (টাকায়))
+                                                    </a>
+                                                </th>
+                                                <th class="text-center" style="min-width: 160px;">
+                                                    <a href="">
+                                                        (সুষম বা মধ্যম পণ্য বিক্রির মাসের সংখ্যা)<br />
+                                                        (সুষম বা মধ্যম পণ্য বিক্রির পরিমাণ (টাকায়))
+                                                    </a>
+                                                </th>
+                                                <th class="text-center" style="min-width: 160px;">
+                                                    <a href="">
+                                                        (সর্বনিম্ন পণ্য বিক্রির মাসের সংখ্যা)<br />
+                                                        (সর্বনিম্ন পণ্য বিক্রির পরিমাণ (টাকায়))
+                                                    </a>
+                                                </th>
+                                                <th class="text-center" style="min-width: 160px;">
+                                                    <a href="">
+                                                        (সর্বোচ্চ পণ্য ক্রয়ের মাসের সংখ্যা)<br />
+                                                        (সর্বোচ্চ পণ্য ক্রয়ের পরিমাণ (টাকায়))
+                                                    </a>
+                                                </th>
+                                                <th class="text-center" style="min-width: 160px;">
+                                                    <a href="">
+                                                        (সুষম বা মধ্যম পণ্য ক্রয়ের মাসের সংখ্যা)<br />
+                                                        (সুষম বা মধ্যম পণ্য ক্রয়ের পরিমাণ (টাকায়))
+                                                    </a>
+                                                </th>
+                                                <th class="text-center" style="min-width: 160px;">
+                                                    <a href="">
+                                                        (সর্বনিম্ন পণ্য ক্রয়ের মাসের সংখ্যা)<br />
+                                                        (সর্বনিম্ন পণ্য ক্রয়ের পরিমাণ (টাকায়))
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        ব্যবসায় ভাড়ার পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        কর্মীদের বেতনের পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        পরিবহন খরচের পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        ইউটিলিটি খরচের পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        সংস্করণ খরচের পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        প্যাকেজিং এর খরচের পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        করের পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        অন্যান্য খরচের পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        বকেয়ার পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        পাওনার পরিমাণ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        (একাউন্টের নাম)<br />
+                                                        (একাউন্ট নাম্বার)<br />
+                                                        (একাউন্ট টাইপ)
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        ব্যাংক শর্ট কোড
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        ব্যাংক রাউটিং নাম্বার
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        বিকাশ নাম্বার
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        কী পরিমাণ নগদ অর্থ আছে(টাকায়)
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        ব্যাংকে কী পরিমাণ অর্থ সঞ্চিত আছে(টাকায়)
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="">
+                                                        চেক বই এর ছবি
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td style="text-align: center">
+                                                    {{merchantBusinessData.noOfMaxProductSellingMonth}}<br />
+                                                    {{merchantBusinessData.avgAmountOfMaxSellingMonth}}
+                                                </td>
+                                                <td style="text-align: center">
+                                                    {{merchantBusinessData.noOfRegularProductSellingMonth}}<br />
+                                                    {{merchantBusinessData.avgAmountOfRegularSellingMonth}}
+                                                </td>
+                                                <td style="text-align: center">
+                                                    {{merchantBusinessData.noOfLowestProductSellingMonth}}<br />
+                                                    {{merchantBusinessData.avgAmountOfLowestSellingMonth}}
+                                                </td>
+                                                <td style="text-align: center">
+                                                    {{merchantBusinessData.noOfMaxProductPurchasedMonth}}<br />
+                                                    {{merchantBusinessData.avgAmountOfMaxPurchasedMonth}}
+                                                </td>
+                                                <td style="text-align: center">
+                                                    {{merchantBusinessData.noOfRegularProductPurchasedMonth}}<br />
+                                                    {{merchantBusinessData.avgAmountOfRegularPurchasedMonth}}
+                                                </td>
+                                                <td style="text-align: center">
+                                                    {{merchantBusinessData.noOfLowestProductPurchasedMonth}}<br />
+                                                    {{merchantBusinessData.avgAmountOfLowestPurchasedMonth}}
+                                                </td>
+                                                <td style="text-align: center">{{merchantBusinessData.businessRent}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.salaryOfEmployee}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.transportationCost}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.utilityCost}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.repairCost}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.packagingCost}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.businessTax}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.othersExpense}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.debotrsOwingAmount}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.creditorsOwingAmount}}</td>
+                                                <td style="text-align: center">
+                                                    {{merchantBusinessData.accountName}}<br />
+                                                    {{merchantBusinessData.accountNumber}}<br />
+                                                    {{merchantBusinessData.accountType}}
+                                                </td>
+                                                <td style="text-align: center">{{merchantBusinessData.bankShortCode}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.routingNumber}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.bkashNumber}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.cashInHand}}</td>
+                                                <td style="text-align: center">{{merchantBusinessData.cashAtBank}}</td>
+                                                <td style="text-align: center">
+                                                    <img src="{{merchantBusinessData.checqueBookPhotoUrl}}" width="100" height="100" />
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" ng-click="createExcelSheet('merchantBusinessInformation')">Excel</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*End*@
+
+                @*Merchant Loan Approved Status Informations*@
+                <div id="merchantLoanApprovedStatusModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">লোন স্ট্যাটাসের তথ্য</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div id="merchantLoanApprovedStatusDetails">
+                                    <table class="table table-bordered" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">SN.</th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='statusCode'; reverseSort = !reverseSort">
+                                                        স্ট্যাটাস
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='comment'; reverseSort = !reverseSort">
+                                                        কমেন্ট
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='commentDate'; reverseSort = !reverseSort">
+                                                        কমেন্টের তারিখ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='disbursementDate'; reverseSort = !reverseSort">
+                                                        ডিসবারসমেন্টের তারিখ
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='emiAmount'; reverseSort = !reverseSort">
+                                                        ই-এম-আই এর পরিমাণ
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="m in loanStatusData | orderBy:orderByField:reverseSort">
+                                                <td style="text-align: center">{{$index+1}}</td>
+                                                <td style="text-align: center">{{m.status}}({{m.statusCode}})</td>
+                                                <td style="text-align: center">{{m.comment}}</td>
+                                                <td style="text-align: center">{{m.commentDate | date:'medium'}}</td>
+                                                <td style="text-align: center">{{m.disbursementDate | date:'medium'}}</td>
+                                                <td style="text-align: center">{{m.emiAmount}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" ng-click="createExcelSheet('merchantLoanApprovedStatusDetails')">Excel</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*End*@
+
+                @*Merchant Loan Disbursement Informations*@
+                <div id="merchantLoanDisbursementInfoModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">লোন ডিসবারসমেন্টের তথ্য</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div id="merchantLoanDisbursementInfoDetails">
+                                    <table class="table table-bordered" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">SN.</th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='loanSurveyId'; reverseSort = !reverseSort">
+                                                        Loan Application Id
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='transactionID'; reverseSort = !reverseSort">
+                                                        Transaction Id
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='disbursementAmount'; reverseSort = !reverseSort">
+                                                        Disbursement Amount
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='disbursementDate'; reverseSort = !reverseSort">
+                                                        Disbursement Date
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='emiAmount'; reverseSort = !reverseSort">
+                                                        Emi Amount
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='emiDate'; reverseSort = !reverseSort">
+                                                        Emi Date
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='cumulativeRecovery'; reverseSort = !reverseSort">
+                                                        Cumulative Recovery
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='lastMonthRecoveryAmount'; reverseSort = !reverseSort">
+                                                        Last Month Recovery Amount
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='monthlyMaxEmiDate'; reverseSort = !reverseSort">
+                                                        Monthly Max Emi Date
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='statusCode'; reverseSort = !reverseSort">
+                                                        Status
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='requiredTenorMonth'; reverseSort = !reverseSort">
+                                                        Loan Duration
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td style="text-align: center">{{$index+1}}</td>
+                                                <td style="text-align: center">{{loanDisbursementData.loanSurveyId}}</td>
+                                                <td style="text-align: center; cursor: pointer;" ng-click="getLoanDisbursementHistoryInfo(loanDisbursementData.transactionID)" data-toggle="modal" data-target="#merchantLoanDisbursementHistoryModal">
+                                                    {{loanDisbursementData.transactionID}}
+                                                    <i class="fa fa-hand-o-left" style="color: cornflowerblue" aria-hidden="true"></i>
+                                                </td>
+                                                <td style="text-align: center">{{loanDisbursementData.disbursementAmount}}</td>
+                                                <td style="text-align: center">{{loanDisbursementData.disbursementDate | date:'medium'}}</td>
+                                                <td style="text-align: center">{{loanDisbursementData.emiAmount}}</td>
+                                                <td style="text-align: center">{{loanDisbursementData.emiDate | date:'medium'}}</td>
+                                                <td style="text-align: center">{{loanDisbursementData.cumulativeRecovery}}</td>
+                                                <td style="text-align: center">{{loanDisbursementData.lastMonthRecoveryAmount}}</td>
+                                                <td style="text-align: center">{{loanDisbursementData.monthlyMaxEmiDate | date:'medium'}}</td>
+                                                <td style="text-align: center">{{loanDisbursementData.status}}({{loanDisbursementData.statusCode}})</td>
+                                                <td style="text-align: center">{{loanDisbursementData.requiredTenorMonth}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" ng-click="createExcelSheet('merchantLoanDisbursementInfoDetails')">Excel</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*End*@
+
+                @*Merchant Loan Disbursement History Informations*@
+                <div id="merchantLoanDisbursementHistoryModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">লোন স্ট্যাটাসের তথ্য</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div id="merchantLoanDisbursementHistoryDetails">
+                                    <table class="table table-bordered" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">SN.</th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='refTransactionID'; reverseSort = !reverseSort">
+                                                        Reference Transaction Id
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='paymentDate'; reverseSort = !reverseSort">
+                                                        Payment Date
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='paymentAmount'; reverseSort = !reverseSort">
+                                                        Payment Amount
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='paymentMethod'; reverseSort = !reverseSort">
+                                                        Payment Method
+                                                    </a>
+                                                </th>
+                                                <th class="text-center">
+                                                    <a href="" ng-click="orderByField='paymentTransactionID'; reverseSort = !reverseSort">
+                                                        PaymentTransactionID
+                                                    </a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="m in loanDisbursementHistoryData | orderBy:orderByField:reverseSort">
+                                                <td style="text-align: center">{{$index+1}}</td>
+                                                <td style="text-align: center">{{m.refTransactionID}}</td>
+                                                <td style="text-align: center">{{m.paymentDate | date:'medium'}}</td>
+                                                <td style="text-align: center">{{m.paymentAmount}}</td>
+                                                <td style="text-align: center">{{m.paymentMethod}}</td>
+                                                <td style="text-align: center">{{m.paymentTransactionID}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" ng-click="createExcelSheet('merchantLoanDisbursementHistoryDetails')">Excel</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*End*@
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = angular.module('LoanSurveyReportModule', []);
+    app.controller('LoanSurveyReportController', function ($scope, $http) {
+
+        $scope.tradeLicense = 1;
+        $scope.loanStatusFilter = '00000';
+
+        $scope.loanSurveyDataFinal = [];
+        function loanSurveyDataFunction(fromDate, toDate, lastDymanicMonth) {
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+            $scope.fromdate = fromDate;
+            $scope.todate = toDate;
+
+            let orderBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "LastDymanicMonth": lastDymanicMonth
+            };
+
+            $scope.showLoader = true;
+            $http.post(apiBaseURL + 'Report/GetLoanSurvey', orderBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.showLoader = false;
+                    $scope.showTableLoan = true;
+                    $scope.loanSurveyDatafilter = response.data.model;
+                    $scope.loanSurveyData = response.data.model;
+                    $scope.loanSurveyDataFinal = [];
+                    $scope.loanSurveyData.forEach(function (item) {
+                        var couriers = '';
+                        couriers = item.couriersWithLoanSurveyViewModel
+                            .map(function (elem) {
+                                return elem.courierName;
+                            }).join(",");
+                        //item.couriersWithLoanSurveyViewModel.forEach(function (item1) {
+                        //    couriers += item1.courierName + ',';
+                        //})
+
+                        item["couriersWithLoanSurvey"] = couriers;
+                        $scope.loanSurveyDataFinal.push(item);
+                    });
+
+                    //set data filter section
+                    $scope.tradeLicense = 'yes';
+                    $scope.minInterestedLoanAmount = "0";
+                    $scope.maxInterestedLoanAmount = "0";
+                    $scope.cashToCollectAvg = 0;
+                    $scope.bankStatementFilter = "yes";
+
+                }, function (error) {
+                    $scope.showLoader = false;
+                    console.log(error);
+                })
+        }
+
+        $scope.getData = function () {
+            //set ToDate field date value
+            var d = new Date(),
+                month1 = '' + (d.getMonth() + 1),
+                day1 = '' + d.getDate(),
+                year1 = d.getFullYear();
+
+            if (month1.length < 2)
+                month1 = '0' + month1;
+            if (day1.length < 2)
+                day1 = '0' + day1;
+
+            var date1 = ([year1, month1, day1].join('-'));
+
+            //set FromDate field date value
+            //var beforeSevenDay = new Date(d.setDate(d.getDate() - 7));
+            //month2 = '' + (beforeSevenDay.getMonth() + 1);
+            //day2 = '' + beforeSevenDay.getDate();
+            //year2 = beforeSevenDay.getFullYear();
+
+            //if (month2.length < 2)
+            //    month2 = '0' + month2;
+            //if (day2.length < 2)
+            //    day2 = '0' + day2;
+
+            //var date2 = ([year2, month2, day2].join('-'));
+            var date2 = "2021-09-01";
+
+            $scope.lastDymanicMonth = "3";
+            $scope.fromdate = date2;
+            $scope.todate = date1;
+
+            const fromDateCalendar = flatpickr("#fromDate", {});
+            fromDateCalendar.setDate(date2, true, 'Y/m/d');
+            const toDateCalendar = flatpickr("#toDate", {});
+            toDateCalendar.setDate(date1, true, 'Y/m/d');
+
+            loanSurveyDataFunction(date2, date1, "3");
+        }
+
+        $scope.getLoanSurveyData = function (fromDate, toDate, lastDymanicMonth) {
+            loanSurveyDataFunction(fromDate, toDate, lastDymanicMonth);
+        }
+
+        $scope.setImageUrl = function (imageUrl) {
+            $scope.imageUrl = imageUrl;
+        }
+
+        $scope.getMerchantInformation = function (courierUserId) {
+            $http.get(apiBaseURL + 'Fetch/GetCourierUserInfo/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.merchantData = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.merchantInfo = function (courierUserId) {
+            var monthlyAvgTransaction;
+            $http.get(apiBaseURL + 'Fetch/GetCourierUserInfo/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.merchantData = response.data.model;
+                    $scope.merchantModalLoanSurvey = $scope.loanSurveyDataFinal.filter(x => x.courierUserId == courierUserId)[0];
+
+                    $http.get(apiBaseURL + 'Report/MonthWiseTotalCollectionAmount/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                        .then(function (response) {
+                            //$scope.monthWiseCollectionAmountData = response.data.model;
+                            $scope.monthlyAvgTransaction = response.data.model;
+
+                            var counter = 6;
+                            var monthlyAvgTransactionChartData = [];
+                            if ($scope.monthlyAvgTransaction.length < 6) counter = $scope.monthlyAvgTransaction.length;
+                            for (var i = 0; i < counter; i++) {
+                                var singleObj = {};
+                                singleObj['y'] = $scope.monthlyAvgTransaction[i].totalCollectionAmount;
+                                singleObj['name'] = $scope.monthlyAvgTransaction[i].monthName.toString() + "/" + $scope.monthlyAvgTransaction[i].year.toString();
+                                monthlyAvgTransactionChartData.push(singleObj);
+                                //monthlyAvgTransactionVal.push(monthlyAvgTransaction[i].totalCollectionAmount);
+                                //monthlyAvgTransactionMonthName.push(monthlyAvgTransaction[i].monthName.toString() + "/" + monthlyAvgTransaction[i].year.toString());
+                            }
+
+                            BarChart(monthlyAvgTransactionChartData);
+                        }, function error(response) {
+                            console.log(response.data);
+                        });
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.getMerchantBusinessInformation = function (courierUserId) {
+            $http.get(apiBaseURL + 'Loan/GetBorrowerBusinessData/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.merchantBusinessData = response.data.model;
+                    //console.log($scope.merchantBusinessData);
+                }, function error(response) {
+                    if (response.status == 404) {
+                        $scope.merchantBusinessData = "";
+                    }
+                    else {
+                        console.log(response.data);
+                    }
+                });
+        }
+
+        function BarChart(monthlyAvgTransactionChartData) {
+            // Create the chart
+            Highcharts.chart('monthlyAvgTransactionBarChart', {
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: 'মাসিক অ্যাভারেজ ট্রানসেকশন'
+                },
+                subtitle: {
+                    text: ''
+                },
+                accessibility: {
+                    announceNewData: {
+                        enabled: true
+                    }
+                },
+                xAxis: {
+                    type: 'category'
+                },
+                yAxis: {
+                    title: {
+                        text: 'প্রতি মাসে মোট অ্যাভারেজ ট্রানসেকশনের পরিমাণ'
+                    }
+
+                },
+                legend: {
+                    enabled: false
+                },
+                plotOptions: {
+                    series: {
+                        borderWidth: 0,
+                        dataLabels: {
+                            enabled: true,
+                            format: '{point.y}'
+                        }
+                    }
+                },
+
+                tooltip: {
+                    headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                    pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y}</b> of total<br/>'
+                },
+
+                series: [
+                    {
+                        name: "মাসিক অ্যাভারেজ ট্রানসেকশন",
+                        colorByPoint: false,
+                        color: 'grey',
+                        data: monthlyAvgTransactionChartData
+                    }
+                ]
+            });
+        }
+
+        $scope.getMonthWiseCollectionAmount = function (courierUserId) {
+            $http.get(apiBaseURL + 'Report/MonthWiseTotalCollectionAmount/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.monthWiseCollectionAmountData = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.filterLoanSurveyData = function (tradeLicense, minInterestedLoanAmount, maxInterestedLoanAmount, cashToCollectAvg, bankStatementFilter, loanStatusFilter) {
+            var NumberRegx = /^[0-9]+$/;
+
+            //if (parseInt(minInterestedLoanAmount) != 0 || minInterestedLoanAmount != "0") {
+            //    if (minInterestedLoanAmount == undefined || minInterestedLoanAmount == "") {
+            //        alert("Please give any amount or 0 at Min Interested Loan Amount");
+            //        return false;
+            //    }
+            //}
+            //if (!minInterestedLoanAmount.toString().match(NumberRegx)) {
+            //    alert('Please enter numbers only at Min Interested Loan Amount');
+            //    return false;
+            //}
+            //if (parseInt(maxInterestedLoanAmount) != 0 || maxInterestedLoanAmount != "0") {
+            //    if (maxInterestedLoanAmount == undefined || maxInterestedLoanAmount == "") {
+            //        alert("Please give any amount or 0 at Max Interested Loan Amount");
+            //        return false;
+            //    }
+            //}
+            //if (!maxInterestedLoanAmount.toString().match(NumberRegx)) {
+            //    alert('Please enter numbers only at Max Interested Loan Amount');
+            //    return false;
+            //}
+            if (parseInt(cashToCollectAvg) != 0 || cashToCollectAvg != "0") {
+                if (cashToCollectAvg == undefined || cashToCollectAvg == "") {
+                    alert("মাসিক অ্যাভারেজ ট্রানসেকশন এ শূন্য অথবা কোন পরিমাণ উল্লেখ করুন।");
+                    return false;
+                }
+            }
+            if (!cashToCollectAvg.toString().match(NumberRegx)) {
+                alert('মাসিক অ্যাভারেজ ট্রানসেকশন এ শুধুমাত্র সংখ্যা উল্লেখ করুন।');
+                return false;
+            }
+            if (tradeLicense == "yes") {
+                var data = $scope.loanSurveyData.filter(t => t.hasTradeLicense == true);
+
+                if (parseInt(minInterestedLoanAmount) != 0 && parseInt(maxInterestedLoanAmount) == 0) {
+                    data = data.filter(f => f.interestedAmount >= parseInt(minInterestedLoanAmount));
+                }
+                else if (parseInt(minInterestedLoanAmount) == 0 && parseInt(maxInterestedLoanAmount) != 0) {
+                    data = data.filter(f => f.interestedAmount <= parseInt(maxInterestedLoanAmount));
+                }
+                else if (parseInt(minInterestedLoanAmount) != 0 && parseInt(maxInterestedLoanAmount) != 0) {
+                    data = data.filter(f => f.interestedAmount >= parseInt(minInterestedLoanAmount) && f.interestedAmount <= parseInt(maxInterestedLoanAmount));
+                }
+                if (parseInt(cashToCollectAvg) != 0) {
+                    data = data.filter(f => f.collectionAmountAvg >= parseInt(cashToCollectAvg));
+                }
+
+                if (bankStatementFilter == "yes") {
+                    data = data.filter(t => t.bankStatementUrl != "");
+                }
+                else if (bankStatementFilter == "no") {
+                    data = data.filter(t => t.bankStatementUrl == "");
+                }
+
+                var loanSurveyId = [];
+                if (loanStatusFilter != '0000') {
+                    for (var i = 0; i < data.length; i++){
+                        if (data[i]["loanApprovedStatusViewModel"].length != 0) {
+                            for (var j = 0; j < data[i]["loanApprovedStatusViewModel"].length; j++) {
+                                if (data[i]["loanApprovedStatusViewModel"][j]["statusCode"] == loanStatusFilter) {
+                                    loanSurveyId.push(data[i]["loanSurveyId"]);
+                                }
+                            }
+                        }
+                    }
+                    data = data.filter(x => loanSurveyId.includes(x.loanSurveyId));
+                }
+
+                $scope.loanSurveyDataFinal = data;
+            }
+            else if (tradeLicense == "no") {
+                var data = $scope.loanSurveyData.filter(t => t.hasTradeLicense == false);
+
+                if (parseInt(minInterestedLoanAmount) != 0 && parseInt(maxInterestedLoanAmount) == 0) {
+                    data = data.filter(f => f.interestedAmount >= parseInt(minInterestedLoanAmount));
+                }
+                else if (parseInt(minInterestedLoanAmount) == 0 && parseInt(maxInterestedLoanAmount) != 0) {
+                    data = data.filter(f => f.interestedAmount <= parseInt(maxInterestedLoanAmount));
+                }
+                else if (parseInt(minInterestedLoanAmount) != 0 && parseInt(maxInterestedLoanAmount) != 0) {
+                    data = data.filter(f => f.interestedAmount >= parseInt(minInterestedLoanAmount) && f.interestedAmount <= parseInt(maxInterestedLoanAmount));
+                }
+                if (parseInt(cashToCollectAvg) != 0) {
+                    data = data.filter(f => f.collectionAmountAvg >= parseInt(cashToCollectAvg));
+                }
+
+                if (bankStatementFilter == "yes") {
+                    data = data.filter(t => t.bankStatementUrl != "");
+                }
+                else if (bankStatementFilter == "no") {
+                    data = data.filter(t => t.bankStatementUrl == "");
+                }
+
+                var loanSurveyId = [];
+                if (loanStatusFilter != '0000') {
+                    for (var i = 0; i < data.length; i++) {
+                        if (data[i]["loanApprovedStatusViewModel"].length != 0) {
+                            for (var j = 0; j < data[i]["loanApprovedStatusViewModel"].length; j++) {
+                                if (data[i]["loanApprovedStatusViewModel"][j]["statusCode"] == loanStatusFilter) {
+                                    loanSurveyId.push(data[i]["loanSurveyId"]);
+                                }
+                            }
+                        }
+                    }
+                    data = data.filter(x => loanSurveyId.includes(x.loanSurveyId));
+                }
+
+                $scope.loanSurveyDataFinal = data;
+            }
+            else if (tradeLicense == "both") {
+                var data = $scope.loanSurveyData;
+
+                if (parseInt(minInterestedLoanAmount) != 0 && parseInt(maxInterestedLoanAmount) == 0) {
+                    data = data.filter(f => f.interestedAmount >= parseInt(minInterestedLoanAmount));
+                }
+                else if (parseInt(minInterestedLoanAmount) == 0 && parseInt(maxInterestedLoanAmount) != 0) {
+                    data = data.filter(f => f.interestedAmount <= parseInt(maxInterestedLoanAmount));
+                }
+                else if (parseInt(minInterestedLoanAmount) != 0 && parseInt(maxInterestedLoanAmount) != 0) {
+                    data = data.filter(f => f.interestedAmount >= parseInt(minInterestedLoanAmount) && f.interestedAmount <= parseInt(maxInterestedLoanAmount));
+                }
+                if (parseInt(cashToCollectAvg) != 0) {
+                    data = data.filter(f => f.collectionAmountAvg >= parseInt(cashToCollectAvg));
+                }
+
+                if (bankStatementFilter == "yes") {
+                    data = data.filter(t => t.bankStatementUrl != "");
+                }
+                else if (bankStatementFilter == "no") {
+                    data = data.filter(t => t.bankStatementUrl == "");
+                }
+
+                var loanSurveyId = [];
+                if (loanStatusFilter != '0000') {
+                    for (var i = 0; i < data.length; i++) {
+                        if (data[i]["loanApprovedStatusViewModel"].length != 0) {
+                            for (var j = 0; j < data[i]["loanApprovedStatusViewModel"].length; j++) {
+                                if (data[i]["loanApprovedStatusViewModel"][j]["statusCode"] == loanStatusFilter) {
+                                    loanSurveyId.push(data[i]["loanSurveyId"]);
+                                }
+                            }
+                        }
+                    }
+                    data = data.filter(x => loanSurveyId.includes(x.loanSurveyId));
+                }
+
+                $scope.loanSurveyDataFinal = data;
+            }
+
+        }
+
+        $scope.getLoanStatusInfo = function (courierUserId) {
+            $http.get(apiBaseURL + 'Loan/GetMerchantLoanApprovedStatus/' + courierUserId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.loanStatusData = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.getLoanDisbursementInfo = function (loanSurveyId) {
+            $http.get(apiBaseURL + 'Loan/GetLoanDisbursementsInfo/' + loanSurveyId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.loanDisbursementData = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.getLoanDisbursementHistoryInfo = function (transactionId) {
+            $http.get(apiBaseURL + 'Loan/GetLoanDisbursementsHistoryInfo/' + transactionId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.loanDisbursementHistoryData = response.data.model;
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.PrintDiv = function (username) {
+            var divContents = document.getElementById("tblMerchantInformation").innerHTML;
+            var printWindow = window.open();
+
+            var currentDateTime = new Date().toLocaleDateString() + '_' + new Date().toLocaleTimeString();
+            printWindow.document.write('<html><head><title>' + username + "_" + currentDateTime + `</title><style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    background-color: #FAFAFA;
+                    font: 12pt "Tahoma";
+                }
+                * {
+                    box-sizing: border-box;
+                    -moz-box-sizing: border-box;
+                }
+                .page {
+                    width: 21cm;
+                    min-height: 29.7cm;
+                    padding: 0.5cm;
+                    margin: 1cm auto;
+                    border: 1px #D3D3D3 solid;
+                    border-radius: 5px;
+                    background: white;
+                    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+                }
+                .subpage {
+                    padding: 1cm;
+                    border: 5px red solid;
+                    height: 256mm;
+                    outline: 2cm #FFEAEA solid;
+                }
+                .info{
+                margin-top:-2%;
+                }
+
+                .profile{
+                margin-top:-15%;
+                }
+    .second-section{
+        margin-top: -9%;
+    }
+.monthlyAvgTransaction{
+                margin-top:-25%;
+                }
+
+                .highcharts-figure{
+                    margin-left: -10%;
+margin-top: -5%;
+                    }
+
+                table {
+                font-family: arial, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+                }
+
+                .col-7{
+                margin-top:-17%;}
+
+                td, th {
+                border: 1px solid #dddddd;
+                text-align: left;
+                font-size: 8px;
+                padding: 8px;
+                }
+
+                /*tr:nth-child(even) {
+                background-color: #dddddd;
+                }*/
+
+                /* For desktop: */
+              .col-1 {width: 8.33%;}
+              .col-2 {width: 16.66%;}
+              .col-3 {width: 25%;}
+              .col-4 {width: 33.33%;}
+              .col-5 {width: 41.66%;}
+              .col-6 {width: 50%;}
+              .col-7 {width: 58.33%;}
+              .col-8 {width: 66.66%;}
+              .col-9 {width: 75%;}
+              .col-10 {width: 83.33%;}
+              .col-11 {width: 91.66%;}
+              .col-12 {width: 100%;}
+
+
+              .row::after {
+                content: "";
+                clear: both;
+                display: block;
+              }
+
+              [class*="col-"] {
+                float: left;
+                padding: 15px;
+              }
+
+                @@page {
+                    size: A4;
+                    margin: 0;
+                }
+                @@media print {
+                    .page {
+                        margin: 0;
+                        border: initial;
+                        border-radius: initial;
+                        width: initial;
+                        min-height: initial;
+                        box-shadow: initial;
+                        background: initial;
+                        page-break-after: always;
+                    }
+                }
+            </style></head>`);
+            printWindow.document.write('<body >');
+            printWindow.document.write(divContents);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        $scope.CheckUncheckAll = function () {
+            for (var i = 0; i < $scope.loanSurveyDataFinal.length; i++) {
+                $scope.loanSurveyDataFinal[i].Selected = $scope.IsAllChecked;
+            }
+        };
+
+        $scope.CheckUncheckHeader = function () {
+            $scope.IsAllChecked = true;
+            for (var i = 0; i < $scope.loanSurveyDataFinal.length; i++) {
+                if (!$scope.loanSurveyDataFinal[i].Selected) {
+                    $scope.IsAllChecked = false;
+                    break;
+                }
+            };
+        };
+
+        $scope.exportToExcelMainDiv = (e) => {
+            var tbodyLength = 0;
+            for (var i = 0; i < $scope.loanSurveyDataFinal.length; i++) {
+                if ($scope.loanSurveyDataFinal[i].Selected) {
+                    tbodyLength += 1;
+                }
+            }
+
+            if (tbodyLength == 0) {
+                alert("Please select merchants to export!!!");
+                return false;
+            }
+
+            let table = document.createElement('table');
+            let thead = document.createElement('thead');
+            let tbody = document.createElement('tbody');
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+
+            document.getElementById('exportToExcelMainDiv').appendChild(table);
+
+            // Creating and adding data to first row of the table
+            let row_1 = document.createElement('tr');
+
+            let row1_data_1 = document.createElement('th');
+            row1_data_1.style.textAlign = 'center';
+            row1_data_1.innerHTML = 'প্রতিষ্ঠানের নাম';
+
+            let row1_data_2 = document.createElement('th');
+            row1_data_2.style.textAlign = 'center';
+            row1_data_2.innerHTML = 'গড় বাস্কেট ভ্যালু (প্রতি মাসে)';
+
+            let row1_data_3 = document.createElement('th');
+            row1_data_3.style.textAlign = 'center';
+            row1_data_3.innerHTML = 'প্রতিষ্ঠানের ট্রেড লাইসেন্স নম্বর (মেয়াদ শেষ হওয়ার তারিখ)';
+
+            let row1_data_4 = document.createElement('th');
+            row1_data_4.style.textAlign = 'center';
+            row1_data_4.innerHTML = 'প্রতিষ্ঠানের ট্রেড লাইসেন্সের ছবি';
+
+            let row1_data_5 = document.createElement('th');
+            row1_data_5.style.textAlign = 'center';
+            row1_data_5.innerHTML = 'ব্যবসা শুরুর তারিখ';
+
+            let row1_data_6 = document.createElement('th');
+            row1_data_6.style.textAlign = 'center';
+            row1_data_6.innerHTML = 'টিন নাম্বার';
+
+            let row1_data_7 = document.createElement('th');
+            row1_data_7.style.textAlign = 'center';
+            row1_data_7.innerHTML = 'টিন সার্টিফিকেট এর ছবি';
+
+            let row1_data_8 = document.createElement('th');
+            row1_data_8.style.textAlign = 'center';
+            row1_data_8.innerHTML = 'প্রতিষ্ঠানের ব্যাংক স্টেটমেন্টের ছবি';
+                
+            let row1_data_9 = document.createElement('th');
+            row1_data_9.style.textAlign = 'center';
+            row1_data_9.innerHTML = 'শিক্ষাগত যোগ্যতা';
+
+            let row1_data_10 = document.createElement('th');
+            row1_data_10.style.textAlign = 'center';
+            row1_data_10.innerHTML = 'লিঙ্গ';
+
+            let row1_data_11 = document.createElement('th');
+            row1_data_11.style.textAlign = 'center';
+            row1_data_11.innerHTML = 'জন্ম তারিখ';
+
+            let row1_data_12 = document.createElement('th');
+            row1_data_12.style.textAlign = 'center';
+            row1_data_12.innerHTML = 'বয়স';
+
+            let row1_data_13 = document.createElement('th');
+            row1_data_13.style.textAlign = 'center';
+            row1_data_13.innerHTML = 'এনআইডি';
+
+            let row1_data_14 = document.createElement('th');
+            row1_data_14.style.textAlign = 'center';
+            row1_data_14.innerHTML = 'এনআইডি এর ছবি';
+
+            let row1_data_15 = document.createElement('th');
+            row1_data_15.style.textAlign = 'center';
+            row1_data_15.innerHTML = 'বৈবাহিক অবস্থা';
+
+            let row1_data_16 = document.createElement('th');
+            row1_data_16.style.textAlign = 'center';
+            row1_data_16.innerHTML = 'পরিবারের সদস্য সংখ্যা';
+
+            let row1_data_17 = document.createElement('th');
+            row1_data_17.style.textAlign = 'center';
+            row1_data_17.innerHTML = 'লোনের আবেদনের তারিখ';
+
+            let row1_data_18 = document.createElement('th');
+            row1_data_18.style.textAlign = 'center';
+            row1_data_18.innerHTML = 'কত টাকা লোন নিতে ইচ্ছুক';
+
+            let row1_data_19 = document.createElement('th');
+            row1_data_19.style.textAlign = 'center';
+            row1_data_19.innerHTML = 'কত মাসের জন্য লোন নিতে ইচ্ছুক';
+
+            let row1_data_20 = document.createElement('th');
+            row1_data_20.style.textAlign = 'center';
+            row1_data_20.innerHTML = 'কিস্তি';
+
+            let row1_data_21 = document.createElement('th');
+            row1_data_21.style.textAlign = 'center';
+            row1_data_21.innerHTML = 'গড় অর্ডার';
+
+            let row1_data_22 = document.createElement('th');
+            row1_data_22.style.textAlign = 'center';
+            row1_data_22.innerHTML = 'অনলাইন বা ফেসবুকের মাধ্যমে প্রতি মাসে বিক্রির পরিমাণ';
+
+            let row1_data_23 = document.createElement('th');
+            row1_data_23.style.textAlign = 'center';
+            row1_data_23.innerHTML = 'ফিজিক্যাল দোকান(প্রতি মাসে অ্যাভারেজ বিক্রি)';
+
+            let row1_data_24 = document.createElement('th');
+            row1_data_24.style.textAlign = 'center';
+            row1_data_24.innerHTML = 'মাসিক সর্বমোট COD(ডেলিভারি  টাইগারসহ অন্য কুরিয়ার)';
+
+            let row1_data_25 = document.createElement('th');
+            row1_data_25.style.textAlign = 'center';
+            row1_data_25.innerHTML = 'বার্ষিক মোট আয়';
+
+            let row1_data_26 = document.createElement('th');
+            row1_data_26.style.textAlign = 'center';
+            row1_data_26.innerHTML = 'অন্যান্য আয়';
+
+            let row1_data_27 = document.createElement('th');
+            row1_data_27.style.textAlign = 'center';
+            row1_data_27.innerHTML = 'মাসিক খরচ';
+
+            let row1_data_28 = document.createElement('th');
+            row1_data_28.style.textAlign = 'center';
+            row1_data_28.innerHTML = 'গড় বাস্কেট';
+
+            let row1_data_29 = document.createElement('th');
+            row1_data_29.style.textAlign = 'center';
+            row1_data_29.innerHTML = 'ব্যাংক একাউন্ট (ব্যাংকের নাম) (একাউন্ট নাম্বার)';
+
+            let row1_data_30 = document.createElement('th');
+            row1_data_30.style.textAlign = 'center';
+            row1_data_30.innerHTML = 'ক্রেডিট কার্ড';
+
+            let row1_data_31 = document.createElement('th');
+            row1_data_31.style.textAlign = 'center';
+            row1_data_31.innerHTML = 'কার্ড হোল্ডার(ব্যাংক)';
+
+            let row1_data_32 = document.createElement('th');
+            row1_data_32.style.textAlign = 'center';
+            row1_data_32.innerHTML = 'কার্ড লিমিট';
+
+            let row1_data_33 = document.createElement('th');
+            row1_data_33.style.textAlign = 'center';
+            row1_data_33.innerHTML = 'গ্যারেন্টর এর নাম(ফোন নাম্বার)';
+
+            let row1_data_34 = document.createElement('th');
+            row1_data_34.style.textAlign = 'center';
+            row1_data_34.innerHTML = 'লোনের পরিমাণ(অন্য লোনের ক্ষেত্রে)';
+
+            let row1_data_35 = document.createElement('th');
+            row1_data_35.style.textAlign = 'center';
+            row1_data_35.innerHTML = 'ব্যাংকের নামে(অন্য লোনের ক্ষেত্রে)';
+
+            let row1_data_36 = document.createElement('th');
+            row1_data_36.style.textAlign = 'center';
+            row1_data_36.innerHTML = 'লোন পরিশোধের ধরন';
+
+            let row1_data_37 = document.createElement('th');
+            row1_data_37.style.textAlign = 'center';
+            row1_data_37.innerHTML = 'মার্চেন্টের সাথে কত বছরের পরিচয়';
+
+            let row1_data_38 = document.createElement('th');
+            row1_data_38.style.textAlign = 'center';
+            row1_data_38.innerHTML = 'দোকানের মালিকানা';
+
+            let row1_data_39 = document.createElement('th');
+            row1_data_39.style.textAlign = 'center';
+            row1_data_39.innerHTML = '(বর্তমান ঠিকানা এর তথ্য) (হাউজ নাম্বার)(রোড নাম্বার) (রোড এর নাম) (পোস্ট অফিস) (জেলা) (থানা)';
+
+            let row1_data_40 = document.createElement('th');
+            row1_data_40.style.textAlign = 'center';
+            row1_data_40.innerHTML = '(স্থায়ী ঠিকানা এর তথ্য) (হাউজ নাম্বার) (রোড নাম্বার) (রোড এর নাম) (পোস্ট অফিস) (জেলা) (থানা)';
+
+            let row1_data_41 = document.createElement('th');
+            row1_data_41.style.textAlign = 'center';
+            row1_data_41.innerHTML = '(বাড়ির মালিকানা) (বাড়ির নাম) (কত দিন ধরে বসবাস করছেন)';
+
+            let row1_data_42 = document.createElement('th');
+            row1_data_42.style.textAlign = 'center';
+            row1_data_42.innerHTML = 'ডেলিভারি টাইগার ব্যতীত ব্যবহৃত অন্য সার্ভিস';
+
+            let row1_data_43 = document.createElement('th');
+            row1_data_43.style.textAlign = 'center';
+            row1_data_43.innerHTML = 'সুপারিশ';
+
+            row_1.appendChild(row1_data_1);
+            row_1.appendChild(row1_data_2);
+            row_1.appendChild(row1_data_3);
+            row_1.appendChild(row1_data_4);
+            row_1.appendChild(row1_data_5);
+            row_1.appendChild(row1_data_6);
+            row_1.appendChild(row1_data_7);
+            row_1.appendChild(row1_data_8);
+            row_1.appendChild(row1_data_9);
+            row_1.appendChild(row1_data_10);
+            row_1.appendChild(row1_data_11);
+            row_1.appendChild(row1_data_12);
+            row_1.appendChild(row1_data_13);
+            row_1.appendChild(row1_data_14);
+            row_1.appendChild(row1_data_15);
+            row_1.appendChild(row1_data_16);
+            row_1.appendChild(row1_data_17);
+            row_1.appendChild(row1_data_18);
+            row_1.appendChild(row1_data_19);
+            row_1.appendChild(row1_data_20);
+            row_1.appendChild(row1_data_21);
+            row_1.appendChild(row1_data_22);
+            row_1.appendChild(row1_data_23);
+            row_1.appendChild(row1_data_24);
+            row_1.appendChild(row1_data_25);
+            row_1.appendChild(row1_data_26);
+            row_1.appendChild(row1_data_27);
+            row_1.appendChild(row1_data_28);
+            row_1.appendChild(row1_data_29);
+            row_1.appendChild(row1_data_30);
+            row_1.appendChild(row1_data_31);
+            row_1.appendChild(row1_data_32);
+            row_1.appendChild(row1_data_33);
+            row_1.appendChild(row1_data_34);
+            row_1.appendChild(row1_data_35);
+            row_1.appendChild(row1_data_36);
+            row_1.appendChild(row1_data_37);
+            row_1.appendChild(row1_data_38);
+            row_1.appendChild(row1_data_39);
+            row_1.appendChild(row1_data_40);
+            row_1.appendChild(row1_data_41);
+            row_1.appendChild(row1_data_42);
+            row_1.appendChild(row1_data_43);
+            thead.appendChild(row_1);
+
+            var merchantName = document.getElementsByClassName("merchantName");
+            var collectionAmountAvg = document.getElementsByClassName("collectionAmountAvg");
+            var tradeLicense = document.getElementsByClassName("tradeLicense");
+            var tradeLicenseImg = document.getElementsByClassName("tradeLicenseImg");
+            var businessStartDate = document.getElementsByClassName("businessStartDate");
+            var tinNumber = document.getElementsByClassName("tinNumber");
+            var tinImage = document.getElementsByClassName("tinImage");
+            var bankStatement = document.getElementsByClassName("bankStatementImg");
+            var eduLevel = document.getElementsByClassName("eduLevel");
+            var gender = document.getElementsByClassName("gender");
+            var dateOfBirth = document.getElementsByClassName("dateOfBirth");
+            var age = document.getElementsByClassName("age");
+            var nidNo = document.getElementsByClassName("nidNo");
+            var nidImage = document.getElementsByClassName("nidImage");
+            var married = document.getElementsByClassName("married");
+            var famMem = document.getElementsByClassName("famMem");
+            var applicationDate = document.getElementsByClassName("applicationDate");
+            var interestedAmount = document.getElementsByClassName("interestedAmount");
+            var reqTenorMonth = document.getElementsByClassName("reqTenorMonth");
+            var loanEmi = document.getElementsByClassName("loanEmi");
+            var monthlyOrder = document.getElementsByClassName("monthlyOrder");
+            var transactionAmount = document.getElementsByClassName("transactionAmount");
+            var monthlyTotalAverageSale = document.getElementsByClassName("monthlyTotalAverageSale");
+            var monthlyTotalCodAmount = document.getElementsByClassName("monthlyTotalCodAmount");
+            var annualTotalIncome = document.getElementsByClassName("annualTotalIncome");
+            var othersIncome = document.getElementsByClassName("othersIncome");
+            var monthlyExp = document.getElementsByClassName("monthlyExp");
+            var basketValue = document.getElementsByClassName("basketValue");
+            var companyBankAccName = document.getElementsByClassName("companyBankAccName");
+            var hasCreditCard = document.getElementsByClassName("hasCreditCard");
+            var cardHolder = document.getElementsByClassName("cardHolder");
+            var cardLimit = document.getElementsByClassName("cardLimit");
+            var guarantor = document.getElementsByClassName("guarantor");
+            var loanAmount = document.getElementsByClassName("loanAmount");
+            var bankName = document.getElementsByClassName("bankName");
+            var repayType = document.getElementsByClassName("repayType");
+            var relationMarchent = document.getElementsByClassName("relationMarchent");
+            var shopOwnership = document.getElementsByClassName("shopOwnership");
+            var couriersWithLoanSurvey = document.getElementsByClassName("couriersWithLoanSurvey");
+            var recommend = document.getElementsByClassName("recommend");
+            var presentAddressInfo = document.getElementsByClassName("presentAddressInfo");
+            var permanentAddressInfo = document.getElementsByClassName("permanentAddressInfo");
+            var houseOwnerAddressInfo = document.getElementsByClassName("houseOwnerAddressInfo");
+
+            var table1 = document.getElementById("tableLoan");
+            var tbodyRowCount = table1.tBodies[0].rows.length;
+            
+            var checkbox = document.getElementsByClassName("mainDivCheckBox");
+
+            for (var i = 0; i < tbodyRowCount; i++) { //$scope.loanSurveyDataFinal.length
+                if (checkbox[i].checked) { //$scope.loanSurveyDataFinal[i].Selected
+                    // Creating and adding data to second row of the table
+                    let row_2 = document.createElement('tr');
+
+                    let row_data_1 = document.createElement('td');
+                    row_data_1.style.textAlign = 'center';
+                    row_data_1.innerHTML = merchantName[i].innerText;
+
+                    let row_data_2 = document.createElement('td');
+                    row_data_2.style.textAlign = 'center';
+                    row_data_2.innerHTML = collectionAmountAvg[i].innerText;
+
+                    let row_data_3 = document.createElement('td');
+                    row_data_3.style.textAlign = 'center';
+                    row_data_3.innerHTML = tradeLicense[i].innerText;
+
+                    let row_data_4 = document.createElement('td');
+                    row_data_4.style.textAlign = 'center';
+                    row_data_4.innerHTML = tradeLicenseImg[i].innerText;
+
+                    let row_data_5 = document.createElement('td');
+                    row_data_5.style.textAlign = 'center';
+                    row_data_5.innerHTML = businessStartDate[i].innerText;
+
+                    let row_data_6 = document.createElement('td');
+                    row_data_6.style.textAlign = 'center';
+                    row_data_6.innerHTML = tinNumber[i].innerText;
+
+                    let row_data_7 = document.createElement('td');
+                    row_data_7.style.textAlign = 'center';
+                    row_data_7.innerHTML = tinImage[i].innerText;
+
+                    let row_data_8 = document.createElement('td');
+                    row_data_8.style.textAlign = 'center';
+                    row_data_8.innerHTML = bankStatement[i].innerText;
+
+                    let row_data_9 = document.createElement('td');
+                    row_data_9.style.textAlign = 'center';
+                    row_data_9.innerHTML = eduLevel[i].innerText;
+
+                    let row_data_10 = document.createElement('td');
+                    row_data_10.style.textAlign = 'center';
+                    row_data_10.innerHTML = gender[i].innerText;
+
+                    let row_data_11 = document.createElement('td');
+                    row_data_11.style.textAlign = 'center';
+                    row_data_11.innerHTML = dateOfBirth[i].innerText;
+
+                    let row_data_12 = document.createElement('td');
+                    row_data_12.style.textAlign = 'center';
+                    row_data_12.innerHTML = age[i].innerText;
+
+                    let row_data_13 = document.createElement('td');
+                    row_data_13.style.textAlign = 'center';
+                    row_data_13.innerHTML = nidNo[i].innerText;
+
+                    let row_data_14 = document.createElement('td');
+                    row_data_14.style.textAlign = 'center';
+                    row_data_14.innerHTML = nidImage[i].innerText;
+
+                    let row_data_15 = document.createElement('td');
+                    row_data_15.style.textAlign = 'center';
+                    row_data_15.innerHTML = married[i].innerText;
+
+                    let row_data_16 = document.createElement('td');
+                    row_data_16.style.textAlign = 'center';
+                    row_data_16.innerHTML = famMem[i].innerText == "" ? famMem[i].innerText : famMem[i].innerText.replace('-', ' থেকে ');
+
+                    let row_data_17 = document.createElement('td');
+                    row_data_17.style.textAlign = 'center';
+                    row_data_17.innerHTML = applicationDate[i].innerText;
+
+                    let row_data_18 = document.createElement('td');
+                    row_data_18.style.textAlign = 'center';
+                    row_data_18.innerHTML = interestedAmount[i].innerText;
+
+                    let row_data_19 = document.createElement('td');
+                    row_data_19.style.textAlign = 'center';
+                    row_data_19.innerHTML = reqTenorMonth[i].innerText;
+
+                    let row_data_20 = document.createElement('td');
+                    row_data_20.style.textAlign = 'center';
+                    row_data_20.innerHTML = loanEmi[i].innerText;
+
+                    let row_data_21 = document.createElement('td');
+                    row_data_21.style.textAlign = 'center';
+                    row_data_21.innerHTML = monthlyOrder[i].innerText;
+
+                    let row_data_22 = document.createElement('td');
+                    row_data_22.style.textAlign = 'center';
+                    row_data_22.innerHTML = transactionAmount[i].innerText;
+
+                    let row_data_23 = document.createElement('td');
+                    row_data_23.style.textAlign = 'center';
+                    row_data_23.innerHTML = monthlyTotalAverageSale[i].innerText;
+
+                    let row_data_24 = document.createElement('td');
+                    row_data_24.style.textAlign = 'center';
+                    row_data_24.innerHTML = monthlyTotalCodAmount[i].innerText;
+
+                    let row_data_25 = document.createElement('td');
+                    row_data_25.style.textAlign = 'center';
+                    row_data_25.innerHTML = annualTotalIncome[i].innerText;
+
+                    let row_data_26 = document.createElement('td');
+                    row_data_26.style.textAlign = 'center';
+                    row_data_26.innerHTML = othersIncome[i].innerText;
+
+                    let row_data_27 = document.createElement('td');
+                    row_data_27.style.textAlign = 'center';
+                    row_data_27.innerHTML = monthlyExp[i].innerText;
+
+                    let row_data_28 = document.createElement('td');
+                    row_data_28.style.textAlign = 'center';
+                    row_data_28.innerHTML = basketValue[i].innerText;
+
+                    let row_data_29 = document.createElement('td');
+                    row_data_29.style.textAlign = 'center';
+                    row_data_29.innerHTML = companyBankAccName[i].innerText;
+
+                    let row_data_30 = document.createElement('td');
+                    row_data_30.style.textAlign = 'center';
+                    row_data_30.innerHTML = hasCreditCard[i].innerText;
+
+                    let row_data_31 = document.createElement('td');
+                    row_data_31.style.textAlign = 'center';
+                    row_data_31.innerHTML = cardHolder[i].innerText;
+
+                    let row_data_32 = document.createElement('td');
+                    row_data_32.style.textAlign = 'center';
+                    row_data_32.innerHTML = cardLimit[i].innerText;
+
+                    let row_data_33 = document.createElement('td');
+                    row_data_33.style.textAlign = 'center';
+                    row_data_33.innerHTML = guarantor[i].innerText;
+
+                    let row_data_34 = document.createElement('td');
+                    row_data_34.style.textAlign = 'center';
+                    row_data_34.innerHTML = loanAmount[i].innerText;
+
+                    let row_data_35 = document.createElement('td');
+                    row_data_35.style.textAlign = 'center';
+                    row_data_35.innerHTML = bankName[i].innerText;
+
+                    let row_data_36 = document.createElement('td');
+                    row_data_36.style.textAlign = 'center';
+                    row_data_36.innerHTML = repayType[i].innerText;
+
+                    let row_data_37 = document.createElement('td');
+                    row_data_37.style.textAlign = 'center';
+                    row_data_37.innerHTML = relationMarchent[i].innerText == "" ? relationMarchent[i].innerText : relationMarchent[i].innerText.replace('-', ' থেকে ');
+                    //row_data_33.innerHTML = relationMarchent[i].innerText;
+
+                    let row_data_38 = document.createElement('td');
+                    row_data_38.style.textAlign = 'center';
+                    row_data_38.innerHTML = shopOwnership[i].innerText;
+
+                    let row_data_39 = document.createElement('td');
+                    row_data_39.style.textAlign = 'center';
+                    row_data_39.innerHTML = presentAddressInfo[i].innerText;
+
+                    let row_data_40 = document.createElement('td');
+                    row_data_40.style.textAlign = 'center';
+                    row_data_40.innerHTML = permanentAddressInfo[i].innerText;
+
+                    let row_data_41 = document.createElement('td');
+                    row_data_41.style.textAlign = 'center';
+                    row_data_41.innerHTML = houseOwnerAddressInfo[i].innerText;
+
+                    let row_data_42 = document.createElement('td');
+                    row_data_42.style.textAlign = 'center';
+                    row_data_42.innerHTML = couriersWithLoanSurvey[i].innerText;
+
+                    let row_data_43 = document.createElement('td');
+                    row_data_43.style.textAlign = 'center';
+                    row_data_43.innerHTML = recommend[i].innerText;
+
+                    row_2.appendChild(row_data_1);
+                    row_2.appendChild(row_data_2);
+                    row_2.appendChild(row_data_3);
+                    row_2.appendChild(row_data_4);
+                    row_2.appendChild(row_data_5);
+                    row_2.appendChild(row_data_6);
+                    row_2.appendChild(row_data_7);
+                    row_2.appendChild(row_data_8);
+                    row_2.appendChild(row_data_9);
+                    row_2.appendChild(row_data_10);
+                    row_2.appendChild(row_data_11);
+                    row_2.appendChild(row_data_12);
+                    row_2.appendChild(row_data_13);
+                    row_2.appendChild(row_data_14);
+                    row_2.appendChild(row_data_15);
+                    row_2.appendChild(row_data_16);
+                    row_2.appendChild(row_data_17);
+                    row_2.appendChild(row_data_18);
+                    row_2.appendChild(row_data_19);
+                    row_2.appendChild(row_data_20);
+                    row_2.appendChild(row_data_21);
+                    row_2.appendChild(row_data_22);
+                    row_2.appendChild(row_data_23);
+                    row_2.appendChild(row_data_24);
+                    row_2.appendChild(row_data_25);
+                    row_2.appendChild(row_data_26);
+                    row_2.appendChild(row_data_27);
+                    row_2.appendChild(row_data_28);
+                    row_2.appendChild(row_data_29);
+                    row_2.appendChild(row_data_30);
+                    row_2.appendChild(row_data_31);
+                    row_2.appendChild(row_data_32);
+                    row_2.appendChild(row_data_33);
+                    row_2.appendChild(row_data_34);
+                    row_2.appendChild(row_data_35);
+                    row_2.appendChild(row_data_36);
+                    row_2.appendChild(row_data_37);
+                    row_2.appendChild(row_data_38);
+                    row_2.appendChild(row_data_39);
+                    row_2.appendChild(row_data_40);
+                    row_2.appendChild(row_data_41);
+                    row_2.appendChild(row_data_42);
+                    row_2.appendChild(row_data_43);
+                    tbody.appendChild(row_2);
+                }
+            };
+
+            //download as excel
+            window.open('data:application/vnd.ms-excel,' + encodeURIComponent($('#' + 'exportToExcelMainDiv').html()));
+            e.preventDefault();
+
+            //empty dynamically created table
+            document.getElementById("exportToExcelMainDiv").innerHTML = "";
+        }
+
+        $scope.createExcelSheet = (tableName, e) => {
+            window.open('data:application/vnd.ms-excel,' + encodeURIComponent($('#' + tableName).html()));
+            e.preventDefault();
+        }
+
+        $scope.redirectToSite = function (redirectLink) {
+            var link = "";
+            if (redirectLink.search("https://") == -1) {
+                if (redirectLink.search("www") == -1) {
+                    link = "https://" + "www." + redirectLink;
+                }
+                else {
+                    link = "https://" + redirectLink;
+                }
+            }
+            else {
+                link = redirectLink;
+            }
+            window.open(link, '_blank');
+        }
+
+        $scope.commentMerchant = function (loanSurveyId, comments) {
+            $scope.Id = loanSurveyId;
+            $scope.comments = comments;
+        }
+
+        $scope.updateApplicantComment = function (Id, comments) {
+            if (comments == "" || comments == undefined) {
+                alert("মার্চেন্ট সম্পর্কে মন্তব্য করুন।");
+                return false;
+            }
+
+            var requestBodyModel = {
+                "Comments": comments
+            };
+
+            var userToken = sessionStorage.getItem('token');
+            $http.put(apiBaseURL + 'Loan/UpdateLoanApplicantsComment/' + Id, requestBodyModel,
+                {
+                    headers: { 'Content-Type': 'application/json', 'Authorization': "Bearer " + userToken }
+                })
+                .then(function (response) {
+                    if (response.status == 200 || response.data != "") {
+                        var result = response.data.model;
+                        if (result == 1) {
+                            loanSurveyDataFunction($scope.fromdate, $scope.todate, $scope.lastDymanicMonth);
+                            alert('সফল হয়েছে!!');
+                        }
+                        else {
+                            alert('ব্যর্থ হয়েছে....!!');
+                        }
+                    }
+                }, function (error) {
+                    console.log(error);
+                    alert('Something Wrong....!!');
+                    $scope.showFullPageLoader = false;
+                });
+        }
+    });
+</script>

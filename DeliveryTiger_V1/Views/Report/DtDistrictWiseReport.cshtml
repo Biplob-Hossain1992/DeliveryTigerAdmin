@@ -1,0 +1,1050 @@
+﻿
+@{
+    ViewBag.Title = "DT District Wise Report";
+}
+
+<script src="https://code.angularjs.org/1.2.14/angular.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function () {
+
+        flatpickr(".flatpickr", {
+            enableTime: false,
+            allowInput: true,
+            maxDate: "today"
+        });
+    });
+</script>
+
+<style>
+    .modal{
+        overflow-y: auto;
+    }
+</style>
+
+<div ng-app="DtDistrictWiseReportModule">
+    <div ng-controller="DtDistrictWiseReportController">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="spiner-example" ng-show="showLoader">
+                    <div class="sk-spinner sk-spinner-wave">
+                        <div class="sk-rect1"></div>
+                        <div class="sk-rect2"></div>
+                        <div class="sk-rect3"></div>
+                        <div class="sk-rect4"></div>
+                        <div class="sk-rect5"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="ibox">
+                    <div class="ibox-title">
+                        <div class="form-group">
+                            <h4 style="text-align: center;">Dt District Wise Report</h4>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <input style="width: 150px; margin-right: 2px;" type="text" class="form-control-sm form-control" placeholder="search" ng-model="mainSearch" />
+                                <div class="input-daterange input-group" id="datepickerOrders">
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="fromDate" id="fromDate" name="fromDate" class="btn flatpickr" placeholder="From Date" autocomplete="off" />
+                                    <input type="text" style="border: 1px solid #46b8da; margin-right: 2px;" ng-model="toDate" id="toDate" name="toDate" class="btn flatpickr" placeholder="To Date" autocomplete="off" />
+                                    <select style="border: 1px solid #46b8da; margin-right: 2px;" class="btn btn-default" ng-model="courier" ng-options="courier.id as courier.name for courier in couriers"></select>
+                                    <select style="border: 1px solid #46b8da; margin-right: 2px;" class="btn btn-default" ng-model="service">
+                                        <option value="0">All</option>
+                                        <option ng-repeat="service in services" value="{{service.id}}">{{service.name}}</option>
+                                    </select>
+                                    <select style="border: 1px solid #46b8da" class="btn btn-default" ng-model="secondMile">
+                                        <option value="0">Select</option>
+                                        <option value="1">SA</option>
+                                    </select>
+                                    <button style="margin-left: 2px;" class="btn  btn-w-m btn-success" type="button" ng-click="speedReports(fromDate,toDate,courier,service,secondMile)">Show</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <h4>Packaged To Delivered</h4>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                #
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='District'; reverseSort = !reverseSort">
+                                                    Name
+                                                </a>
+                                            </th>
+
+                                            <th>
+                                                <a href="#" ng-click="orderByField='PackagedPodNumber'; reverseSort = !reverseSort">
+                                                    Package POD
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='DeliveredPodNumber'; reverseSort = !reverseSort">
+                                                    Delivered POD
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='SpeedPercentage'; reverseSort = !reverseSort">
+                                                    Speed(Packeged To Delivered) ({{100 * PodNumberCountSum / PackagePodNumberCountSum | number:2}}%)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Days'; reverseSort= !reverseSort">Speed(Packeged To Delivered)(Days)</a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="speed in districtSpeedModel | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>
+                                                {{$index +1}}
+                                            </td>
+                                            <td>
+                                                {{ speed.District }}
+                                                <p ng-show="name != 'All'">
+                                                    <button class="btn btn-sm btn-info" data-toggle='modal' data-target='#speedAreaModal' ng-click="speedAreaReports(fromDate,toDate,courier,speed.DistrictId)" type="button">Area</button>
+                                                </p>
+                                            </td>
+
+                                            <td style="cursor: pointer;" ng-click="detailsPackagedPodNumber(speed.DistrictId, '0', '0')" data-toggle='modal' data-target='#speedModalPackaged'>
+                                                {{ speed.PackagedPodNumber }}
+                                                <i ng-if="speed.PackagedPodNumber > 0" class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                            <td style="cursor: pointer;" ng-click="detailsDeliveredPodNumber(speed.DistrictId, '0', '0')" data-toggle='modal' data-target='#speedModal'>
+                                                {{ speed.DeliveredPodNumber }}
+
+                                                <i ng-if="speed.DeliveredPodNumber > 0" class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                            <td>{{ speed.SpeedPercentage | number:2}} %</td>
+                                            <td>{{speed.Days | number:2}} Days</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-lg-6">
+                                <h4>Last Hub To Delivered</h4>
+                                <table class="table table-bordered table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                #
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='District'; reverseSort = !reverseSort">
+                                                    Name
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='LastHubPodNumber'; reverseSort = !reverseSort">
+                                                    Last Hub POD
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='DeliveredPodNumber'; reverseSort = !reverseSort">
+                                                    Delivered POD
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='SpeedPercentage'; reverseSort = !reverseSort">
+                                                    Speed(LastHub To Delivered)(%)
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                    Speed(LastHub To Delivered)(Days)
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="speed in districtSpeedModelLastHub | orderBy:orderByField:reverseSort | filter:mainSearch">
+                                            <td>
+                                                {{$index +1}}
+                                            </td>
+                                            <td>
+                                                {{ speed.District }}
+                                                <p ng-show="name != 'All'">
+                                                    <button class="btn btn-sm btn-info" data-toggle='modal' data-target='#speedAreaModalLastHub' ng-click="speedAreaReportsLastHub(fromDate,toDate,courier,speed.DistrictId)" type="button">Area</button>
+                                                </p>
+                                            </td>
+
+                                            <td style="cursor: pointer;" ng-click="detailsDeliveredPodNumberLaastHub(speed.DistrictId, '0', '0')" data-toggle='modal' data-target='#speedModalLastHubPod'>
+                                                {{ speed.LastHubPodNumber }}
+                                                <i ng-if="speed.LastHubPodNumber > 0" class="fa fa-hand-o-left"></i>
+                                            </td>
+
+                                            <td style="cursor: pointer;" ng-click="detailsDeliveredPodNumberLastHub(speed.DistrictId, '0', '0')" data-toggle='modal' data-target='#speedModalLastHub'>
+                                                {{ speed.DeliveredPodNumber }}
+                                                <i ng-if="speed.DeliveredPodNumber > 0" class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                            </td>
+                                            <td>{{ speed.SpeedPercentage | number:2}} %</td>
+                                            <td>
+                                                {{ speed.Days | number:2 }} Days
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*Modal Section Start*@
+        <div class="container">
+            <div class="row">
+
+                @*Speed Area Modal*@
+                <div id="speedAreaModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Packeged To Delivered Area Speed</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='District'; reverseSort = !reverseSort">
+                                                        District
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Thana'; reverseSort = !reverseSort">
+                                                        Thana
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Area'; reverseSort = !reverseSort">
+                                                        Area
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='PackagePodNumberCount'; reverseSort = !reverseSort">
+                                                        Package POD
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveredPodNumber'; reverseSort = !reverseSort">
+                                                        Delivered POD
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                        Speed(Packeged To Delivered)
+                                                    </a>
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in AreaSpeedModel | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{a.District }}</td>
+                                                <td>{{a.Thana }}</td>
+                                                <td>{{a.Area }}</td>
+                                                <td>
+                                                    <span ng-if="a.PackagedPodNumber != 0" style="cursor: pointer;" ng-click="detailsPackagedPodNumber(a.DistrictId, a.ThanaId, a.AreaId)" data-toggle="modal" data-target="#speedModalPackaged">
+                                                        {{a.PackagedPodNumber}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                    </span>
+                                                    <span ng-if="a.PackagedPodNumber == 0">
+                                                        {{a.PackagedPodNumber}}
+                                                    </span>
+                                                </td>
+
+                                                @*<td style="cursor: pointer;" ng-click="detailsArea(a.DistrictId,a.ThanaId,a.AreaId)" data-toggle='modal' data-target='#speedModal'>
+                                {{ a.DeliveredPodNumber }}
+                                <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                            </td>*@
+                                                <td>
+                                                    <span ng-if="a.DeliveredPodNumber != 0" style="cursor: pointer;" ng-click="detailsDeliveredPodNumber(a.DistrictId, a.ThanaId, a.AreaId)" data-toggle='modal' data-target='#speedModal'>
+                                                        {{a.DeliveredPodNumber}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                    </span>
+                                                    <span ng-if="a.DeliveredPodNumber == 0">
+                                                        {{a.DeliveredPodNumber}}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {{ a.Days | number:2 }} Days
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Speed Area Modal End*@
+
+                @*Speed Area Modal Last Hub*@
+                <div id="speedAreaModalLastHub" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content" style="text-align: center;">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Last Hub To Delivered Area Speed</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    #
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='District'; reverseSort = !reverseSort">
+                                                        District
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Thana'; reverseSort = !reverseSort">
+                                                        Thana
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Area'; reverseSort = !reverseSort">
+                                                        Area
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='LastHubPodNumber'; reverseSort = !reverseSort">
+                                                        LastHub POD
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveredPodNumber'; reverseSort = !reverseSort">
+                                                        Delivered POD
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                        Speed(Last Hub To Delivered)
+                                                    </a>
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="a in AreaSpeedModel | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td>{{a.District }}</td>
+                                                <td>{{a.Thana }}</td>
+                                                <td>{{a.Area }}</td>
+                                                <td>
+                                                    <span ng-if="a.LastHubPodNumber != 0" style="cursor: pointer;" ng-click="detailsDeliveredPodNumberLaastHub(a.DistrictId, a.ThanaId, a.AreaId)" data-toggle="modal" data-target="#speedModalLastHubPod">
+                                                        {{a.LastHubPodNumber}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                    </span>
+                                                    <span ng-if="a.LastHubPodNumber == 0">
+                                                        {{a.LastHubPodNumber}}
+                                                    </span>
+                                                </td>
+                                                @*<td style="cursor: pointer;" ng-click="detailsArea(a.DistrictId,a.ThanaId,a.AreaId)" data-toggle='modal' data-target='#speedModal'>
+                                {{ a.DeliveredPodNumber }}
+                                <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                            </td>*@
+                                                <td>
+                                                    <span ng-if="a.DeliveredPodNumber != 0" style="cursor: pointer;" ng-click="detailsDeliveredPodNumberLastHub(a.DistrictId, a.ThanaId, a.AreaId)" data-toggle="modal" data-target="#speedModalLastHub">
+                                                        {{a.DeliveredPodNumber}}
+                                                        <i class="fa fa-hand-o-left" aria-hidden="true"></i>
+                                                    </span>
+                                                    <span ng-if="a.DeliveredPodNumber == 0">
+                                                        {{a.DeliveredPodNumber}}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {{ a.Days | number:2 }} Days
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Speed Area Modal Last Hub End*@
+
+                @*Speed Modal Packaged*@
+                <div id="speedModalPackaged" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Packeged To Delivered Details !!</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div id="dtSpeedModelId">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>OrderId</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CourierName'; reverseSort = !reverseSort">
+                                                        CourierName
+                                                    </a>
+                                                </th>
+                                                <th>PodNumber</th>
+                                                <th>ServiceType</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='PackagedDate'; reverseSort = !reverseSort">
+                                                        PackagedDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveredDate'; reverseSort = !reverseSort">
+                                                        DeliveredDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='ExpectedDeliveryDate'; reverseSort = !reverseSort">
+                                                        ExpectedDeliveryDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                        Days
+                                                    </a>
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in detailsResult | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3" ; ng-click="getOrderHistoryInformation(d.PackagedCourierOrderId)">{{d.PackagedCourierOrderId}}<i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i></td>
+                                                <td>
+                                                    <span ng-if="name == 'All'">
+                                                        {{d.CourierName}}
+                                                    </span>
+                                                    <span ng-if="name != 'All'">
+                                                        {{name}}
+                                                    </span>
+                                                </td>
+                                                <td>{{d.PackagedPodNumber}}</td>
+                                                <td>{{d.ServiceType}}</td>
+                                                <td>{{d.PackagedDate | date:'medium'}}</td>
+                                                <td>
+                                                    <span ng-if="d.DeliveredDate == null">
+                                                        NA
+                                                    </span>
+                                                    <span ng-if="d.DeliveredDate != null">
+                                                        {{d.DeliveredDate | date:'medium'}}
+                                                    </span>
+                                                </td>
+                                                <td>{{d.ExpectedDeliveryDate | date:'medium'}}</td>
+                                                <td>{{d.Days | number:2}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Speed Modal Packaged End*@
+
+                @*Speed Modal*@
+                <div id="speedModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Packeged To Delivered Details !!</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div id="dtSpeedModelId">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>OrderId</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CourierName'; reverseSort = !reverseSort">
+                                                        CourierName
+                                                    </a>
+                                                </th>
+                                                <th>PodNumber</th>
+                                                <th>ServiceType</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='PackagedDate'; reverseSort = !reverseSort">
+                                                        PackagedDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveredDate'; reverseSort = !reverseSort">
+                                                        DeliveredDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='ExpectedDeliveryDate'; reverseSort = !reverseSort">
+                                                        ExpectedDeliveryDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                        Days
+                                                    </a>
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in detailsResult | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3" ; ng-click="getOrderHistoryInformation(d.DeliveredCourierOrderId)">{{d.DeliveredCourierOrderId}}<i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i></td>
+                                                <td>
+                                                    <span ng-if="name == 'All'">
+                                                        {{d.CourierName}}
+                                                    </span>
+                                                    <span ng-if="name != 'All'">
+                                                        {{name}}
+                                                    </span>
+                                                </td>
+                                                <td>{{d.DeliveredPodNumber}}</td>
+                                                <td>{{d.ServiceType}}</td>
+                                                <td>{{d.PackagedDate | date:'medium'}}</td>
+                                                <td>{{d.DeliveredDate | date:'medium'}}</td>
+                                                <td>{{d.ExpectedDeliveryDate | date:'medium'}}</td>
+                                                <td>{{d.Days | number:2}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Speed Modal End*@
+
+                @*Speed Modal Last Hub Pod*@
+                <div id="speedModalLastHubPod" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Last Hub To Delivered Details !!</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>OrderId</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CourierName'; reverseSort = !reverseSort">
+                                                        CourierName
+                                                    </a>
+                                                </th>
+                                                <th>PodNumber</th>
+                                                <th>ServiceType</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='PackagedDate'; reverseSort = !reverseSort">
+                                                        LastHubDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveredDate'; reverseSort = !reverseSort">
+                                                        DeliveredDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='ExpectedDeliveryDate'; reverseSort = !reverseSort">
+                                                        ExpectedDeliveryDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                        Days
+                                                    </a>
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in detailsResultLaastHub | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3" ; ng-click="getOrderHistoryInformation(d.LastHubCourierOrderId)">{{d.LastHubCourierOrderId}}<i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i></td>
+                                                <td>
+                                                    <span ng-if="name == 'All'">
+                                                        {{d.CourierName}}
+                                                    </span>
+                                                    <span ng-if="name != 'All'">
+                                                        {{name}}
+                                                    </span>
+                                                </td>
+                                                <td>{{d.LastHubPodNumber}}</td>
+                                                <td>{{d.ServiceType}}</td>
+                                                <td>{{d.LastHubDate | date:'medium'}}</td>
+                                                <td>
+                                                    <span ng-if="d.DeliveredDate == null">
+                                                        NA
+                                                    </span>
+                                                    <span ng-if="d.DeliveredDate != null">
+                                                        {{d.DeliveredDate | date:'medium'}}
+                                                    </span>
+                                                </td>
+                                                <td>{{d.ExpectedDeliveryDate | date:'medium'}}</td>
+                                                <td>{{d.Days | number:2}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Speed Modal Last Hub Pod End*@
+
+                @*Speed Modal Last Hub*@
+                <div id="speedModalLastHub" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog"
+                     aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Last Hub To Delivered Details !!</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input placeholder="Search" class="form-control " ng-model="search" type="text">
+                                </div>
+                                <div>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>OrderId</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='CourierName'; reverseSort = !reverseSort">
+                                                        CourierName
+                                                    </a>
+                                                </th>
+                                                <th>PodNumber</th>
+                                                <th>ServiceType</th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='PackagedDate'; reverseSort = !reverseSort">
+                                                        LastHubDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='DeliveredDate'; reverseSort = !reverseSort">
+                                                        DeliveredDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='ExpectedDeliveryDate'; reverseSort = !reverseSort">
+                                                        ExpectedDeliveryDate
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a href="#" ng-click="orderByField='Days'; reverseSort = !reverseSort">
+                                                        Days
+                                                    </a>
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="d in detailsResultLastHub | orderBy:orderByField:reverseSort | filter:search">
+                                                <td>{{$index +1}}</td>
+                                                <td data-toggle="modal" data-target="#orderInformationModal" style="cursor:pointer; color:#0482f3" ; ng-click="getOrderHistoryInformation(d.DeliveredCourierOrderId)">{{d.DeliveredCourierOrderId}}<i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i></td>
+                                                <td>
+                                                    <span ng-if="name == 'All'">
+                                                        {{d.CourierName}}
+                                                    </span>
+                                                    <span ng-if="name != 'All'">
+                                                        {{name}}
+                                                    </span>
+                                                </td>
+                                                <td>{{d.DeliveredPodNumber}}</td>
+                                                <td>{{d.ServiceType}}</td>
+                                                <td>{{d.LastHubDate | date:'medium'}}</td>
+                                                <td>{{d.DeliveredDate | date:'medium'}}</td>
+                                                <td>{{d.ExpectedDeliveryDate | date:'medium'}}</td>
+                                                <td>{{d.Days | number:2}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Speed Modal Last Hub End*@
+
+                @*Order Information Modal*@
+                <div id="orderInformationModal" class="modal fade" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Order Informations</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="overflow: auto;">
+                                <table class="table table-hover" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>OrderId</th>
+                                            <th>Confirmed By</th>
+                                            <th>Order Date</th>
+                                            <th>Confirmation Date</th>
+                                            <th>Status</th>
+                                            <th>Comment</th>
+                                            <th>Hub Name</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="o in OrderInformations">
+                                            <td>{{$index +1}}</td>
+                                            <td>
+                                                @*<a ng-href="https://admin.deliverytiger.com.bd/Operation/Operation?orderId={{o.courierOrderId}}"> {{o.courierOrderId}}</a>*@
+                                                <a href="" ng-click="redirectToDtOperation(o.courierOrderId)"> {{o.courierOrderId}}</a>
+                                                <i class="fa fa-hand-o-left" style="color:black" aria-hidden="true"></i>
+                                            </td>
+                                            <td>{{o.isConfirmedBy}}({{o.namePostedBy}})</td>
+                                            <td>{{o.orderDate | date:'medium'}}</td>
+                                            <td>{{o.postedOn | date:'medium'}}</td>
+                                            <td>{{o.statusNameEng}}-{{o.status}}</td>
+                                            <td>{{o.comment}}</td>
+                                            <td>{{o.hubName}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*Order Information Modal End*@
+
+            </div>
+        </div>
+        @*Modal Section End*@
+    </div>
+</div>
+
+<script>
+    var app = angular.module('DtDistrictWiseReportModule', []);
+    app.controller('DtDistrictWiseReportController', function ($scope, $http, $timeout) {
+        //URL
+        var OnlineUrl = "https://adm.ajkerdeal.com/api/deliverytiger/";
+        var CoreOnlineUrl = "https://adcore.ajkerdeal.com/api/";
+        var LocalOnlineUrl = "http://localhost:15332/api/deliverytiger/";
+
+        $scope.courier = 0;
+
+        $scope.couriers = [
+            {
+                'id': 0,
+                'name': 'All'
+            },
+            {
+                'id': 28,
+                'name': 'Bangladesh Postal Service'
+            },
+            {
+                'id': 30,
+                'name': 'Paperfly'
+            },
+            {
+                'id': 32,
+                'name': 'E-Desh'
+            },
+            {
+                'id': 34,
+                'name': 'Redx'
+            },
+            {
+                'id': 49,
+                'name': 'Steadfast'
+            },
+            {
+                'id': 50,
+                'name': 'Chittagong Tiger'
+            },
+            {
+                'id': 51,
+                'name': 'Sylhet Tiger'
+            },
+            {
+                'id': 52,
+                'name': 'Khulna Tiger'
+            },
+            {
+                'id': 53,
+                'name': 'Narayangonj Tiger'
+            },
+            {
+                'id': 54,
+                'name': 'Gazipur Tiger'
+            },
+            {
+                'id': 55,
+                'name': 'Dhaka Tiger'
+            },
+            {
+                'id': 56,
+                'name': 'Coxsbazar Tiger'
+            },
+            {
+                'id': 57,
+                'name': 'Jatrabari Tiger'
+            }
+        ]
+
+        $scope.service = 0;
+        $scope.secondMile = 0;
+
+        $timeout(function () {
+            $http.get(CoreOnlineUrl + "Fetch/GetDeliveryRange", { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.services = response.data.model;
+                }, function (error) {
+                    console.log(error);
+                })
+        }, 1000);
+
+        $scope.speedReports = function (fromDate, toDate, courierId, deliveryRangeId, secondMile) {
+            $scope.name = $scope.couriers.find(d => d.id === courierId).name;
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            let dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": courierId,
+                "DeliveryRangeId": parseInt(deliveryRangeId),
+                "IsSecondMile": parseInt(secondMile)
+            };
+
+            $scope.showLoader = true;
+
+            $http.post(OnlineUrl + 'GetSpeedDtNew', dtOrderSearchBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function(response) {
+                    $scope.districtSpeedModel = response.data.DistrictSpeedModel;
+                    $scope.districtDetailsSpeedModel = response.data.DistrictDetailsSpeedModel;
+
+                    $scope.districtSpeedModelLastHub = response.data.DistrictSpeedModelLastHub;
+                    $scope.districtDetailsSpeedModelLastHub = response.data.DistrictDetailsSpeedModelLastHub;
+
+                    $scope.showLoader = false;
+                }, function error(response) {
+                    console.log(response);
+                    $scope.showLoader = false;
+                })
+        }
+
+        $scope.speedAreaReports = function (fromDate, toDate, courierId, districtId) {
+            $scope.name = $scope.couriers.find(d => d.id === courierId).name;
+
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": courierId,
+                "DistrictId": districtId
+            };
+
+            //$scope.showLoaderModal = true;
+            $http.post(OnlineUrl + 'GetSpeedDtNew', dtOrderSearchBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.AreaSpeedModel = response.data.DistrictSpeedModel;
+                    $scope.AreaDetailsSpeedModel = response.data.DistrictDetailsSpeedModel;
+                    //$scope.showLoaderModal = false;
+                    //console.log($scope.AreaSpeedModel);
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        $scope.speedAreaReportsLastHub = function (fromDate, toDate, courierId, districtId) {
+
+            $scope.name = $scope.couriers.find(d => d.id === courierId).name;
+
+            if (typeof fromDate == 'undefined' || fromDate == "" || typeof toDate == 'undefined' || toDate == "") {
+                alert("Please must be select From and To Date");
+                return false;
+            }
+
+            var dtOrderSearchBodyModel = {
+                "FromDate": fromDate,
+                "ToDate": toDate,
+                "CourierId": courierId,
+                "DistrictId": districtId
+            };
+
+            //$scope.showLoaderModal = true;
+            $http.post(OnlineUrl + 'GetSpeedDtNew', dtOrderSearchBodyModel, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+                    $scope.AreaSpeedModel = response.data.DistrictSpeedModelLastHub;
+                    $scope.AreaDetailsSpeedModel = response.data.DistrictDetailsSpeedModelLastHub;
+                    //$scope.showLoaderModal = false;
+                    //console.log($scope.AreaSpeedModel);
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        };
+
+        $scope.detailsDeliveredPodNumber = function (districtId, thanaId, areaId) {
+            if (thanaId == '0' && areaId == '0')
+                $scope.detailsResult = $scope.districtDetailsSpeedModel.filter(d => d.DistrictId === districtId && d.DeliveredCourierOrderId != null && d.PackagedCourierOrderId != null);
+            else
+                $scope.detailsResult = $scope.AreaDetailsSpeedModel.filter(d => d.DistrictId === districtId && d.ThanaId === thanaId && d.AreaId === areaId && d.DeliveredCourierOrderId != null && d.PackagedCourierOrderId != null);
+        }
+        $scope.detailsPackagedPodNumber = function (districtId, thanaId, areaId) {
+            if (thanaId == '0' && areaId == '0')
+                $scope.detailsResult = $scope.districtDetailsSpeedModel.filter(d => d.DistrictId === districtId && d.PackagedCourierOrderId != null);
+            else
+                $scope.detailsResult = $scope.AreaDetailsSpeedModel.filter(d => d.DistrictId === districtId && d.ThanaId === thanaId && d.AreaId === areaId && d.PackagedCourierOrderId != null);
+        }
+        $scope.detailsDeliveredPodNumberLastHub = function (districtId, thanaId, areaId) {
+            if (thanaId == '0' && areaId == '0')
+                $scope.detailsResultLastHub = $scope.districtDetailsSpeedModelLastHub.filter(d => d.DistrictId === districtId && d.DeliveredCourierOrderId != null && d.LastHubCourierOrderId != null);
+            else
+                $scope.detailsResultLastHub = $scope.AreaDetailsSpeedModel.filter(d => d.DistrictId === districtId && d.ThanaId === thanaId && d.AreaId === areaId && d.DeliveredCourierOrderId != null && d.LastHubCourierOrderId != null);
+        }
+        $scope.detailsDeliveredPodNumberLaastHub = function (districtId, thanaId, areaId) {
+            if (thanaId == '0' && areaId == '0')
+                $scope.detailsResultLaastHub = $scope.districtDetailsSpeedModelLastHub.filter(d => d.DistrictId === districtId && d.LastHubCourierOrderId != null);
+            else
+                $scope.detailsResultLaastHub = $scope.AreaDetailsSpeedModel.filter(d => d.DistrictId === districtId && d.ThanaId === thanaId && d.AreaId === areaId && d.LastHubCourierOrderId != null);
+        }
+
+        $scope.getOrderHistoryInformation = function (orderId) {
+            $http.get(CoreOnlineUrl + 'Fetch/OrderUpdateHistory/' + orderId, { headers: { 'Content-Type': 'application/json' } })
+                .then(function (response) {
+
+                    $scope.OrderInformations = response.data.model;
+
+
+                }, function error(response) {
+                    console.log(response.data);
+                });
+        }
+
+        $scope.redirectToDtOperation = function (courierOrderId) {
+            var redirectUrl = 'https://admin.deliverytiger.com.bd/Operation/Operation?orderId=';
+            redirectUrl += courierOrderId;
+            window.open(redirectUrl);
+        }
+    })
+
+
+</script>
